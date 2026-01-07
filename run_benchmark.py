@@ -437,9 +437,18 @@ async def main():
     """Main execution function."""
     args = parse_arguments()
 
-    llm_model = args.llm_model or _get_env_setting("LLM_MODEL", "gpt-4o-mini")
-    base_model_name = _normalize_model_dir_name(llm_model)
     model_configs = _load_model_configs()
+    llm_model = args.llm_model or _get_env_setting("LLM_MODEL")
+    
+    if not llm_model and model_configs:
+        # Auto-select the first model from configs if no default is set
+        llm_model = list(model_configs.keys())[0]
+        logger.info(f"LLM_MODEL not set. Auto-selected first model from config: {llm_model}")
+    
+    if not llm_model:
+        llm_model = "gpt-4o-mini" # Ultimate fallback
+
+    base_model_name = _normalize_model_dir_name(llm_model)
     model_override = model_configs.get(llm_model, {})
 
     llm_provider = args.llm_provider or model_override.get("provider") or _get_env_setting("LLM_PROVIDER")
