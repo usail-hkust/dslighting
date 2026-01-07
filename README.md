@@ -4,7 +4,7 @@
 
 # DSLIGHTING
 
-Personalized math and science expert assistant, built as a full-stack data science workflow runner. Personalized 数据科学专家
+Personalized data science expert assistant, built as a full-stack data science workflow runner.
 
 [Quick Start](#quick-start) · [Workflows](#workflows) · [Data Layout](#data-layout) · [Configuration](#configuration) · [中文说明](docs/README_CN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
 
@@ -110,26 +110,55 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 
 You can override the base directory with `--log-path`.
 
-## FAQ
+## ❓ FAQ
 
 See `docs/FAQ.md`.
 
-## Star History
+## ⭐ Star History
 
-| Stargazers | Forkers |
-| --- | --- |
-| TBD | TBD |
+<div align="center">
 
-Star History Chart: add chart under `assets/` and link it here.
+<p>
+  <a href="https://github.com/luckyfan-cs/dslighting/stargazers"><img src="assets/roster/stargazers.svg" alt="Stargazers"/></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/luckyfan-cs/dslighting/network/members"><img src="assets/roster/forkers.svg" alt="Forkers"/></a>
+</p>
 
-## Contribution
+<a href="https://www.star-history.com/#luckyfan-cs/dslighting&type=timeline&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
+  </picture>
+</a>
 
-We hope DSLIGHTING can become a gift for the community. 🎁
+</div>
+
+## 🤝 Contribution
+
+<div align="center">
+
+We hope DSLIGHTING could become a gift for the community. 🎁
+
+<a href="https://github.com/luckyfan-cs/dslighting/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=luckyfan-cs/dslighting" />
+</a>
+
+Contributors: [luckyfan-cs](https://github.com/luckyfan-cs) (project leader), [canchengliu](https://github.com/canchengliu) (workflow contribution)
+
+</div>
+
 See `docs/CONTRIBUTING.md`.
 
-## Community
+## 🔗 Community
 
-⭐ Star us · 🐛 Report a bug · 💬 Discussions
+<div align="center">
+
+**[DSLIGHTING Community](https://github.com/luckyfan-cs)**
+
+[⭐ Star us](https://github.com/luckyfan-cs/dslighting/stargazers) · [🐛 Report a bug](https://github.com/luckyfan-cs/dslighting/issues) · [💬 Discussions](https://github.com/luckyfan-cs/dslighting/discussions)
+
+</div>
 
 ## License
 
