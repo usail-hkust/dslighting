@@ -76,6 +76,24 @@ python run_benchmark.py \
 Each agent has one sample script under `job_scripts/<agent>/`.
 Update the `DATA_DIR` in the script to point at your prepared competitions root if needed.
 
+### 7. Interactive Web UI (Experimental)
+
+We provide a Next.js + FastAPI web interface for easier data upload and task execution.
+
+**Backend:**
+```bash
+source dsat/bin/activate
+uvicorn web_ui.backend.main:app --reload --port 8000
+```
+
+**Frontend:**
+```bash
+cd web_ui/frontend
+npm install
+npm run dev
+```
+Open `http://localhost:3000` to start.
+
 ## Data Layout
 
 Expected data structure:
