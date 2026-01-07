@@ -1,0 +1,16 @@
+id: dabench-252-determine-which-country
+name: DABench Task - Determine which country's gross domestic product p
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-252-determine-which-country/description.md
+
+dataset:
+  answers: dabench-252-determine-which-country/prepared/private/answer.csv
+  sample_submission: dabench-252-determine-which-country/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-252-determine-which-country.grade:grade
+
+preparer: mlebench.competitions.dabench-252-determine-which-country.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-142-question-there-relationship
+name: "DABench Task - Question 2: Is there a relationship between the di"
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-142-question-there-relationship/description.md
+
+dataset:
+  answers: dabench-142-question-there-relationship/prepared/private/answer.csv
+  sample_submission: dabench-142-question-there-relationship/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-142-question-there-relationship.grade:grade
+
+preparer: mlebench.competitions.dabench-142-question-there-relationship.prepare:prepare

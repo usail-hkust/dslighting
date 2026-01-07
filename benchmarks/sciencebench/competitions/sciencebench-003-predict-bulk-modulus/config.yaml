@@ -1,0 +1,16 @@
+id: sciencebench-003-predict-bulk-modulus
+name: "ScienceBench - predict_bulk_modulus.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-003-predict-bulk-modulus/description.md
+
+dataset:
+  answers: sciencebench-003-predict-bulk-modulus/prepared/private/answer.csv
+  sample_submission: sciencebench-003-predict-bulk-modulus/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-003-predict-bulk-modulus.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-003-predict-bulk-modulus.prepare:prepare

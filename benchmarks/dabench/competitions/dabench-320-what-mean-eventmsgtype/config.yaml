@@ -1,0 +1,16 @@
+id: dabench-320-what-mean-eventmsgtype
+name: DABench Task - What is the mean of the EVENTMSGTYPE column?
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-320-what-mean-eventmsgtype/description.md
+
+dataset:
+  answers: dabench-320-what-mean-eventmsgtype/prepared/private/answer.csv
+  sample_submission: dabench-320-what-mean-eventmsgtype/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-320-what-mean-eventmsgtype.grade:grade
+
+preparer: mlebench.competitions.dabench-320-what-mean-eventmsgtype.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-447-there-outliers-atmospheric
+name: DABench Task - 2. Are there any outliers in the atmospheric press
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-447-there-outliers-atmospheric/description.md
+
+dataset:
+  answers: dabench-447-there-outliers-atmospheric/prepared/private/answer.csv
+  sample_submission: dabench-447-there-outliers-atmospheric/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-447-there-outliers-atmospheric.grade:grade
+
+preparer: mlebench.competitions.dabench-447-there-outliers-atmospheric.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-602-column-follows-normal
+name: DABench Task - 2. Check if the RHO_OLD column follows a normal di
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-602-column-follows-normal/description.md
+
+dataset:
+  answers: dabench-602-column-follows-normal/prepared/private/answer.csv
+  sample_submission: dabench-602-column-follows-normal/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-602-column-follows-normal.grade:grade
+
+preparer: mlebench.competitions.dabench-602-column-follows-normal.prepare:prepare

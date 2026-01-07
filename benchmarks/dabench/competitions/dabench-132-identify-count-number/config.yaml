@@ -1,0 +1,16 @@
+id: dabench-132-identify-count-number
+name: DABench Task - Identify and count the number of outliers in the f
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-132-identify-count-number/description.md
+
+dataset:
+  answers: dabench-132-identify-count-number/prepared/private/answer.csv
+  sample_submission: dabench-132-identify-count-number/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-132-identify-count-number.grade:grade
+
+preparer: mlebench.competitions.dabench-132-identify-count-number.prepare:prepare

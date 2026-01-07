@@ -1,0 +1,16 @@
+id: dabench-278-there-outliers-agri
+name: DABench Task - Are there any outliers in the Agri column of the d
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-278-there-outliers-agri/description.md
+
+dataset:
+  answers: dabench-278-there-outliers-agri/prepared/private/answer.csv
+  sample_submission: dabench-278-there-outliers-agri/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-278-there-outliers-agri.grade:grade
+
+preparer: mlebench.competitions.dabench-278-there-outliers-agri.prepare:prepare

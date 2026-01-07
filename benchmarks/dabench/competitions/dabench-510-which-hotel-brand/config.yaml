@@ -1,0 +1,16 @@
+id: dabench-510-which-hotel-brand
+name: DABench Task - 2. Which hotel brand has the highest average star 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-510-which-hotel-brand/description.md
+
+dataset:
+  answers: dabench-510-which-hotel-brand/prepared/private/answer.csv
+  sample_submission: dabench-510-which-hotel-brand/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-510-which-hotel-brand.grade:grade
+
+preparer: mlebench.competitions.dabench-510-which-hotel-brand.prepare:prepare

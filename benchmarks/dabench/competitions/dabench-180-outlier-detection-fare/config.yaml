@@ -1,0 +1,16 @@
+id: dabench-180-outlier-detection-fare
+name: DABench Task - Perform outlier detection on the fare variable for
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-180-outlier-detection-fare/description.md
+
+dataset:
+  answers: dabench-180-outlier-detection-fare/prepared/private/answer.csv
+  sample_submission: dabench-180-outlier-detection-fare/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-180-outlier-detection-fare.grade:grade
+
+preparer: mlebench.competitions.dabench-180-outlier-detection-fare.prepare:prepare

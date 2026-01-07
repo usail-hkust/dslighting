@@ -1,0 +1,16 @@
+id: sciencebench-021-deforestation
+name: "ScienceBench - deforestation.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-021-deforestation/description.md
+
+dataset:
+  answers: sciencebench-021-deforestation/prepared/private/answer.csv
+  sample_submission: sciencebench-021-deforestation/prepared/public/sample_submission.csv
+
+grader:
+  name: relative_error
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-021-deforestation.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-021-deforestation.prepare:prepare

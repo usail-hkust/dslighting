@@ -1,0 +1,16 @@
+id: dabench-117-which-variable-strongest
+name: DABench Task - Which variable has the strongest correlation with 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-117-which-variable-strongest/description.md
+
+dataset:
+  answers: dabench-117-which-variable-strongest/prepared/private/answer.csv
+  sample_submission: dabench-117-which-variable-strongest/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-117-which-variable-strongest.grade:grade
+
+preparer: mlebench.competitions.dabench-117-which-variable-strongest.prepare:prepare

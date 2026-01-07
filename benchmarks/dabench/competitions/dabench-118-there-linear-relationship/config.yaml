@@ -1,0 +1,16 @@
+id: dabench-118-there-linear-relationship
+name: DABench Task - Is there a linear relationship between the GDP per
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-118-there-linear-relationship/description.md
+
+dataset:
+  answers: dabench-118-there-linear-relationship/prepared/private/answer.csv
+  sample_submission: dabench-118-there-linear-relationship/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-118-there-linear-relationship.grade:grade
+
+preparer: mlebench.competitions.dabench-118-there-linear-relationship.prepare:prepare

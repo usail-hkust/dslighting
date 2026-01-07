@@ -1,0 +1,16 @@
+id: sciencebench-011-bbbc002-cell-count
+name: "ScienceBench - BBBC002_cell-count.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-011-bbbc002-cell-count/description.md
+
+dataset:
+  answers: sciencebench-011-bbbc002-cell-count/prepared/private/answer.csv
+  sample_submission: sciencebench-011-bbbc002-cell-count/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-011-bbbc002-cell-count.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-011-bbbc002-cell-count.prepare:prepare

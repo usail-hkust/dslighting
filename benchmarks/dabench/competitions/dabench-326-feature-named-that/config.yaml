@@ -1,0 +1,16 @@
+id: dabench-326-feature-named-that
+name: DABench Task - Create a new feature named "event_hour" that repre
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-326-feature-named-that/description.md
+
+dataset:
+  answers: dabench-326-feature-named-that/prepared/private/answer.csv
+  sample_submission: dabench-326-feature-named-that/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-326-feature-named-that.grade:grade
+
+preparer: mlebench.competitions.dabench-326-feature-named-that.prepare:prepare

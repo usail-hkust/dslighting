@@ -1,0 +1,16 @@
+id: dabench-495-outlier-detection-percentage
+name: DABench Task - Perform outlier detection on the percentage of gra
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-495-outlier-detection-percentage/description.md
+
+dataset:
+  answers: dabench-495-outlier-detection-percentage/prepared/private/answer.csv
+  sample_submission: dabench-495-outlier-detection-percentage/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-495-outlier-detection-percentage.grade:grade
+
+preparer: mlebench.competitions.dabench-495-outlier-detection-percentage.prepare:prepare

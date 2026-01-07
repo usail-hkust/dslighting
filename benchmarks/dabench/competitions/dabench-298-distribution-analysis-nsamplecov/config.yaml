@@ -1,0 +1,16 @@
+id: dabench-298-distribution-analysis-nsamplecov
+name: DABench Task - 2. Perform a distribution analysis on the "nsample
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-298-distribution-analysis-nsamplecov/description.md
+
+dataset:
+  answers: dabench-298-distribution-analysis-nsamplecov/prepared/private/answer.csv
+  sample_submission: dabench-298-distribution-analysis-nsamplecov/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-298-distribution-analysis-nsamplecov.grade:grade
+
+preparer: mlebench.competitions.dabench-298-distribution-analysis-nsamplecov.prepare:prepare

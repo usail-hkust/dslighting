@@ -1,0 +1,16 @@
+id: dabench-58-what-percentage-missing
+name: DABench Task - What is the percentage of missing values in the "N
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-58-what-percentage-missing/description.md
+
+dataset:
+  answers: dabench-58-what-percentage-missing/prepared/private/answer.csv
+  sample_submission: dabench-58-what-percentage-missing/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-58-what-percentage-missing.grade:grade
+
+preparer: mlebench.competitions.dabench-58-what-percentage-missing.prepare:prepare

@@ -1,0 +1,16 @@
+id: custom-house-price-prediction
+name: House Price Prediction Challenge
+competition_type: kaggle
+awards_medals: false
+prizes: null
+description: competitions/custom_house_price_prediction/description.md
+
+dataset:
+  answers: custom-house-price-prediction/prepared/private/answer.csv
+  sample_submission: custom-house-price-prediction/prepared/public/sample_submission.csv
+
+grader:
+  name: rmse
+  grade_fn: competitions.custom_house_price_prediction.grade:grade
+
+preparer: competitions.custom_house_price_prediction.prepare:prepare

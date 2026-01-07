@@ -1,0 +1,16 @@
+id: dabench-669-identify-remove-outliers
+name: DABench Task - Identify and remove any outliers in the MedInc col
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-669-identify-remove-outliers/description.md
+
+dataset:
+  answers: dabench-669-identify-remove-outliers/prepared/private/answer.csv
+  sample_submission: dabench-669-identify-remove-outliers/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-669-identify-remove-outliers.grade:grade
+
+preparer: mlebench.competitions.dabench-669-identify-remove-outliers.prepare:prepare

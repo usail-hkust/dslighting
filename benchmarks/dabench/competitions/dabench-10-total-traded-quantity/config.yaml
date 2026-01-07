@@ -1,0 +1,16 @@
+id: dabench-10-total-traded-quantity
+name: DABench Task - Check if the "Total Traded Quantity" column adhere
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-10-total-traded-quantity/description.md
+
+dataset:
+  answers: dabench-10-total-traded-quantity/prepared/private/answer.csv
+  sample_submission: dabench-10-total-traded-quantity/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-10-total-traded-quantity.grade:grade
+
+preparer: mlebench.competitions.dabench-10-total-traded-quantity.prepare:prepare

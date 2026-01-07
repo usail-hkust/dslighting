@@ -1,0 +1,16 @@
+id: dabench-130-passengers-follows-normal
+name: DABench Task - Check if the age of the passengers follows a norma
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-130-passengers-follows-normal/description.md
+
+dataset:
+  answers: dabench-130-passengers-follows-normal/prepared/private/answer.csv
+  sample_submission: dabench-130-passengers-follows-normal/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-130-passengers-follows-normal.grade:grade
+
+preparer: mlebench.competitions.dabench-130-passengers-follows-normal.prepare:prepare

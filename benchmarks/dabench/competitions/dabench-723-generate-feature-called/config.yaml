@@ -1,0 +1,16 @@
+id: dabench-723-generate-feature-called
+name: DABench Task - 2. Generate a new feature called 'power-to-weight 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-723-generate-feature-called/description.md
+
+dataset:
+  answers: dabench-723-generate-feature-called/prepared/private/answer.csv
+  sample_submission: dabench-723-generate-feature-called/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-723-generate-feature-called.grade:grade
+
+preparer: mlebench.competitions.dabench-723-generate-feature-called.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-555-many-unique-plant
+name: DABench Task - How many unique plant species (represented by uniq
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-555-many-unique-plant/description.md
+
+dataset:
+  answers: dabench-555-many-unique-plant/prepared/private/answer.csv
+  sample_submission: dabench-555-many-unique-plant/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-555-many-unique-plant.grade:grade
+
+preparer: mlebench.competitions.dabench-555-many-unique-plant.prepare:prepare

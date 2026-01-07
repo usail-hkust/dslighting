@@ -1,0 +1,16 @@
+id: dabench-282-correlation-analysis-given
+name: DABench Task - Perform correlation analysis on the given dataset 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-282-correlation-analysis-given/description.md
+
+dataset:
+  answers: dabench-282-correlation-analysis-given/prepared/private/answer.csv
+  sample_submission: dabench-282-correlation-analysis-given/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-282-correlation-analysis-given.grade:grade
+
+preparer: mlebench.competitions.dabench-282-correlation-analysis-given.prepare:prepare

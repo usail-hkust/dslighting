@@ -1,0 +1,16 @@
+id: dabench-30-linear-regression-machine
+name: DABench Task - Create a linear regression machine learning model 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-30-linear-regression-machine/description.md
+
+dataset:
+  answers: dabench-30-linear-regression-machine/prepared/private/answer.csv
+  sample_submission: dabench-30-linear-regression-machine/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-30-linear-regression-machine.grade:grade
+
+preparer: mlebench.competitions.dabench-30-linear-regression-machine.prepare:prepare

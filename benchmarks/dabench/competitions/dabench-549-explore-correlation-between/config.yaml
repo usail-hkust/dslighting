@@ -1,0 +1,16 @@
+id: dabench-549-explore-correlation-between
+name: DABench Task - Explore the correlation between the length and the
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-549-explore-correlation-between/description.md
+
+dataset:
+  answers: dabench-549-explore-correlation-between/prepared/private/answer.csv
+  sample_submission: dabench-549-explore-correlation-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-549-explore-correlation-between.grade:grade
+
+preparer: mlebench.competitions.dabench-549-explore-correlation-between.prepare:prepare

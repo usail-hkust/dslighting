@@ -1,0 +1,16 @@
+id: dabench-269-there-correlation-between
+name: DABench Task - Is there any correlation between the TOTUSJH and T
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-269-there-correlation-between/description.md
+
+dataset:
+  answers: dabench-269-there-correlation-between/prepared/private/answer.csv
+  sample_submission: dabench-269-there-correlation-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-269-there-correlation-between.grade:grade
+
+preparer: mlebench.competitions.dabench-269-there-correlation-between.prepare:prepare

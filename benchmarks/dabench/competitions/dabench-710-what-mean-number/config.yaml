@@ -1,0 +1,16 @@
+id: dabench-710-what-mean-number
+name: DABench Task - 1. What is the mean number of wins in the "JAMES L
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-710-what-mean-number/description.md
+
+dataset:
+  answers: dabench-710-what-mean-number/prepared/private/answer.csv
+  sample_submission: dabench-710-what-mean-number/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-710-what-mean-number.grade:grade
+
+preparer: mlebench.competitions.dabench-710-what-mean-number.prepare:prepare

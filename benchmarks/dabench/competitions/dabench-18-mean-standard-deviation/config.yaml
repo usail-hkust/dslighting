@@ -1,0 +1,16 @@
+id: dabench-18-mean-standard-deviation
+name: DABench Task - Calculate the mean and standard deviation of the "
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-18-mean-standard-deviation/description.md
+
+dataset:
+  answers: dabench-18-mean-standard-deviation/prepared/private/answer.csv
+  sample_submission: dabench-18-mean-standard-deviation/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-18-mean-standard-deviation.grade:grade
+
+preparer: mlebench.competitions.dabench-18-mean-standard-deviation.prepare:prepare

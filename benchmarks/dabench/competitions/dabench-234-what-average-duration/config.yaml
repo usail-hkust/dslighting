@@ -1,0 +1,16 @@
+id: dabench-234-what-average-duration
+name: DABench Task - What is the average duration of a budget year for 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-234-what-average-duration/description.md
+
+dataset:
+  answers: dabench-234-what-average-duration/prepared/private/answer.csv
+  sample_submission: dabench-234-what-average-duration/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-234-what-average-duration.grade:grade
+
+preparer: mlebench.competitions.dabench-234-what-average-duration.prepare:prepare

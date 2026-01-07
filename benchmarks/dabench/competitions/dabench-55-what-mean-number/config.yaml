@@ -1,0 +1,16 @@
+id: dabench-55-what-mean-number
+name: DABench Task - What is the mean number of cases recorded across a
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-55-what-mean-number/description.md
+
+dataset:
+  answers: dabench-55-what-mean-number/prepared/private/answer.csv
+  sample_submission: dabench-55-what-mean-number/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-55-what-mean-number.grade:grade
+
+preparer: mlebench.competitions.dabench-55-what-mean-number.prepare:prepare

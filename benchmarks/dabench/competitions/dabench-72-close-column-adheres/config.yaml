@@ -1,0 +1,16 @@
+id: dabench-72-close-column-adheres
+name: DABench Task - Check if the "Close" column adheres to a normal di
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-72-close-column-adheres/description.md
+
+dataset:
+  answers: dabench-72-close-column-adheres/prepared/private/answer.csv
+  sample_submission: dabench-72-close-column-adheres/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-72-close-column-adheres.grade:grade
+
+preparer: mlebench.competitions.dabench-72-close-column-adheres.prepare:prepare

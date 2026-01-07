@@ -1,0 +1,16 @@
+id: dabench-219-identify-site-with
+name: DABench Task - Identify the site(s) with outliers in the abs_diff
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-219-identify-site-with/description.md
+
+dataset:
+  answers: dabench-219-identify-site-with/prepared/private/answer.csv
+  sample_submission: dabench-219-identify-site-with/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-219-identify-site-with.grade:grade
+
+preparer: mlebench.competitions.dabench-219-identify-site-with.prepare:prepare

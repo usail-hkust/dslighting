@@ -1,0 +1,16 @@
+id: dabench-410-what-distribution-ages
+name: DABench Task - What is the distribution of ages among the male pa
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-410-what-distribution-ages/description.md
+
+dataset:
+  answers: dabench-410-what-distribution-ages/prepared/private/answer.csv
+  sample_submission: dabench-410-what-distribution-ages/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-410-what-distribution-ages.grade:grade
+
+preparer: mlebench.competitions.dabench-410-what-distribution-ages.prepare:prepare

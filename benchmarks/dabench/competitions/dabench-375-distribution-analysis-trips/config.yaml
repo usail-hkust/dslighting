@@ -1,0 +1,16 @@
+id: dabench-375-distribution-analysis-trips
+name: DABench Task - 2. Perform a distribution analysis on the "Trips o
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-375-distribution-analysis-trips/description.md
+
+dataset:
+  answers: dabench-375-distribution-analysis-trips/prepared/private/answer.csv
+  sample_submission: dabench-375-distribution-analysis-trips/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-375-distribution-analysis-trips.grade:grade
+
+preparer: mlebench.competitions.dabench-375-distribution-analysis-trips.prepare:prepare

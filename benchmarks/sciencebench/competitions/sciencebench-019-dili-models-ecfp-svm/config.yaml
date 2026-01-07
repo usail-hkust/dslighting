@@ -1,0 +1,16 @@
+id: sciencebench-019-dili-models-ecfp-svm
+name: "ScienceBench - DILI_models_ECFP_SVM.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-019-dili-models-ecfp-svm/description.md
+
+dataset:
+  answers: sciencebench-019-dili-models-ecfp-svm/prepared/private/answer.csv
+  sample_submission: sciencebench-019-dili-models-ecfp-svm/prepared/public/sample_submission.csv
+
+grader:
+  name: f1
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-019-dili-models-ecfp-svm.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-019-dili-models-ecfp-svm.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-355-linear-regression-analysis
+name: DABench Task - Perform a linear regression analysis to predict fa
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-355-linear-regression-analysis/description.md
+
+dataset:
+  answers: dabench-355-linear-regression-analysis/prepared/private/answer.csv
+  sample_submission: dabench-355-linear-regression-analysis/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-355-linear-regression-analysis.grade:grade
+
+preparer: mlebench.competitions.dabench-355-linear-regression-analysis.prepare:prepare

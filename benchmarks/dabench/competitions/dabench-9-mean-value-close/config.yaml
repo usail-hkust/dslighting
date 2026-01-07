@@ -1,0 +1,16 @@
+id: dabench-9-mean-value-close
+name: DABench Task - Calculate the mean value of the "Close Price" colu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-9-mean-value-close/description.md
+
+dataset:
+  answers: dabench-9-mean-value-close/prepared/private/answer.csv
+  sample_submission: dabench-9-mean-value-close/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-9-mean-value-close.grade:grade
+
+preparer: mlebench.competitions.dabench-9-mean-value-close.prepare:prepare

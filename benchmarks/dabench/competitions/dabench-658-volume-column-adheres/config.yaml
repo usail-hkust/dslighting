@@ -1,0 +1,16 @@
+id: dabench-658-volume-column-adheres
+name: DABench Task - Check if the 'Volume' column adheres to a normal d
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-658-volume-column-adheres/description.md
+
+dataset:
+  answers: dabench-658-volume-column-adheres/prepared/private/answer.csv
+  sample_submission: dabench-658-volume-column-adheres/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-658-volume-column-adheres.grade:grade
+
+preparer: mlebench.competitions.dabench-658-volume-column-adheres.prepare:prepare

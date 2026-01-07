@@ -1,0 +1,16 @@
+id: dabench-688-using-feature-engineering
+name: DABench Task - 3. Using feature engineering, create a new feature
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-688-using-feature-engineering/description.md
+
+dataset:
+  answers: dabench-688-using-feature-engineering/prepared/private/answer.csv
+  sample_submission: dabench-688-using-feature-engineering/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-688-using-feature-engineering.grade:grade
+
+preparer: mlebench.competitions.dabench-688-using-feature-engineering.prepare:prepare

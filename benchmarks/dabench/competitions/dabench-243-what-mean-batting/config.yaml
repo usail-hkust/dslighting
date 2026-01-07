@@ -1,0 +1,16 @@
+id: dabench-243-what-mean-batting
+name: DABench Task - What is the mean batting average of the players in
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-243-what-mean-batting/description.md
+
+dataset:
+  answers: dabench-243-what-mean-batting/prepared/private/answer.csv
+  sample_submission: dabench-243-what-mean-batting/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-243-what-mean-batting.grade:grade
+
+preparer: mlebench.competitions.dabench-243-what-mean-batting.prepare:prepare

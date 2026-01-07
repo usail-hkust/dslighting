@@ -1,0 +1,16 @@
+id: dabench-244-number-home-runs
+name: DABench Task - Are the number of home runs hit by the players nor
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-244-number-home-runs/description.md
+
+dataset:
+  answers: dabench-244-number-home-runs/prepared/private/answer.csv
+  sample_submission: dabench-244-number-home-runs/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-244-number-home-runs.grade:grade
+
+preparer: mlebench.competitions.dabench-244-number-home-runs.prepare:prepare

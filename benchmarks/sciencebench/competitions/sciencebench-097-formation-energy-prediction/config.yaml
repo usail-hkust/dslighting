@@ -1,0 +1,16 @@
+id: sciencebench-097-formation-energy-prediction
+name: "ScienceBench - formation_energy_prediction.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-097-formation-energy-prediction/description.md
+
+dataset:
+  answers: sciencebench-097-formation-energy-prediction/prepared/private/answer.csv
+  sample_submission: sciencebench-097-formation-energy-prediction/prepared/public/sample_submission.csv
+
+grader:
+  name: mse
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-097-formation-energy-prediction.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-097-formation-energy-prediction.prepare:prepare

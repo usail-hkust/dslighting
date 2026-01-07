@@ -1,0 +1,18 @@
+# Data integrity checksums
+# Generated automatically by prepare.py
+
+raw/houses.csv:
+  md5: placeholder
+  size_bytes: placeholder
+
+prepared/public/train.csv:
+  md5: placeholder
+  size_bytes: placeholder
+
+prepared/public/sample_submission.csv:
+  md5: placeholder
+  size_bytes: placeholder
+
+prepared/private/answer.csv:
+  md5: placeholder
+  size_bytes: placeholder

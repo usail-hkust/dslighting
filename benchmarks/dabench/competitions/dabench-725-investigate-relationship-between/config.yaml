@@ -1,0 +1,16 @@
+id: dabench-725-investigate-relationship-between
+name: DABench Task - 1. Investigate the relationship between 'displacem
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-725-investigate-relationship-between/description.md
+
+dataset:
+  answers: dabench-725-investigate-relationship-between/prepared/private/answer.csv
+  sample_submission: dabench-725-investigate-relationship-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-725-investigate-relationship-between.grade:grade
+
+preparer: mlebench.competitions.dabench-725-investigate-relationship-between.prepare:prepare

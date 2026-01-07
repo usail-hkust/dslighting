@@ -1,0 +1,16 @@
+id: dabench-736-feature-combining-population
+name: DABench Task - Create a new feature by combining the population a
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-736-feature-combining-population/description.md
+
+dataset:
+  answers: dabench-736-feature-combining-population/prepared/private/answer.csv
+  sample_submission: dabench-736-feature-combining-population/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-736-feature-combining-population.grade:grade
+
+preparer: mlebench.competitions.dabench-736-feature-combining-population.prepare:prepare

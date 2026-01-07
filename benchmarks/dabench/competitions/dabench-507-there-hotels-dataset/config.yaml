@@ -1,0 +1,16 @@
+id: dabench-507-there-hotels-dataset
+name: DABench Task - 2. Are there any hotels in the dataset that have a
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-507-there-hotels-dataset/description.md
+
+dataset:
+  answers: dabench-507-there-hotels-dataset/prepared/private/answer.csv
+  sample_submission: dabench-507-there-hotels-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-507-there-hotels-dataset.grade:grade
+
+preparer: mlebench.competitions.dabench-507-there-hotels-dataset.prepare:prepare

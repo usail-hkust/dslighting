@@ -1,0 +1,16 @@
+id: dabench-496-feature-engineering-creating
+name: DABench Task - Perform feature engineering by creating a new feat
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-496-feature-engineering-creating/description.md
+
+dataset:
+  answers: dabench-496-feature-engineering-creating/prepared/private/answer.csv
+  sample_submission: dabench-496-feature-engineering-creating/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-496-feature-engineering-creating.grade:grade
+
+preparer: mlebench.competitions.dabench-496-feature-engineering-creating.prepare:prepare

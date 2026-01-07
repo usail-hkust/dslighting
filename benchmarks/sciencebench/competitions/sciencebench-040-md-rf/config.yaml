@@ -1,0 +1,16 @@
+id: sciencebench-040-md-rf
+name: "ScienceBench - MD_RF.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-040-md-rf/description.md
+
+dataset:
+  answers: sciencebench-040-md-rf/prepared/private/answer.csv
+  sample_submission: sciencebench-040-md-rf/prepared/public/sample_submission.csv
+
+grader:
+  name: f1
+  grade_fn: benchmarks.sciencebench.competitions.sciencebench-040-md-rf.grade:grade
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-040-md-rf.prepare:prepare

@@ -1,0 +1,16 @@
+id: ili
+name: ILI Time Series Forecasting
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/ili/description.md
+
+dataset:
+  answers: ili/prepared/private/test_targets.csv
+  sample_submission: ili/prepared/public/sample_submission.csv
+
+grader:
+  name: mse-mae
+  grade_fn: mlebench.competitions.ili.grade:grade
+
+preparer: mlebench.competitions.ili.prepare:prepare

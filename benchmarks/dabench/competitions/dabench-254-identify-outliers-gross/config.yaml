@@ -1,0 +1,16 @@
+id: dabench-254-identify-outliers-gross
+name: DABench Task - Identify any outliers in the gross domestic produc
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-254-identify-outliers-gross/description.md
+
+dataset:
+  answers: dabench-254-identify-outliers-gross/prepared/private/answer.csv
+  sample_submission: dabench-254-identify-outliers-gross/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-254-identify-outliers-gross.grade:grade
+
+preparer: mlebench.competitions.dabench-254-identify-outliers-gross.prepare:prepare

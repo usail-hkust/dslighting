@@ -1,0 +1,16 @@
+id: dabench-759-median-range-maximum
+name: DABench Task - 5. Calculate the median and range of the maximum t
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-759-median-range-maximum/description.md
+
+dataset:
+  answers: dabench-759-median-range-maximum/prepared/private/answer.csv
+  sample_submission: dabench-759-median-range-maximum/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-759-median-range-maximum.grade:grade
+
+preparer: mlebench.competitions.dabench-759-median-range-maximum.prepare:prepare

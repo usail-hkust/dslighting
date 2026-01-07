@@ -1,0 +1,16 @@
+id: dabench-23-machine-learning-techniques
+name: DABench Task - Apply machine learning techniques to predict the e
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-23-machine-learning-techniques/description.md
+
+dataset:
+  answers: dabench-23-machine-learning-techniques/prepared/private/answer.csv
+  sample_submission: dabench-23-machine-learning-techniques/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-23-machine-learning-techniques.grade:grade
+
+preparer: mlebench.competitions.dabench-23-machine-learning-techniques.prepare:prepare

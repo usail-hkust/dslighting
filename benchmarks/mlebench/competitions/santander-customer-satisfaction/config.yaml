@@ -1,0 +1,17 @@
+id: santander-customer-satisfaction
+name: Santander Customer Satisfaction
+competition_type: simple
+awards_medals: false
+prizes: null
+description: mlebench/competitions/santander-customer-satisfaction/description.md
+
+dataset:
+  answers: santander-customer-satisfaction/prepared/private/test.csv
+  gold_submission: santander-customer-satisfaction/prepared/private/gold_submission.csv
+  sample_submission: santander-customer-satisfaction/prepared/public/sample_submission.csv
+
+grader:
+  name: auc-roc
+  grade_fn: mlebench.competitions.santander-customer-satisfaction.grade:grade
+
+preparer: mlebench.competitions.santander-customer-satisfaction.prepare:prepare

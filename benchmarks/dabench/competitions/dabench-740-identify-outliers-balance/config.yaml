@@ -1,0 +1,16 @@
+id: dabench-740-identify-outliers-balance
+name: DABench Task - Identify any outliers in the "Balance" column of t
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-740-identify-outliers-balance/description.md
+
+dataset:
+  answers: dabench-740-identify-outliers-balance/prepared/private/answer.csv
+  sample_submission: dabench-740-identify-outliers-balance/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-740-identify-outliers-balance.grade:grade
+
+preparer: mlebench.competitions.dabench-740-identify-outliers-balance.prepare:prepare
