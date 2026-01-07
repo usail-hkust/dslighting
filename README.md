@@ -80,19 +80,33 @@ Update the `DATA_DIR` in the script to point at your prepared competitions root 
 
 We provide a Next.js + FastAPI web interface for easier data upload and task execution.
 
-**Backend:**
+#### 1. Start the Backend
+The backend manages file uploads and runs the dslighting agent processes.
+
 ```bash
 source dsat/bin/activate
+# Default port is 8000
 uvicorn web_ui.backend.main:app --reload --port 8000
 ```
 
-**Frontend:**
+> **Note:** If port 8000 is already in use (Error: `[Errno 48] Address already in use`), try using a different port, e.g., 8001:
+> ```bash
+> uvicorn web_ui.backend.main:app --reload --port 8001
+> ```
+> *If you change the backend port, verify the API URL in the frontend configuration.*
+
+#### 2. Start the Frontend
+The frontend provides the visual dashboard.
+
 ```bash
 cd web_ui/frontend
-npm install
-npm run dev
+npm install   # Install dependencies (first time only)
+npm run dev   # Start the development server
 ```
-Open `http://localhost:3000` to start.
+
+#### 3. Access the Dashboard
+Open your browser and navigate to:
+[http://localhost:3000](http://localhost:3000)
 
 ## Data Layout
 
