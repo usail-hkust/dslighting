@@ -153,3 +153,12 @@ temp/
 runs/
 
 
+# Accidental virtual environment in dsat/
+dsat/bin/
+dsat/include/
+dsat/lib/
+dsat/share/
+dsat/pyvenv.cfg
+dsat/etc/
+
+
