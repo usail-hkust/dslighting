@@ -143,6 +143,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code
+.claude/
+
 # Project specific
 /artifacts
 logs/
@@ -152,6 +155,47 @@ temp/
 /competitions/
 runs/
 requirements_local.txt
+
+# Development scripts (one-time utilities)
+rename_data_dirs.py
+verify_competition.py
+
+# Backend logs
+backend.log
+backend*.log
+*_startup.log
+
+# Local development files
+*.local
+local.*
+*.bak
+*.tmp
+
+# Test/development data
+data/competitions/mcm-2025-c/
+data/competitions/my-custom-task-01/
+data/competitions/new-my-task-01/
+data/competitions/test-repair-task-01/
+data/competitions/test-repair-task-02/
+
+# Benchmark test data
+benchmarks/mlebench/competitions/mcm-2025-c/
+benchmarks/mlebench/competitions/my-custom-task-01/
+benchmarks/mlebench/competitions/new-my-task-01/
+benchmarks/mlebench/competitions/test-repair-task-01/
+benchmarks/mlebench/competitions/test-repair-task-02/
+
+# Web UI specific (duplicates from web_ui/.gitignore)
+web_ui/.claude
+web_ui/*.log
+web_ui/*_FIX.md
+web_ui/*_IMPROVEMENTS.md
+web_ui/AGENT_REFACTORING.md
+web_ui/BUGFIX_SUMMARY.md
+web_ui/MODEL_TRAINING_IMPROVEMENTS.md
+web_ui/STOP_FIX.md
+web_ui/UX_IMPROVEMENTS.md
+web_ui/GITIGNORE_SUMMARY.md
 
 
 
