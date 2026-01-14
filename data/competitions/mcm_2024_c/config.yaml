@@ -1,0 +1,12 @@
+id: mcm_2024_c
+name: MCM 2024 Problem C
+description: description.md
+competition_type: open_ended
+preparer: mcm_2024_c.prepare:prepare
+dataset:
+  answers: mcm_2024_c/raw/Wimbledon_featured_matches.csv
+  sample_submission: mcm_2024_c/raw/Wimbledon_featured_matches.csv
+  gold_submission: mcm_2024_c/raw/Wimbledon_featured_matches.csv
+grader:
+  name: CustomGrader
+  grade_fn: mcm_2024_c.grade:grade
