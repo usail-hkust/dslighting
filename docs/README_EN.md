@@ -16,6 +16,8 @@
   <a href="#core-features"><img src="https://img.shields.io/badge/⚡-Features-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  &nbsp;&nbsp;
+  <img src="https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge" alt="Profile views">
 </p>
 
 [🇨🇳 中文](../README.md) · [日本語](README_JA.md) · [Français](README_FR.md)

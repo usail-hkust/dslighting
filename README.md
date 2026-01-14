@@ -16,6 +16,8 @@
   <a href="#核心功能"><img src="https://img.shields.io/badge/⚡-核心功能-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
+  &nbsp;&nbsp;
+  <img src="https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge" alt="Profile views">
 </p>
 
 [English](docs/README_EN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
