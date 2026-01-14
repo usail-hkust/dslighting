@@ -17,6 +17,8 @@
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
   &nbsp;&nbsp;
+  <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
+  &nbsp;&nbsp;
   <img src="https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge" alt="Profile views">
 </p>
 
