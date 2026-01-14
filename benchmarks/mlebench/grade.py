@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 from tqdm import tqdm
 
 from mlebench.data import get_leaderboard, is_dataset_prepared
@@ -152,3 +153,57 @@ def aggregate_reports(competition_reports: list[CompetitionReport]) -> dict:
     }
 
     return summary_report
+
+def simple_accuracy_grader(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
+    """
+    Computes simple accuracy between submission and answers.
+    Assumes matching order or joins on an ID column.
+    """
+    try:
+        # 1. Try to find ID column to merge on
+        id_col = None
+        common_cols = set(submission.columns).intersection(set(answers.columns))
+        for col in common_cols:
+            if col.lower() in ['id', 'key', 'index', 'sample_id', 'image_id', 'patient_id']:
+                id_col = col
+                break
+                
+        if id_col:
+            merged = submission.merge(answers, on=id_col, suffixes=('_pred', '_true'))
+            # Compare all other columns
+            pred_cols = [c for c in submission.columns if c != id_col]
+            true_cols = [c for c in answers.columns if c != id_col]
+            
+            # If there's only one other column, compare it
+            if len(pred_cols) == 1 and len(true_cols) == 1:
+                return float((merged[pred_cols[0]] == merged[true_cols[0]]).mean())
+            
+            # Iterate over shared columns that are NOT id
+            shared_content_cols = [c for c in common_cols if c != id_col]
+            if shared_content_cols:
+                matches = []
+                for c in shared_content_cols:
+                    # In merged df, they are c_pred and c_true
+                    matches.append((merged[f"{c}_pred"] == merged[f"{c}_true"]).mean())
+                if matches:
+                    return float(sum(matches) / len(matches))
+
+        # 2. Fallback: Position-based comparison (assuming sorted)
+        if len(submission) == len(answers):
+            # Compare last column if dimensions match
+            if submission.shape[1] == answers.shape[1]:
+                return float((submission.iloc[:, -1] == answers.iloc[:, -1]).mean())
+            
+            # Or compare specific common columns
+            common_cols = set(submission.columns).intersection(set(answers.columns))
+            if common_cols:
+                matches = []
+                for c in common_cols:
+                    matches.append((submission[c] == answers[c]).mean())
+                if matches:
+                    return float(sum(matches) / len(matches))
+    except Exception as e:
+        logger.error(f"simple_accuracy_grader failed: {e}")
+        return 0.0
+
+    return 0.0

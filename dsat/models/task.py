@@ -3,7 +3,12 @@ from typing import Literal, Dict, Any
 
 # Define a controlled vocabulary for task types.
 # The framework will choose appropriate TaskHandler based on this type.
-TaskType = Literal["kaggle", "qa", "code", "datasci"]
+TaskType = Literal["kaggle", "qa", "code", "datasci", "open_ended"]
+
+# Define execution modes.
+# 'standard_ml': Strict evaluation against ground truth (e.g., RMSE, Accuracy).
+# 'open_ended': Exploratory tasks evaluated by LLM judge or artifact existence.
+TaskMode = Literal["standard_ml", "open_ended"]
 
 
 class TaskDefinition(BaseModel):
@@ -19,6 +24,10 @@ class TaskDefinition(BaseModel):
     )
     task_type: TaskType = Field(
         description="General category of the task, used to select the correct TaskHandler for processing."
+    )
+    mode: TaskMode = Field(
+        default="standard_ml",
+        description="The execution mode for the task. Defaults to 'standard_ml' for backward compatibility."
     )
     payload: Dict[str, Any] = Field(
         description="A dictionary containing task-specific data."
@@ -44,6 +53,12 @@ class TaskDefinition(BaseModel):
               "prompt": "Write a Python function that computes the nth Fibonacci number.",
               "entry_point": "fibonacci",
               "test_cases": "[...]"
+          }
+        - task_type='open_ended':
+          {
+              "description": "Design a mathematical model to optimize traffic flow in a city.",
+              "rubric": "Evaluation criteria: model accuracy (40%), creativity (30%), clarity (30%)",
+              "output_submission_path": "/path/to/run/artifacts"
           }
         """
         frozen = True  # Task definitions should be immutable after creation.

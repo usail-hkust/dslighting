@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, List, Dict, Any
+from typing import AsyncGenerator, List, Dict, Any, Optional
 from multiprocessing import Process, Queue
 
 import nbformat
@@ -251,18 +251,21 @@ class SandboxService:
         self.timeout = timeout
         self.execution_history: List[Dict[str, Any]] = []
 
-    def run_script(self, code: str) -> ExecutionResult:
-        # This part of the code was already robust and remains unchanged, but now we record telemetry.
-        script_filename = f"_sandbox_script_{uuid.uuid4().hex}.py"
-        script_path = self.workspace.run_dir / script_filename
+    def run_script(self, script_code: str, timeout: Optional[int] = None) -> ExecutionResult:
+        """Runs a Python script within the sandbox workspace."""
+        # Force non-interactive backend for matplotlib to prevent blocking plt.show()
+        fixed_code = "import matplotlib\nmatplotlib.use('Agg')\n" + script_code
+        
+        script_name = f"_sandbox_script_{uuid.uuid4().hex}.py"
+        script_path = self.workspace.run_dir / script_name
         execution_id = uuid.uuid4().hex
         started_at = datetime.utcnow()
         perf_start = time.perf_counter()
         execution_result: ExecutionResult = ExecutionResult(success=False, stdout="", stderr="", exc_type=None)
 
         try:
-            script_path.write_text(code, encoding="utf-8")
-            logger.info(f"Executing script '{script_filename}' in sandbox (timeout: {self.timeout}s)...")
+            script_path.write_text(fixed_code, encoding="utf-8")
+            logger.info(f"Executing script '{script_name}' in sandbox (timeout: {self.timeout}s)...")
             completed_process = subprocess.run(
                 [sys.executable, str(script_path)],
                 capture_output=True, text=True, timeout=self.timeout,
@@ -308,14 +311,14 @@ class SandboxService:
             scripts_dir.mkdir(parents=True, exist_ok=True)
             if script_path.exists():
                 try:
-                    copied_script_path = scripts_dir / script_filename
+                    copied_script_path = scripts_dir / script_name
                     shutil.copy2(script_path, copied_script_path)
                 except Exception as copy_error:
-                    logger.error(f"Failed to copy sandbox script '{script_filename}' to artifacts: {copy_error}", exc_info=True)
+                    logger.error(f"Failed to copy sandbox script '{script_name}' to artifacts: {copy_error}", exc_info=True)
 
             execution_metadata = {
                 "execution_id": execution_id,
-                "script_filename": script_filename,
+                "script_filename": script_name,
                 "original_script_path": str(script_path) if script_path.exists() else None,
                 "copied_script_path": str(copied_script_path) if copied_script_path else None,
                 "sandbox_cwd": str(self.workspace.get_path("sandbox_workdir")),
@@ -331,7 +334,7 @@ class SandboxService:
                 "exc_type": execution_result.exc_type,
                 "stdout": execution_result.stdout,
                 "stderr": execution_result.stderr,
-                "code": code,
+                "code": fixed_code,
             }
             self.execution_history.append(history_entry)
         return execution_result

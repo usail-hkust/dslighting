@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'katex/dist/katex.min.css';
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -24,4 +26,43 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+@media print {
+  /* Hide all sidebars and headers */
+  aside, header, nav, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset layout for printing */
+  body, main, section, div {
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Target the Report Content specifically */
+  .prose {
+    max-width: 100% !important;
+    padding: 2cm !important; /* Standard A4 padding */
+    font-size: 12pt !important;
+  }
+  
+  /* Ensure details tags (code blocks) are printed correctly */
+  details[open] {
+    break-inside: avoid;
+  }
+  
+  /* Page break handling */
+  h1, h2 {
+    break-before: auto;
+    break-after: avoid;
+  }
+  img, table, pre {
+    break-inside: avoid;
+  }
 }

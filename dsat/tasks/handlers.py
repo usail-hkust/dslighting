@@ -179,14 +179,14 @@ class DataSciTaskHandler(TaskHandler):
         """Prepare DataSciBench task input."""
         if task.task_type != "datasci":
             raise ValueError("DataSciTaskHandler can only handle tasks of type 'datasci'.")
-        
+
         prompt = task.payload.get("prompt", "")
         input_dir = task.payload.get("input_dir", "")
         output_dir = task.payload.get("output_dir", "")
-        
+
         if not prompt:
             raise ValueError("DataSci task payload is missing required key: 'prompt'.")
-        
+
         # Use input_dir as data_dir, or temp_dir if no input files
         if input_dir and Path(input_dir).exists():
             data_dir = Path(input_dir)
@@ -194,33 +194,33 @@ class DataSciTaskHandler(TaskHandler):
             data_dir = Path(self.temp_dir.name)
         else:
             raise RuntimeError("No data directory available for DataSciTaskHandler.")
-        
+
         # Output directory
         if output_dir:
             output_path = Path(output_dir) / "output.csv"
         else:
             output_path = data_dir / "output.csv"
-        
+
         # Build description with the prompt
         description = prompt
-        
+
         # Analyze data if available
         try:
             data_report = self.analyzer.analyze_data(data_dir, task_type="datasci")
             description = f"{prompt}\n\n{data_report}"
         except Exception as e:
             logger.debug(f"Data analysis skipped: {e}")
-        
+
         # Generate I/O instructions
         io_instructions = (
             f"All input data files are in the current working directory.\n"
             f"Save all output files to the current working directory.\n"
             f"Follow the task instructions carefully and generate the required output files."
         )
-        
+
         logger.debug(f"Preparing DataSci task '{task.task_id}': data_dir='{data_dir}', output_dir='{output_dir}'")
         return description, io_instructions, data_dir, output_path
-    
+
     def parse_output(self, output_path: Path) -> Path:
         """
         For DataSci tasks, return the output directory path.
@@ -228,4 +228,149 @@ class DataSciTaskHandler(TaskHandler):
         """
         if output_path.parent.exists():
             return output_path.parent
+        return output_path
+
+
+class OpenEndedTaskHandler(TaskHandler):
+    """
+    Handler for open-ended tasks (mathematical modeling, simulations, strategy tasks).
+    These tasks don't have ground truth answers and are evaluated via LLM judges.
+    """
+    def prepare_input(self, task: TaskDefinition) -> Tuple[str, str, Path, Path]:
+        """Prepare open-ended task input."""
+        if task.task_type != "open_ended":
+            raise ValueError("OpenEndedTaskHandler can only handle tasks of type 'open_ended'.")
+        if not self.temp_dir:
+            raise RuntimeError("Temporary directory not available for OpenEndedTaskHandler.")
+
+        # Get task paths from payload
+        raw_dir_str = task.payload.get("raw_data_dir", "")
+        description_file = task.payload.get("description_file", "")
+        rubric_file = task.payload.get("rubric_file", "")
+
+        # Use temp directory as working directory
+        data_dir = Path(self.temp_dir.name)
+
+        # Copy ONLY data files (CSV, JSON, etc.) - exclude description and rubric files
+        if raw_dir_str:
+            raw_dir = Path(raw_dir_str)
+            if raw_dir.exists():
+                import shutil
+                for file in raw_dir.iterdir():
+                    if file.is_file() and file.suffix in ['.csv', '.json', '.txt', '.xlsx', '.parquet']:
+                        # Exclude description.md and rubric.md from being treated as data files
+                        if file.name not in ['description.md', 'rubric.md']:
+                            shutil.copy2(file, data_dir / file.name)
+                            logger.debug(f"Copied data file: {file.name}")
+
+        # Read task description and rubric from files if provided
+        description = task.payload.get("description", "")
+        rubric = task.payload.get("rubric", "")
+
+        # Read from files if specified
+        if description_file and Path(description_file).exists():
+            try:
+                description = Path(description_file).read_text(encoding='utf-8')
+                logger.debug(f"Read description from {description_file} ({len(description)} chars)")
+            except Exception as e:
+                logger.warning(f"Failed to read description file {description_file}: {e}")
+
+        if rubric_file and Path(rubric_file).exists():
+            try:
+                rubric = Path(rubric_file).read_text(encoding='utf-8')
+                logger.debug(f"Read rubric from {rubric_file} ({len(rubric)} chars)")
+            except Exception as e:
+                logger.warning(f"Failed to read rubric file {rubric_file}: {e}")
+
+        if not description:
+            raise ValueError("Open-ended task payload is missing required key: 'description'.")
+
+        # Output path - agent should create an artifacts directory or report
+        output_path = data_dir / "artifacts"
+
+        # Build the FULL task description directly in the prompt
+        # Include description and evaluation criteria
+        # IMPORTANT: For open-ended tasks, explicitly require artifacts directory creation
+
+        task_description_section = f"""## Task Description
+
+{description}
+"""
+
+        if rubric:
+            task_description_section += f"""
+
+## Evaluation Criteria
+
+{rubric}
+"""
+
+        # Analyze available data files to provide schema information (excluding task files)
+        data_report = self.analyzer.analyze_data(data_dir, task_type="datasci")
+
+        # Combine everything into the full description
+        # Note: data_report already contains "--- COMPREHENSIVE DATA REPORT ---" header
+        full_description = f"""{task_description_section}
+
+{data_report}
+
+## CRITICAL OUTPUT INSTRUCTIONS
+
+**YOU MUST CREATE AN `artifacts/` DIRECTORY AND SAVE ALL OUTPUTS THERE:**
+
+```python
+import os
+artifact_dir = 'artifacts'
+os.makedirs(artifact_dir, exist_ok=True)
+
+# Save all your work to the artifacts directory:
+# - Analysis code: artifacts/analysis.py
+# - Visualizations: artifacts/plot_*.png
+# - Data files: artifacts/results.csv
+# - Models, notebooks, etc.
+```
+
+## Task Goals
+- Your goal is to complete this task to the best of your ability
+- Create appropriate output files (code, analysis, visualizations, etc.) in the `artifacts/` subdirectory
+- The evaluation will be based on the quality and completeness of your work according to the evaluation criteria
+"""
+
+        # Generate I/O instructions - VERY EXPLICIT for open-ended tasks
+        io_instructions = f"""**OUTPUT DIRECTORY STRUCTURE (MANDATORY):**
+
+```python
+# At the START of your code, create the artifacts directory:
+import os
+artifact_dir = 'artifacts'
+os.makedirs(artifact_dir, exist_ok=True)
+
+# Save ALL outputs to this directory:
+# - Code: f"{{artifact_dir}}/solution.py"
+# - Plots: f"{{artifact_dir}}/visualization_{{i}}.png"
+# - Data: f"{{artifact_dir}}/results.csv"
+```
+
+**REQUIREMENTS:**
+1. Create the `artifacts/` directory at the beginning of your code
+2. Save ALL generated files (plots, models, data, code) to this directory
+3. Do NOT save files to the current directory - use the artifacts/ subdirectory
+4. Focus on quality, completeness, and following the evaluation criteria
+"""
+
+        logger.debug(f"Preparing open-ended task '{task.task_id}': output_path='{output_path}', description_len={len(description)}")
+        return full_description, io_instructions, data_dir, output_path
+
+    def parse_output(self, output_path: Path) -> Path:
+        """
+        For open-ended tasks, return the artifacts directory path.
+        The actual evaluation is done by LLM judges, not CSV grading.
+        """
+        if not output_path.exists():
+            # If artifacts directory doesn't exist, return the parent temp dir
+            # This allows evaluation to proceed even if no artifacts were created
+            logger.warning(f"Open-ended task did not create artifacts directory at: {output_path}")
+            return output_path.parent
+
+        logger.debug(f"Parsed open-ended task artifacts from: {output_path}")
         return output_path

@@ -107,6 +107,7 @@ class Registry:
         """
         Resolve where a competition config lives.
         - Prefer top-level `dabench/` for DABench-prefixed tasks.
+        - Check `data_dir` for user-uploaded tasks.
         - Fallback to legacy `mlebench/competitions/` for everything else.
         """
         # New layout: benchmarks/mlebench and benchmarks/dabench sit under repo root.
@@ -116,6 +117,11 @@ class Registry:
 
         if competition_id.startswith("dabench-") and (dabench_root / competition_id).exists():
             return dabench_root
+        
+        # Check if the competition is in the data directory (user uploaded)
+        if (self._data_dir / competition_id / "config.yaml").exists():
+            return self._data_dir
+
         if (legacy_root / competition_id).exists():
             return legacy_root
         if (dabench_root / competition_id).exists():
@@ -146,9 +152,14 @@ class Registry:
         if root_dir.name == "competitions" and root_dir.parent.name == "dabench":
             description_path = root_dir / competition_id / "description.md"
         else:
-            description_path = get_repo_dir() / config["description"]
-            if not description_path.exists() and config["description"].startswith("mlebench/"):
-                description_path = get_repo_dir() / "benchmarks" / config["description"]
+            # Try to find description relative to competition dir first
+            candidate_desc = root_dir / competition_id / config["description"]
+            if candidate_desc.exists():
+                description_path = candidate_desc
+            else:
+                description_path = get_repo_dir() / config["description"]
+                if not description_path.exists() and config["description"].startswith("mlebench/"):
+                    description_path = get_repo_dir() / "benchmarks" / config["description"]
         description = description_path.read_text()
 
         # Config for different modes

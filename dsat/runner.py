@@ -17,7 +17,7 @@ from dsat.services.llm import LLMService
 from dsat.workflows.base import DSATWorkflow
 
 # Dynamic components (factories and handlers)
-from dsat.tasks.handlers import TaskHandler, KaggleTaskHandler, QATaskHandler, DataSciTaskHandler
+from dsat.tasks.handlers import TaskHandler, KaggleTaskHandler, QATaskHandler, DataSciTaskHandler, OpenEndedTaskHandler
 from dsat.workflows.factory import (
     WorkflowFactory,
     AutoMindWorkflowFactory,
@@ -53,6 +53,7 @@ TASK_HANDLER_CLASSES: Dict[TaskType, Type[TaskHandler]] = {
     "kaggle": KaggleTaskHandler,
     "qa": QATaskHandler,
     "datasci": DataSciTaskHandler,
+    "open_ended": OpenEndedTaskHandler,
     # "code": CodeTaskHandler, # future extension
 }
 
@@ -102,9 +103,13 @@ class DSATRunner:
         async def eval_function(task: TaskDefinition) -> Tuple[Any, float, Dict[str, Any]]:
             logger.info(f"Starting evaluation for task '{task.task_id}' (type='{task.task_type}').")
 
-            safe_task_id = "".join(c if c.isalnum() else "_" for c in task.task_id)
-            unique_suffix = uuid.uuid4().hex[:8]
-            task_run_name = f"{self.config.run.name}_{safe_task_id}_{unique_suffix}"
+            # If a specific run name is provided in config, use it. Otherwise, generate one.
+            if self.config.run.name and self.config.run.name != "dsat_run":
+                task_run_name = self.config.run.name
+            else:
+                safe_task_id = "".join(c if c.isalnum() else "_" for c in task.task_id)
+                unique_suffix = uuid.uuid4().hex[:8]
+                task_run_name = f"{self.config.run.name}_{safe_task_id}_{unique_suffix}"
 
             task_config = self.config.model_copy(deep=True)
             task_config.run.name = task_run_name
@@ -186,9 +191,23 @@ class DSATRunner:
                             output_path.parent.mkdir(parents=True, exist_ok=True)
                             if generated_file.resolve() != output_path.resolve():
                                 logger.info(f"Collecting produced artifact '{output_path.name}' from the sandbox.")
-                                shutil.copy(generated_file, output_path)
+
+                                # Handle both files and directories (e.g., for open-ended tasks)
+                                if generated_file.is_dir():
+                                    # For directories (like 'artifacts'), use copytree
+                                    if output_path.exists():
+                                        if output_path.is_dir():
+                                            shutil.rmtree(output_path)
+                                        else:
+                                            output_path.unlink()
+                                    shutil.copytree(generated_file, output_path)
+                                    logger.info(f"Copied directory '{generated_file}' to '{output_path}'")
+                                else:
+                                    # For files, use regular copy
+                                    shutil.copy(generated_file, output_path)
+                                    logger.info(f"Copied file '{generated_file}' to '{output_path}'")
                         else:
-                            logger.warning(f"No output file '{output_path.name}' found in sandbox '{sandbox_workdir}' after workflow execution.")
+                            logger.warning(f"No output '{output_path.name}' found in sandbox '{sandbox_workdir}' after workflow execution.")
 
                     if output_path:
                         result = handler.parse_output(output_path)
@@ -356,6 +375,60 @@ class DSATRunner:
             },
             "config_snapshot": config_snapshot,
         }
+
+        # Save Final Code to a standard location
+        if best_node and best_node.code:
+            final_code_file = workspace_service.get_path("run_dir") / "final_solution.py"
+            with open(final_code_file, "w", encoding="utf-8") as f:
+                f.write(best_node.code)
+            metadata["summary"]["final_code_path"] = str(final_code_file)
+
+            # 💾 NEW: Save model training code to code_history directory
+            try:
+                code_history_dir = workspace_service.get_path("sandbox_workdir") / "code_history"
+                code_history_dir.mkdir(parents=True, exist_ok=True)
+
+                # Find next available number for model training code
+                import re
+                existing_model_codes = list(code_history_dir.glob("model_code_*.py"))
+                if existing_model_codes:
+                    numbers = []
+                    for f in existing_model_codes:
+                        match = re.search(r'model_code_(\d+)\.py', f.name)
+                        if match:
+                            numbers.append(int(match.group(1)))
+                    next_num = max(numbers) + 1 if numbers else 1
+                else:
+                    next_num = 1
+
+                # Save with formatted number and metadata
+                model_code_filename = f"model_code_{next_num:03d}.py"
+                model_code_filepath = code_history_dir / model_code_filename
+
+                # Add header with training metadata
+                import datetime
+                header = f'''# Code Type: MODEL TRAINING
+# Workflow: {task_config.workflow.name if task_config.workflow else 'Unknown'}
+# Model: {task_config.llm.model if task_config.llm else 'Unknown'}
+# Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+# Task ID: {task.task_id}
+# Success: {not (isinstance(result, str) and result.startswith("[ERROR]"))}
+
+'''
+                model_code_filepath.write_text(header + best_node.code)
+                logger.info(f"💾 Saved model training code to workspace: {model_code_filepath}")
+            except Exception as e:
+                logger.warning(f"Failed to save model training code to code_history: {e}")
+
+        # Save Evaluation Result to a CSV in workspace
+        if isinstance(result, (float, int, str)) and not str(result).startswith("[ERROR]"):
+            try:
+                res_file = workspace_service.get_path("run_dir") / "evaluation_result.csv"
+                with open(res_file, "w") as f:
+                    f.write("task_id,score,cost,duration\n")
+                    f.write(f"{task.task_id},{result},{total_cost},{duration_seconds}\n")
+            except Exception:
+                pass
 
         detail_files = {}
         if llm_calls:

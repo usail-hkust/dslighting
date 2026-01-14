@@ -31,6 +31,9 @@ class Grader:
 
     @staticmethod
     def from_dict(data: dict) -> "Grader":
+        if "name" not in data:
+            data = data.copy()
+            data["name"] = "StandardGrader"
         return Grader(**data)
 
     def __call__(self, submission: pd.DataFrame, answers: Any) -> Optional[float]:

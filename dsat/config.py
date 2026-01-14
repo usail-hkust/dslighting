@@ -10,7 +10,7 @@ class LLMConfig(BaseModel):
     api_key: Optional[str] = Field(None, description="API key, defaults to API_KEY env var if not set.")
     api_base: Optional[str] = "https://api.openai.com/v1"
     provider: Optional[str] = Field(None, description="Optional LiteLLM provider alias, e.g. 'siliconflow'.")
-    max_retries: int = 10
+    max_retries: int = 3
 
 class SandboxConfig(BaseModel):
     """Code execution sandbox settings."""

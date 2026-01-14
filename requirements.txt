@@ -99,4 +99,3 @@ optuna-integration==4.5.0
 deepchem==2.8.0
 rdkit==2025.9.3
 
-# conda create -n ds-lumina python=3.11 -y

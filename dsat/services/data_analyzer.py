@@ -272,8 +272,8 @@ This includes the column names, column order, and data types. Failure to adhere 
         """
         report_parts = []
         # Define supported extensions and keywords for more robust discovery
-        SUPPORTED_EXTENSIONS = ('.csv', '.tsv', '.parquet')
-        KEYWORDS = ('train', 'test')
+        SUPPORTED_EXTENSIONS = ('.csv', '.tsv', '.parquet', '.xlsx')
+        KEYWORDS = ('train', 'test', 'val', 'eval', 'sample', 'submission', 'sub', 'data')
 
         # Fast path: most prepared competitions keep train/test-like tables at the root.
         files_to_analyze: List[Path] = []
@@ -285,11 +285,14 @@ This includes the column names, column order, and data types. Failure to adhere 
         for p in root_files:
             if p.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 continue
-            if not any(keyword in p.stem.lower() for keyword in KEYWORDS):
-                continue
-            files_to_analyze.append(p)
+            if any(keyword in p.stem.lower() for keyword in KEYWORDS):
+                files_to_analyze.append(p)
 
-        # Fallback: bounded recursive search (avoid walking huge image folders).
+        # Fallback: if still nothing, just take the first few supported files at root
+        if not files_to_analyze and root_files:
+            files_to_analyze = [p for p in root_files if p.suffix.lower() in SUPPORTED_EXTENSIONS][:3]
+
+        # Deep discoveryFallback: bounded recursive search (avoid walking huge image folders).
         if not files_to_analyze:
             max_depth = 3
             max_dirs = 200
@@ -337,11 +340,18 @@ This includes the column names, column order, and data types. Failure to adhere 
                 # Dynamically choose the reader based on file extension
                 ext = file_path.suffix.lower()
                 if ext in ['.csv', '.tsv']:
-                    # Use a small sample for speed; full reads are too slow for large datasets.
-                    if ext == ".tsv":
-                        df = pd.read_csv(file_path, sep="\t", nrows=max_rows)
-                    else:
-                        df = pd.read_csv(file_path, nrows=max_rows)
+                    sep = "\t" if ext == ".tsv" else ","
+                    # Try multiple encodings
+                    df = None
+                    for enc in ['utf-8', 'gbk', 'latin1', 'utf-8-sig']:
+                        try:
+                            df = pd.read_csv(file_path, sep=sep, nrows=max_rows, encoding=enc)
+                            break
+                        except (UnicodeDecodeError, Exception):
+                            continue
+                    
+                    if df is None:
+                        raise Exception(f"Failed to read CSV with multiple encodings for {file_path.name}")
                 elif ext == '.parquet':
                     # Note: This requires 'pyarrow' or 'fastparquet' to be installed
                     df = pd.read_parquet(file_path).head(max_rows)

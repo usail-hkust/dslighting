@@ -1,4 +1,11 @@
+# Web Backend Dependencies
 fastapi==0.109.0
-uvicorn==0.27.0
+uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 aiofiles==23.2.1
+pydantic==2.6.0
+python-dotenv==1.0.0
+
+# DSAT Dependencies (needed for backend operations)
+# Note: These should already be installed in parent dslighting environment
+# This is just for reference and standalone installation

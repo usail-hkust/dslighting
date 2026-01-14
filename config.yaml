@@ -1,35 +1,52 @@
-# DSAT Framework Configuration
-
-# Competition list for MLEBenchmark
 competitions:
-  - aptos2019-blindness-detection
-  - histopathologic-cancer-detection
-  - plant-pathology-2020-fgvc7
-  - detecting-insults-in-social-commentary
-  - spooky-author-identification
-  - us-patent-phrase-to-phrase-matching
-  - tabular-playground-series-dec-2021
-  - new-york-city-taxi-fare-prediction
-  - google-quest-challenge
-
-# Custom model pricing configuration for models not included in litellm's default registry
+- aptos2019-blindness-detection
+- histopathologic-cancer-detection
+- plant-pathology-2020-fgvc7
+- detecting-insults-in-social-commentary
+- spooky-author-identification
+- us-patent-phrase-to-phrase-matching
+- tabular-playground-series-dec-2021
+- new-york-city-taxi-fare-prediction
+- google-quest-challenge
+- test-03
+- test-04
+- new-my-task-01
+- new-my-task-02
+- new-my-task-07
+- new-my-task-004
+- new-my-task-005
+- new-my-task-009
+- repair-task
+- test-repair-001
+- test-repair-002
+- test-repair-003
+- test-repair-004
+- test-repair-005
+- test-repair-006
+- test-repair-007
+- my-custom-task-01
+- test-repair-task-01
+- test-repair-task-02
+- mcm-2025-c
+- id: mcm_2024_c
+  mode: open_ended
+- id: new-my-task-03
+  mode: open_ended
+- id: mcm_2024_c_test
+  mode: open_ended
 custom_model_pricing:
-  "openai/Qwen/Qwen3-Coder-480B-A35B-Instruct":
-    input_cost_per_token: 0.0000006
-    output_cost_per_token: 0.0000018
-  
-  "openai/Qwen/Qwen3-Coder-30B-A3B-Instruct":
-    input_cost_per_token: 0.0000006
-    output_cost_per_token: 0.0000018
-
-  "o4-mini-2025-04-16":
-    input_cost_per_token: 0.00000110  # 1.10 USD / 1M tokens
-    output_cost_per_token: 0.00000440 # 4.40 USD / 1M tokens
-
-  "openai/deepseek-ai/DeepSeek-V3.1-Terminus":
-    input_cost_per_token: 0.000000555  # 0.555 USD / 1M tokens
-    output_cost_per_token: 0.00000167  # 1.67 USD / 1M tokens
-
+  openai/Qwen/Qwen3-Coder-480B-A35B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  openai/Qwen/Qwen3-Coder-30B-A3B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  o4-mini-2025-04-16:
+    input_cost_per_token: 1.1e-06
+    output_cost_per_token: 4.4e-06
+  openai/deepseek-ai/DeepSeek-V3.1-Terminus:
+    input_cost_per_token: 5.55e-07
+    output_cost_per_token: 1.67e-06
 run:
   enable_trajectory_logging: true
   trajectory_filename: aide_trajectory.jsonl

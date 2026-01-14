@@ -9,6 +9,7 @@ import math
 import sys
 import json
 import uuid
+import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -207,11 +208,24 @@ def parse_arguments() -> argparse.Namespace:
         help="[DABench/MLE/ScienceBench] Override competition list (alias for --mle-competitions)."
     )
     parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Explicitly set the run name (workspace directory name)."
+    )
+    parser.add_argument(
         "--mle-competitions",
         type=str,
         nargs="+",
         default=None,
         help="Override competition list for MLE."
+    )
+    parser.add_argument(
+        "--data-source",
+        type=str,
+        default="prepared",
+        choices=["raw", "prepared"],
+        help="[MLE only] Data source to use: 'raw' for raw data, 'prepared' for prepared data. Default: 'prepared'."
     )
     parser.add_argument(
         "--best-workflow-path",
@@ -481,6 +495,8 @@ async def main():
             optimizer=OptimizerConfig()
         )
         config.workflow = WorkflowConfig(name=args.workflow)
+        if args.run_name:
+            config.run.name = args.run_name
         config.run.keep_all_workspaces = bool(args.keep_workspaces)
         config.run.keep_workspace_on_failure = bool(args.keep_workspace_on_failure)
         config.run.parameters = {
@@ -535,6 +551,8 @@ async def main():
         benchmark_kwargs["data_dir"] = data_dir
         if competitions:
             benchmark_kwargs["competitions"] = competitions
+        # Add data_source parameter for MLE benchmark
+        benchmark_kwargs["data_source"] = args.data_source
     # DataSciBench handling disabled (not yet converted to mle-bench format)
     # elif args.benchmark == "datasci":
     #     benchmark_kwargs["datasci_root_dir"] = args.datasci_root_dir
@@ -601,7 +619,20 @@ async def main():
         logger.info(f"Starting benchmark '{args.benchmark}' with workflow '{config.workflow.name}'...")
         await benchmark.run_evaluation(eval_fn=eval_function, model_name=llm_model)
 
-    # --- 5. Present results ---
+    # --- 5. Copy results to task workspaces (Double Saving) ---
+    try:
+        results_path = getattr(benchmark, "results_path", None)
+        if results_path and Path(results_path).exists():
+            for record in runner.get_run_records():
+                ws_dir = record.get("workspace_dir")
+                if ws_dir:
+                    dest = Path(ws_dir) / results_path.name
+                    shutil.copy2(results_path, dest)
+                    logger.info(f"Copied benchmark results to workspace: {dest}")
+    except Exception as e:
+        logger.warning(f"Failed to copy results to workspaces: {e}")
+
+    # --- 6. Present results ---
     summary_table, totals_table = _build_benchmark_summary(
         getattr(benchmark, "results_path", None),
         runner.get_run_records()
