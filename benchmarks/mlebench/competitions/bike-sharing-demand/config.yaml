@@ -5,7 +5,7 @@ awards_medals: false
 description: mlebench/competitions/bike-sharing-demand/description.md
 
 dataset:
-  answers: bike-sharing-demand/prepared/private/test.csv
+  answers: bike-sharing-demand/prepared/private/test_answer.csv
   sample_submission: bike-sharing-demand/prepared/public/sampleSubmission.csv
 
 grader:
