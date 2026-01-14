@@ -15,7 +15,7 @@
   &nbsp;&nbsp;
   <a href="#核心功能"><img src="https://img.shields.io/badge/⚡-核心功能-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/luckyfan-cs/dslighting/issues"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
 </p>
 
 [English](docs/README_EN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
@@ -27,7 +27,7 @@
 🎯 **智能Agent工作流** &nbsp;•&nbsp; 📊 **交互式数据可视化**<br>
 🤖 **自动化代码生成** &nbsp;•&nbsp; 📈 **全流程任务评估**
 
-[💬 加入微信交流群](#-微信交流群) &nbsp;•&nbsp; [⭐ 给我们Star](https://github.com/luckyfan-cs/dslighting/stargazers)
+[💬 加入微信交流群](#-微信交流群) &nbsp;•&nbsp; [⭐ 给我们Star](https://github.com/usail-hkust/dslighting/stargazers)
 
 </div>
 
@@ -86,7 +86,7 @@ DSLIGHTING 是一个全流程数据科学智能助手系统，采用Agent式工�
 ### 1. 环境准备
 
 ```bash
-git clone https://github.com/luckyfan-cs/dslighting.git
+git clone https://github.com/usail-hkust/dslighting.git
 cd dslighting
 python3.10 -m venv dslighting
 source dslighting/bin/activate  # Windows: dslighting\Scripts\activate
@@ -296,16 +296,16 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 <div align="center">
 
 <p>
-  <a href="https://github.com/luckyfan-cs/dslighting/stargazers"><img src="assets/roster/stargazers.svg" alt="Stargazers"/></a>
+  <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="assets/roster/stargazers.svg" alt="Stargazers"/></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/luckyfan-cs/dslighting/network/members"><img src="assets/roster/forkers.svg" alt="Forkers"/></a>
+  <a href="https://github.com/usail-hkust/dslighting/network/members"><img src="assets/roster/forkers.svg" alt="Forkers"/></a>
 </p>
 
-<a href="https://www.star-history.com/#luckyfan-cs/dslighting&type=timeline&legend=top-left">
+<a href="https://www.star-history.com/#usail-hkust/dslighting&type=timeline&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
   </picture>
 </a>
 
@@ -339,8 +339,8 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 
 我们希望 DSLIGHTING 能成为社区的一份礼物。🎁
 
-<a href="https://github.com/luckyfan-cs/dslighting/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=luckyfan-cs/dslighting" />
+<a href="https://github.com/usail-hkust/dslighting/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=usail-hkust/dslighting" />
 </a>
 
 **核心贡献者**：
@@ -359,7 +359,7 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 
 **[DSLIGHTING 社区](https://github.com/luckyfan-cs)**
 
-[💬 微信交流群](#-微信交流群) · [⭐ 给我们Star](https://github.com/luckyfan-cs/dslighting/stargazers) · [🐛 报告Bug](https://github.com/luckyfan-cs/dslighting/issues) · [💬 参与讨论](https://github.com/luckyfan-cs/dslighting/discussions)
+[💬 微信交流群](#-微信交流群) · [⭐ 给我们Star](https://github.com/usail-hkust/dslighting/stargazers) · [🐛 报告Bug](https://github.com/usail-hkust/dslighting/issues) · [💬 参与讨论](https://github.com/usail-hkust/dslighting/discussions)
 
 </div>
 
@@ -379,7 +379,7 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 
 ## 📊 项目统计
 
-![](https://komarev.com/ghpvc/?username=luckyfan-cs&repo=dslighting&style=for-the-badge)
-![](https://img.shields.io/github/issues/luckyfan-cs/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/forks/luckyfan-cs/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/stars/luckyfan-cs/dslighting?style=for-the-badge)
+![](https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge)
+![](https://img.shields.io/github/issues/usail-hkust/dslighting?style=for-the-badge)
+![](https://img.shields.io/github/forks/usail-hkust/dslighting?style=for-the-badge)
+![](https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge)

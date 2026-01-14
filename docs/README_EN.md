@@ -15,7 +15,7 @@
   &nbsp;&nbsp;
   <a href="#core-features"><img src="https://img.shields.io/badge/⚡-Features-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/luckyfan-cs/dslighting/issues"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
 </p>
 
 [🇨🇳 中文](../README.md) · [日本語](README_JA.md) · [Français](README_FR.md)
@@ -27,7 +27,7 @@
 🎯 **Intelligent Agent Workflows** &nbsp;•&nbsp; 📊 **Interactive Data Visualization**<br>
 🤖 **Automated Code Generation** &nbsp;•&nbsp; 📈 **End-to-End Task Evaluation**
 
-[⭐ Star us](https://github.com/luckyfan-cs/dslighting/stargazers) &nbsp;•&nbsp; [💬 Discussions](https://github.com/luckyfan-cs/dslighting/discussions)
+[⭐ Star us](https://github.com/usail-hkust/dslighting/stargazers) &nbsp;•&nbsp; [💬 Discussions](https://github.com/usail-hkust/dslighting/discussions)
 
 </div>
 
@@ -92,7 +92,7 @@ DSLIGHTING is a full-stack data science workflow system with agent-style workflo
 ### 1. Setup Environment
 
 ```bash
-git clone https://github.com/luckyfan-cs/dslighting.git
+git clone https://github.com/usail-hkust/dslighting.git
 cd dslighting
 python3.10 -m venv dslighting
 source dslighting/bin/activate  # Windows: dslighting\Scripts\activate
@@ -300,16 +300,16 @@ See `FAQ.md` for more information.
 <div align="center">
 
 <p>
-  <a href="https://github.com/luckyfan-cs/dslighting/stargazers"><img src="../assets/roster/stargazers.svg" alt="Stargazers"/></a>
+  <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="../assets/roster/stargazers.svg" alt="Stargazers"/></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/luckyfan-cs/dslighting/network/members"><img src="../assets/roster/forkers.svg" alt="Forkers"/></a>
+  <a href="https://github.com/usail-hkust/dslighting/network/members"><img src="../assets/roster/forkers.svg" alt="Forkers"/></a>
 </p>
 
-<a href="https://www.star-history.com/#luckyfan-cs/dslighting&type=timeline&legend=top-left">
+<a href="https://www.star-history.com/#usail-hkust/dslighting&type=timeline&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=luckyfan-cs/dslighting&type=timeline&legend=top-left" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
   </picture>
 </a>
 
@@ -343,8 +343,8 @@ In the group, you can:
 
 We hope DSLIGHTING could become a gift for the community. 🎁
 
-<a href="https://github.com/luckyfan-cs/dslighting/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=luckyfan-cs/dslighting" />
+<a href="https://github.com/usail-hkust/dslighting/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=usail-hkust/dslighting" />
 </a>
 
 **Core Contributors**:
@@ -363,7 +363,7 @@ See `CONTRIBUTING.md` for details.
 
 **[DSLIGHTING Community](https://github.com/luckyfan-cs)**
 
-[💬 WeChat Group](#-wechat-community) · [⭐ Star us](https://github.com/luckyfan-cs/dslighting/stargazers) · [🐛 Report a bug](https://github.com/luckyfan-cs/dslighting/issues) · [💬 Discussions](https://github.com/luckyfan-cs/dslighting/discussions)
+[💬 WeChat Group](#-wechat-community) · [⭐ Star us](https://github.com/usail-hkust/dslighting/stargazers) · [🐛 Report a bug](https://github.com/usail-hkust/dslighting/issues) · [💬 Discussions](https://github.com/usail-hkust/dslighting/discussions)
 
 </div>
 
@@ -383,7 +383,7 @@ Thank you for visiting DSLIGHTING!
 
 ## 📊 Project Statistics
 
-![](https://komarev.com/ghpvc/?username=luckyfan-cs&repo=dslighting&style=for-the-badge)
-![](https://img.shields.io/github/issues/luckyfan-cs/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/forks/luckyfan-cs/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/stars/luckyfan-cs/dslighting?style=for-the-badge)
+![](https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge)
+![](https://img.shields.io/github/issues/usail-hkust/dslighting?style=for-the-badge)
+![](https://img.shields.io/github/forks/usail-hkust/dslighting?style=for-the-badge)
+![](https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge)
