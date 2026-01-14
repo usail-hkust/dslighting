@@ -1,6 +1,6 @@
 # 自定义 Benchmark 示例
 
-本示例演示如何为 DSAT 框架添加自定义数据科学 benchmark，采用完整的 DABench 风格结构。
+本示例演示如何为 dslighting 框架添加自定义数据科学 benchmark，采用完整的 DABench 风格结构。
 
 ## 📋 目录
 
@@ -16,13 +16,13 @@
 
 ## 概览
 
-### 什么是 DSAT Benchmark?
+### 什么是 dslighting Benchmark?
 
-Benchmark 是 DSAT 框架中用于评估 AI Agent 在特定任务上表现的组件。一个完整的 benchmark 包括：
+Benchmark 是 dslighting 框架中用于评估 AI Agent 在特定任务上表现的组件。一个完整的 benchmark包括：
 - **任务定义**: 描述要解决的问题
 - **数据集**: 训练数据和测试数据
 - **评分函数**: 量化 Agent 的表现
-- **工作流接口**: 与 DSAT Agent 交互
+- **工作流接口**: 与 dslighting Agent 交互
 
 ### 为什么需要自定义 Benchmark?
 

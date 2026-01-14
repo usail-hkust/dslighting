@@ -103,12 +103,16 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+dsat/
+dslighting/
 
 # Spyder project settings
 .spyderproject
@@ -142,6 +146,8 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # Claude Code
 .claude/
@@ -170,6 +176,9 @@ backend*.log
 local.*
 *.bak
 *.tmp
+*.old
+*.backup
+*~
 
 # Test/development data
 data/competitions/mcm-2025-c/
@@ -177,6 +186,10 @@ data/competitions/my-custom-task-01/
 data/competitions/new-my-task-01/
 data/competitions/test-repair-task-01/
 data/competitions/test-repair-task-02/
+data/competitions/mcm-2024_c/
+data/competitions/new-my-task-02/
+data/competitions/new-my-task-03/
+data/competitions/custom-task-01/
 
 # Benchmark test data
 benchmarks/mlebench/competitions/mcm-2025-c/
@@ -184,19 +197,97 @@ benchmarks/mlebench/competitions/my-custom-task-01/
 benchmarks/mlebench/competitions/new-my-task-01/
 benchmarks/mlebench/competitions/test-repair-task-01/
 benchmarks/mlebench/competitions/test-repair-task-02/
+benchmarks/mlebench/competitions/mcm-2024_c/
+benchmarks/mlebench/competitions/new-my-task-02/
+benchmarks/mlebench/competitions/new-my-task-03/
+benchmarks/mlebench/competitions/custom-task-01/
+
+# Data prepared directories (symlinks and processed data)
+data/competitions/*/prepared/
+# Exclude symlinks in data directories
+data/**/prepared/
 
 # Web UI specific (duplicates from web_ui/.gitignore)
 web_ui/.claude
 web_ui/*.log
 web_ui/*_FIX.md
 web_ui/*_IMPROVEMENTS.md
+web_ui/*_SUMMARY.md
 web_ui/AGENT_REFACTORING.md
+web_ui/AGENT_SYSTEM_GUIDE.md
+web_ui/AGENT_SYSTEM_SUMMARY.md
+web_ui/AGENT_CALLING_LOGIC.md
+web_ui/CONTEXT_FLOW_GUIDE.md
+web_ui/LOOP_PREVENTION_GUIDE.md
 web_ui/BUGFIX_SUMMARY.md
 web_ui/MODEL_TRAINING_IMPROVEMENTS.md
 web_ui/STOP_FIX.md
 web_ui/UX_IMPROVEMENTS.md
 web_ui/GITIGNORE_SUMMARY.md
+web_ui/DATA_DIR_FIX.md
+web_ui/PARAMETER_FIX.md
+web_ui/FIXES_AND_UPDATES.md
 
+# Web UI backend - AI generated documentation
+web_ui/backend/AGENT_*.md
+web_ui/backend/*_GUIDE.md
+web_ui/backend/*_FIX.md
+web_ui/backend/*_SUMMARY.md
+web_ui/backend/DATA_DIR_FIX.md
+web_ui/backend/CONTEXT_FLOW_GUIDE.md
+web_ui/backend/LOOP_PREVENTION_GUIDE.md
+web_ui/backend/PARAMETER_FIX.md
 
+# Web UI Frontend build artifacts
+web_ui/frontend/.next/
+web_ui/frontend/node_modules/
+web_ui/frontend/out/
+web_ui/frontend/build/
+web_ui/frontend/.turbo/
 
+# Web UI Frontend temporary files
+web_ui/frontend/*-old.tsx
+web_ui/frontend/*-old.js
+web_ui/frontend/*.old
+web_ui/frontend/page-old.tsx
+web_ui/frontend/clear-states.js
+web_ui/frontend/*-backup.*
+web_ui/frontend/*.bak
 
+# Web UI component backups
+web_ui/frontend/components/*.bak
+web_ui/frontend/components/**/*.bak
+
+# Web UI build cache
+web_ui/frontend/.next/cache/**/*.old
+web_ui/frontend/.next/cache/**/*.bak
+
+# Documentation and summary files (development docs)
+ROOT_GITIGNORE_SUMMARY.md
+# Ignore all SUMMARY, FIX, GUIDE, IMPROVEMENT MD files except SETUP_GUIDE.md
+*_SUMMARY.md
+*_FIX.md
+*_GUIDE.md
+*_IMPROVEMENTS.md
+!SETUP_GUIDE.md
+web_ui/frontend/MODEL_TRAINING_FEATURES.md
+
+# Report files in benchmarks (may contain sensitive info)
+benchmarks/mlebench/competitions/*/report.md
+
+# Clipboard and temporary data
+.gemini-clipboard/
+
+# Python cache in subdirectories
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Test files
+test_agent*.py
+verify_*.py
+
+# Template files (auto-generated)
+dsat/templates/
+dslighting/templates/

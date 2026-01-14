@@ -1,6 +1,6 @@
 # Custom Benchmark Example
 
-This example shows how to add a custom data science benchmark to the DSAT framework using a full DABench-style structure.
+This example shows how to add a custom data science benchmark to the dslighting framework using a full DABench-style structure.
 
 ## 📋 Contents
 
@@ -16,9 +16,9 @@ This example shows how to add a custom data science benchmark to the DSAT framew
 
 ## Overview
 
-### What is a DSAT Benchmark?
+### What is a dslighting Benchmark?
 
-A benchmark is the DSAT component used to evaluate how an AI agent performs on a specific task. A complete benchmark includes:
+A benchmark is the dslighting component used to evaluate how an AI agent performs on a specific task. A complete benchmark includes:
 - **Task definition**: what problem to solve
 - **Datasets**: training and test data
 - **Scoring function**: how to measure the agent
@@ -317,7 +317,7 @@ python run_benchmark.py \
 |-----------|------|-----------|-------|
 | **MLEBenchmark** | `dsat/benchmark/mle.py` | Kaggle-style | Production-ready, multi-competition |
 | **DataSciBenchmark** | `dsat/benchmark/datasci.py` | Multi-step workflow | Complex data science flows |
-| **HousePriceBenchmark** | `custom_benchmark.py` | Regression | This example, full DABench-style |
+| **HousePriceBenchmark** | `examples/custom_benchmark/custom_benchmark.py` | Regression | This example, full DABench-style |
 
 ---
 
