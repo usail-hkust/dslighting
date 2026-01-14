@@ -138,3 +138,10 @@ A: 在 `app/` 目录下创建新的文件，如 `app/about/page.tsx`
 - Edge
 
 最小版本要求：支持 ES2020+
+
+## 贡献者
+
+- [luckyfan-cs](https://github.com/luckyfan-cs) - 前端架构设计
+- [canchengliu](https://github.com/canchengliu) - 组件开发
+
+欢迎提交 Pull Request 或 Issue 来贡献代码！

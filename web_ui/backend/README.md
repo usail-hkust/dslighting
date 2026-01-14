@@ -236,3 +236,10 @@ A: 访问 http://localhost:8003/docs 查看自动生成的API文档
 3. 限制CORS来源
 4. 实施速率限制
 5. 验证用户输入
+
+## 贡献者
+
+- [luckyfan-cs](https://github.com/luckyfan-cs) - 后端架构设计
+- [canchengliu](https://github.com/canchengliu) - API开发
+
+欢迎提交 Pull Request 或 Issue 来贡献代码！
