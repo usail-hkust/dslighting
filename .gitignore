@@ -173,31 +173,28 @@ backend*.log
 
 # Local development files
 *.local
-local.*
-*.bak
-*.tmp
-*.old
+# Old/backup files
+*-old.*
+*_old.*
 *.backup
 *~
 
-# Test/development data
+# Test/development data (keep mcm_2024_c as example)
 data/competitions/mcm-2025-c/
 data/competitions/my-custom-task-01/
 data/competitions/new-my-task-01/
 data/competitions/test-repair-task-01/
 data/competitions/test-repair-task-02/
-data/competitions/mcm-2024_c/
-data/competitions/new-my-task-02/
-data/competitions/new-my-task-03/
+data/competitions/mcm_2024_c_test/
 data/competitions/custom-task-01/
 
-# Benchmark test data
+# Benchmark test data (keep mcm_2024_c as example)
 benchmarks/mlebench/competitions/mcm-2025-c/
 benchmarks/mlebench/competitions/my-custom-task-01/
 benchmarks/mlebench/competitions/new-my-task-01/
 benchmarks/mlebench/competitions/test-repair-task-01/
 benchmarks/mlebench/competitions/test-repair-task-02/
-benchmarks/mlebench/competitions/mcm-2024_c/
+benchmarks/mlebench/competitions/mcm_2024_c_test/
 benchmarks/mlebench/competitions/new-my-task-02/
 benchmarks/mlebench/competitions/new-my-task-03/
 benchmarks/mlebench/competitions/custom-task-01/
@@ -284,9 +281,19 @@ benchmarks/mlebench/competitions/*/report.md
 **/*.pyo
 **/*.pyd
 
+# Log files
+*.log
+*_startup.log
+backend*.log
+*_startup.log
+
 # Test files
-test_agent*.py
+test_*.py
 verify_*.py
+verify-imports.sh
+
+# Project rules (development doc)
+PROJECT_RULES.md
 
 # Template files (auto-generated)
 dsat/templates/
