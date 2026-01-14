@@ -189,7 +189,8 @@ python run_benchmark.py \
   --workflow aide \
   --benchmark mle \
   --data-dir data/competitions \
-  --task-id bike-sharing-demand
+  --task-id bike-sharing-demand \
+  --llm-model gpt-4
 ```
 
 ### 6. 使用Web UI（推荐）
