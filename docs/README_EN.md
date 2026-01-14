@@ -348,7 +348,7 @@ We hope DSLIGHTING could become a gift for the community. 🎁
 </a>
 
 **Core Contributors**:
-- [luckyfan-cs](https://github.com/luckyfan-cs) (project lead)
+- [luckyfan-cs](https://github.com/luckyfan-cs) (project lead, frontend & backend development)
 - [canchengliu](https://github.com/canchengliu) (workflow contribution)
 
 See `CONTRIBUTING.md` for details.

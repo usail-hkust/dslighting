@@ -344,7 +344,7 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 </a>
 
 **核心贡献者**：
-- [luckyfan-cs](https://github.com/luckyfan-cs)（项目负责人）
+- [luckyfan-cs](https://github.com/luckyfan-cs)（项目负责人，前端和后端开发）
 - [canchengliu](https://github.com/canchengliu)（工作流贡献）
 
 查看 `docs/CONTRIBUTING.md` 了解如何参与贡献。
