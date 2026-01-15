@@ -126,27 +126,19 @@ pip install -e .
 ```
 
 **一行代码运行数据科学任务**：
+
 ```python
 import dslighting
 
-# 自动检测任务类型并运行
+# 快速运行
 result = dslighting.run_agent("data/competitions/bike-sharing-demand")
+
+# 查看结果
 print(f"得分: {result.score}, 成本: ${result.cost:.4f}")
-```
 
-**更多功能**：
-```python
-# 标准用法
+# 或者更多控制
 data = dslighting.load_data("data/competitions/bike-sharing-demand")
-agent = dslighting.Agent()
-result = agent.run(data)
-
-# 高级用法 - 指定 AIDE 工作流
-agent = dslighting.Agent(
-    workflow="aide",
-    model="gpt-4o-mini",
-    temperature=0.7
-)
+agent = dslighting.Agent(workflow="aide", model="gpt-4o-mini", temperature=0.7)
 result = agent.run(data)
 ```
 
