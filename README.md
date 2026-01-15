@@ -17,9 +17,7 @@
   &nbsp;&nbsp;
   <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
   &nbsp;&nbsp;
-  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started/"><img src="https://img.shields.io/badge/📖-使用指南-purple?style=for-the-badge" alt="User Guide"></a>
-  &nbsp;&nbsp;
-  <a href="https://luckyfan-cs.github.io/dslighting-web/api/overview/"><img src="https://img.shields.io/badge/🔧-API文档-red?style=for-the-badge" alt="API Docs"></a>
+  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started.html"><img src="https://img.shields.io/badge/📖-使用指南-purple?style=for-the-badge" alt="User Guide"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
   &nbsp;&nbsp;
