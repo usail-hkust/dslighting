@@ -116,7 +116,49 @@ pip install -r requirements_local.txt
 > - `requirements.txt`：锁定具体版本，适合生产环境
 > - `requirements_local.txt`：不锁定版本，依赖更灵活，适合开发环境
 
-### 3. 配置API密钥
+### 3. (可选) 安装 Python API 包
+
+> 🎉 **新功能！** DSLighting 现在提供简化的 Python API，让使用像 scikit-learn 一样简单！
+
+**快速安装 Python API 包**：
+```bash
+pip install -e .
+```
+
+**一行代码运行数据科学任务**：
+```python
+import dslighting
+
+# 自动检测任务类型并运行
+result = dslighting.run_agent("data/competitions/titanic")
+print(f"得分: {result.score}, 成本: ${result.cost:.4f}")
+```
+
+**更多功能**：
+```python
+# 标准用法
+data = dslighting.load_data("data/competitions/titanic")
+agent = dslighting.Agent()
+result = agent.run(data)
+
+# 高级用法
+agent = dslighting.Agent(
+    workflow="autokaggle",
+    model="gpt-4o",
+    temperature=0.5
+)
+result = agent.run(data)
+```
+
+📖 **详细文档**：[Python API 快速上手指南](docs/python-api-guide.md) | [API 完整文档](dslighting/README.md)
+
+> ✨ **特点**：
+> - 🚀 **超简单**：1-3 行代码完成复杂任务
+> - 🤖 **智能检测**：自动识别任务类型和推荐工作流
+> - 🔧 **完全兼容**：与现有 DSAT API 100% 兼容
+> - 📊 **开箱即用**：合理的默认配置，环境变量驱动
+
+### 4. 配置API密钥
 
 ```bash
 cp .env.example .env
@@ -142,7 +184,7 @@ DSLighting支持多种LLM提供商：
 
 > 💡 **配置示例**: 查看 `.env.example` 文件获取详细的多模型配置示例，包括API密钥轮换、温度设置等。
 
-### 4. 准备数据
+### 5. 准备数据
 
 DSLighting支持多种数据来源。目前支持以下数据准备方式：
 
@@ -186,7 +228,7 @@ data/competitions/
 
 > 📖 **详细数据准备指南**: 查看 [数据准备文档](docs/DATA_PREPARATION.md) 了解更多详情。
 
-### 5. 运行单个任务
+### 6. 运行单个任务
 
 ```bash
 python run_benchmark.py \
@@ -197,7 +239,7 @@ python run_benchmark.py \
   --llm-model gpt-4
 ```
 
-### 6. 使用Web UI（推荐）
+### 7. 使用Web UI（推荐）
 
 我们提供了基于 Next.js + FastAPI 的Web界面，让数据上传和任务执行更加便捷。
 

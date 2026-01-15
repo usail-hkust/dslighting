@@ -112,7 +112,7 @@ ENV/
 env.bak/
 venv.bak/
 dsat/
-dslighting/
+# Note: dslighting/ is now part of the package (not ignored)
 
 # Spyder project settings
 .spyderproject

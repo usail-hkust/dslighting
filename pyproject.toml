@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dslighting"
+version = "1.0.0"
+description = "Simplified API for Data Science Agent Automation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "AGPL-3.0"}
+authors = [
+    {name = "DSLighting Team"}
+]
+keywords = ["data-science", "agent", "automation", "machine-learning", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Dependencies
+# Note: This package is designed to be installed in a DSLighting environment
+# where core dependencies (pandas, pydantic, rich, etc.) are already installed
+# via requirements_local.txt. These are minimal additional requirements.
+dependencies = [
+    # Already in requirements_local.txt, but listed for clarity:
+    # - pandas
+    # - python-dotenv
+    # - rich (if available, otherwise basic logging is used)
+]
+
+# Optional dependencies
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "mypy>=1.0",
+    "ruff>=0.1.0",
+]
+
+# Project URLs
+[project.urls]
+Homepage = "https://github.com/usail-hkust/dslighting"
+Documentation = "https://luckyfan-cs.github.io/dslighting-web/"
+Repository = "https://github.com/usail-hkust/dslighting"
+"Bug Tracker" = "https://github.com/usail-hkust/dslighting/issues"
+
+# Package discovery
+[tool.setuptools.packages.find]
+include = ["dslighting*"]
+
+[tool.setuptools.package-data]
+dslighting = ["*.yaml", "*.json"]
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311']
+include = '\.pyi?$'
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N"]
+ignore = ["E501"]
