@@ -149,6 +149,37 @@ result = dslighting.run_agent("data/open-ended-task")
 
 ## 💡 实用示例
 
+### 示例 0: 快速开始 - bike-sharing-demand
+
+```python
+import dslighting
+
+# 一行代码运行 bike-sharing-demand 预测
+result = dslighting.run_agent("data/competitions/bike-sharing-demand")
+
+print(f"得分: {result.score}")
+print(f"成本: ${result.cost:.4f}")
+```
+
+**或者使用 AIDE 工作流**：
+
+```python
+import dslighting
+
+# 创建 AIDE agent
+agent = dslighting.Agent(workflow="aide")
+
+# 运行 bike-sharing-demand
+result = agent.run("data/competitions/bike-sharing-demand")
+
+print(f"✓ 成功: {result.success}")
+print(f"✓ 得分: {result.score}")
+print(f"✓ 成本: ${result.cost:.4f}")
+print(f"✓ 耗时: {result.duration:.1f}秒")
+```
+
+**完整示例**：查看 `examples/dslighting_api/example_bike_sharing.py`
+
 ### 示例 1: 批量处理多个任务
 
 ```python
