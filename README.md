@@ -388,3 +388,27 @@ runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
 ![](https://img.shields.io/github/issues/usail-hkust/dslighting?style=for-the-badge)
 ![](https://img.shields.io/github/forks/usail-hkust/dslighting?style=for-the-badge)
 ![](https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge)
+
+---
+
+## 📚 引用 (Citation)
+
+如果你在研究中使用了 DSLIGHTING，请使用以下 BibTeX 格式进行引用：
+
+```bibtex
+@software{dslighting2025,
+  title = {DSLIGHTING: An End-to-End Data Science Intelligent Assistant System},
+  author = {Liu, F. and Liu, C. and others},
+  year = {2025},
+  publisher = {GitHub},
+  url = {https://github.com/usail-hkust/dslighting},
+  version = {1.0.0}
+}
+```
+
+或者使用 plain text 格式：
+
+```
+Liu, F., Liu, C., et al. (2025). DSLIGHTING: An End-to-End Data Science Intelligent Assistant System.
+GitHub repository. https://github.com/usail-hkust/dslighting
+```
