@@ -130,22 +130,22 @@ pip install -e .
 import dslighting
 
 # 自动检测任务类型并运行
-result = dslighting.run_agent("data/competitions/titanic")
+result = dslighting.run_agent("data/competitions/bike-sharing-demand")
 print(f"得分: {result.score}, 成本: ${result.cost:.4f}")
 ```
 
 **更多功能**：
 ```python
 # 标准用法
-data = dslighting.load_data("data/competitions/titanic")
+data = dslighting.load_data("data/competitions/bike-sharing-demand")
 agent = dslighting.Agent()
 result = agent.run(data)
 
-# 高级用法
+# 高级用法 - 指定 AIDE 工作流
 agent = dslighting.Agent(
-    workflow="autokaggle",
-    model="gpt-4o",
-    temperature=0.5
+    workflow="aide",
+    model="gpt-4o-mini",
+    temperature=0.7
 )
 result = agent.run(data)
 ```
