@@ -15,7 +15,7 @@
   &nbsp;&nbsp;
   <a href="#核心功能"><img src="https://img.shields.io/badge/⚡-核心功能-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/📚-文档-orange?style=for-the-badge" alt="Documentation"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
   &nbsp;&nbsp;
@@ -72,7 +72,9 @@ DSLIGHTING 是一个全流程数据科学智能助手系统，采用Agent式工�
 
 ## 🚀 快速开始
 
-> 📖 **需要详细配置步骤？** 查看 [完整配置指南](SETUP_GUIDE.md)
+> 📖 **查看完整文档**：https://luckyfan-cs.github.io/dslighting-web/
+>
+> 💡 **需要详细配置步骤？** 查看 [完整配置指南](SETUP_GUIDE.md)
 
 ### 系统要求
 
