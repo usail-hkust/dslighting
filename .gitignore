@@ -160,7 +160,6 @@ temp/
 
 /competitions/
 runs/
-requirements_local.txt
 
 # Development scripts (one-time utilities)
 rename_data_dirs.py
