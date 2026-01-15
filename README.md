@@ -307,12 +307,63 @@ data/competitions/
 
 ### 配置说明
 
+#### 基础配置
+
 `config.yaml` 会被基准测试运行器和LLM服务读取：
 
 - `competitions`：MLEBench的默认竞赛列表
 - `sciencebench_competitions`（可选）：ScienceBench的默认列表
 - `custom_model_pricing`：LiteLLM的按模型token定价覆盖
 - `run`：轨迹日志记录开关
+
+#### 自定义模型价格配置
+
+**默认行为**：
+- DSLighting 使用 LiteLLM 的内置默认价格
+- 如果没有 `config.yaml`，系统会正常工作，**不会报错**
+- 价格配置是**可选的**，仅在需要覆盖默认价格时使用
+
+**自定义价格配置**：
+
+如果需要为自定义模型设置价格，可以在项目目录创建 `config.yaml` 文件：
+
+**位置**：
+```bash
+# 对于 pip 安装
+/path/to/your/project/config.yaml
+
+# 示例：测试项目中
+/Users/liufan/Applications/Github/dslighting_test_project/config.yaml
+```
+
+> 📖 **参考示例**：查看 [config.yaml.example](config.yaml.example) 获取完整配置示例
+
+**配置示例**：
+```yaml
+custom_model_pricing:
+  openai/Qwen/Qwen3-Coder-480B-A35B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  openai/Qwen/Qwen3-Coder-30B-A3B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  o4-mini-2025-04-16:
+    input_cost_per_token: 1.1e-06
+    output_cost_per_token: 4.4e-06
+  openai/deepseek-ai/DeepSeek-V3.1-Terminus:
+    input_cost_per_token: 5.55e-07
+    output_cost_per_token: 1.67e-06
+```
+
+**价格参数说明**：
+- `input_cost_per_token`：输入 token 价格（每次请求）
+- `output_cost_per_token`：输出 token 价格（每次响应）
+- 单位：美元/token（通常为科学计数法）
+
+**注意事项**：
+- 💡 价格配置是**可选的**，没有 config.yaml 也不会报错
+- 💡 只需要覆盖需要自定义的模型，其他模型使用默认价格
+- 💡 价格配置会影响成本计算和预算控制
 
 ---
 

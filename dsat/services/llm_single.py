@@ -43,7 +43,8 @@ def _load_custom_model_pricing():
                 config = yaml.safe_load(f)
                 return config.get('custom_model_pricing', {})
         else:
-            logger.warning(f"Config file not found at {config_yaml_path}")
+            # Changed to debug to avoid confusing warnings for pip-installed packages
+            logger.debug(f"Config file not found at {config_yaml_path} (this is expected for pip-installed packages)")
             return {}
     except Exception as e:
         logger.error(f"Failed to load cost configuration: {e}")

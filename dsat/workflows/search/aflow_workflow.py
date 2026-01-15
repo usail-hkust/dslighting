@@ -24,8 +24,22 @@ try:
     # Preferred when run via run_benchmark.py (module aliases).
     from mlebench.utils import get_repo_dir, import_fn, load_answers, load_yaml, read_csv
 except ModuleNotFoundError:
-    # Allows importing DSAT modules without relying on runtime aliasing.
-    from benchmarks.mlebench.utils import get_repo_dir, import_fn, load_answers, load_yaml, read_csv
+    try:
+        # Allows importing DSAT modules without relying on runtime aliasing.
+        from benchmarks.mlebench.utils import get_repo_dir, import_fn, load_answers, load_yaml, read_csv
+    except ModuleNotFoundError:
+        # mlebench not available in standalone package - define placeholders
+        def get_repo_dir():
+            from pathlib import Path
+            return Path.cwd()
+        def import_fn(*args, **kwargs):
+            return None
+        def load_answers(*args, **kwargs):
+            return {}
+        def load_yaml(*args, **kwargs):
+            return {}
+        def read_csv(*args, **kwargs):
+            return None
 
 logger = logging.getLogger(__name__)
 

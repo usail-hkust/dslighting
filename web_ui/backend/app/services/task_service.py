@@ -139,7 +139,7 @@ async def _enforce_compliance_repair(task_id: str, p_pub: Path, p_priv: Path, da
     
     run_id = f"dsat_repair_{task_id}_{uuid.uuid4().hex[:8]}"
     ws = WorkspaceService(run_id, base_dir=str(LOGS_DIR))
-    sandbox = SandboxService(ws)
+    sandbox = SandboxService(ws, auto_matplotlib=True)  # Enable matplotlib for Web UI visualization
     
     max_retries = 3
     attempt = 0

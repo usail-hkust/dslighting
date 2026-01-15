@@ -105,7 +105,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "params": {}
     },
     "run": {
-        "name": "dslighting_run",
+        "name": "dsat_run",  # Use "dsat_run" to let DSATRunner auto-generate: dsat_run_{task_id}_{uid}
         "total_steps": DEFAULT_MAX_ITERATIONS,
         "keep_all_workspaces": DEFAULT_KEEP_ALL_WORKSPACES,
         "keep_workspace_on_failure": DEFAULT_KEEP_WORKSPACE_ON_FAILURE,

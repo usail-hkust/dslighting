@@ -67,24 +67,24 @@ class TaskDetector:
         Returns:
             TaskDetection with inferred task information
         """
-        # String/Dict: QA task
-        if isinstance(source, str) and len(source) < 500:
-            return self._detect_qa_task(source)
-
-        if isinstance(source, dict):
-            return self._detect_qa_task(str(source))
-
-        # DataFrame: Custom ML task
+        # DataFrame: Custom ML task (highest priority for DataFrames)
         if isinstance(source, pd.DataFrame):
             return self._detect_dataframe_task(source)
 
-        # Path: Directory or file
+        # Path: Directory or file (check before treating as string)
         if isinstance(source, (str, Path)):
             path = Path(source)
             if path.is_dir():
                 return self._detect_from_directory(path)
             elif path.is_file():
                 return self._detect_from_file(path)
+            # If path doesn't exist, check if it's a short question (QA task)
+            elif len(source) < 500 and not any(c in source for c in ['/', '\\', '.csv', '.json', '.txt']):
+                return self._detect_qa_task(source)
+
+        # Dict: QA task
+        if isinstance(source, dict):
+            return self._detect_qa_task(str(source))
 
         # Fallback
         return TaskDetection(
@@ -152,15 +152,19 @@ class TaskDetector:
         """Detect task type from a directory structure."""
         self.logger.info(f"Detecting task from directory: {dir_path}")
 
-        # Check for Kaggle/MLE competition structure
-        if self._is_kaggle_competition(dir_path):
+        # Priority 1: Check for MLE competition structure (prepared/public & prepared/private)
+        if self._is_mle_competition(dir_path):
+            return self._detect_mle_competition(dir_path)
+
+        # Priority 2: Check for Kaggle competition structure (train.csv, test.csv)
+        if self._is_kaggle_format(dir_path):
             return self._detect_kaggle_competition(dir_path)
 
-        # Check for open-ended task
+        # Priority 3: Check for open-ended task
         if self._is_open_ended_task(dir_path):
             return self._detect_open_ended_task(dir_path)
 
-        # Check for DataSci task
+        # Priority 4: Check for DataSci task
         if self._is_datasci_task(dir_path):
             return self._detect_datasci_task(dir_path)
 
@@ -189,8 +193,8 @@ class TaskDetector:
                 confidence=0.6
             )
 
-    def _is_kaggle_competition(self, dir_path: Path) -> bool:
-        """Check if directory is a Kaggle/MLE competition structure."""
+    def _is_mle_competition(self, dir_path: Path) -> bool:
+        """Check if directory is an MLE competition structure (prepared/public & prepared/private)."""
         # Check for prepared/public and prepared/private
         prepared = dir_path / "prepared"
         if prepared.exists():
@@ -198,7 +202,10 @@ class TaskDetector:
             private = prepared / "private"
             if public.exists() and private.exists():
                 return True
+        return False
 
+    def _is_kaggle_format(self, dir_path: Path) -> bool:
+        """Check if directory has Kaggle-style files (train.csv, test.csv, sample_submission.csv)."""
         # Check for train.csv + test.csv
         has_train = (dir_path / "train.csv").exists()
         has_test = (dir_path / "test.csv").exists()
@@ -217,6 +224,28 @@ class TaskDetector:
         has_prompt = (dir_path / "prompt.txt").exists()
         has_description = (dir_path / "description.md").exists()
         return has_prompt or has_description
+
+    def _detect_mle_competition(self, dir_path: Path) -> TaskDetection:
+        """Detect MLE competition task (standard DSAT format with prepared/public & prepared/private)."""
+        self.logger.info("Detected MLE competition structure (prepared/public & prepared/private)")
+
+        # Load description if exists
+        description = ""
+        description_file = dir_path / "description.md"
+        if description_file.exists():
+            description = description_file.read_text(encoding='utf-8')
+
+        # MLE competitions use kaggle task_type internally
+        return TaskDetection(
+            task_type="kaggle",
+            task_mode="standard_ml",
+            data_dir=dir_path,
+            description=description or "MLE competition task",
+            io_instructions="Train a model and generate predictions for the test set.",
+            recommended_workflow="aide",
+            confidence=0.95,
+            metadata={"structure": "mle_competition"}
+        )
 
     def _detect_kaggle_competition(self, dir_path: Path) -> TaskDetection:
         """Detect Kaggle competition task."""

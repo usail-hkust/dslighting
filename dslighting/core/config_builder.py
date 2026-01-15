@@ -60,6 +60,8 @@ class ConfigBuilder:
         num_drafts: int = None,
         workspace_dir: str = None,
         run_name: str = None,
+        keep_workspace: bool = None,
+        keep_workspace_on_failure: bool = None,
         **kwargs
     ) -> DSATConfig:
         """
@@ -76,6 +78,8 @@ class ConfigBuilder:
             num_drafts: Number of drafts to generate
             workspace_dir: Workspace directory
             run_name: Name for this run
+            keep_workspace: Keep workspace after completion
+            keep_workspace_on_failure: Keep workspace on failure
             **kwargs: Additional parameters
 
         Returns:
@@ -100,6 +104,8 @@ class ConfigBuilder:
             num_drafts=num_drafts,
             workspace_dir=workspace_dir,
             run_name=run_name,
+            keep_workspace=keep_workspace,
+            keep_workspace_on_failure=keep_workspace_on_failure,
             **kwargs
         )
         config = self._deep_merge(config, user_config)
@@ -180,7 +186,22 @@ class ConfigBuilder:
             logger.warning("LLM_MODEL_CONFIGS must be a JSON object")
             return {}
 
-        return {k: v for k, v in parsed.items() if isinstance(k, str) and isinstance(v, dict)}
+        # Process each model config
+        result = {}
+        for k, v in parsed.items():
+            if not isinstance(k, str) or not isinstance(v, dict):
+                continue
+
+            # Handle api_key as list (take the first one)
+            if "api_key" in v and isinstance(v["api_key"], list):
+                if len(v["api_key"]) > 0:
+                    v = v.copy()  # Shallow copy to avoid mutating original
+                    v["api_key"] = v["api_key"][0]
+                    logger.debug(f"Model '{k}': using first API key from list of {len(v['api_key'])}")
+
+            result[k] = v
+
+        return result
 
     def _build_user_config(
         self,
@@ -194,6 +215,8 @@ class ConfigBuilder:
         num_drafts: int = None,
         workspace_dir: str = None,
         run_name: str = None,
+        keep_workspace: bool = None,
+        keep_workspace_on_failure: bool = None,
         **kwargs
     ) -> Dict[str, Any]:
         """Build user configuration from parameters."""
@@ -229,6 +252,12 @@ class ConfigBuilder:
 
         if workspace_dir is not None:
             config.setdefault("run", {}).setdefault("parameters", {})["workspace_dir"] = workspace_dir
+
+        if keep_workspace is not None:
+            config.setdefault("run", {})["keep_all_workspaces"] = keep_workspace
+
+        if keep_workspace_on_failure is not None:
+            config.setdefault("run", {})["keep_workspace_on_failure"] = keep_workspace_on_failure
 
         # Additional kwargs are added to run.parameters
         if kwargs:

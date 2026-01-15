@@ -211,6 +211,22 @@ class DSATRunner:
 
                     if output_path:
                         result = handler.parse_output(output_path)
+
+                        # Grade the submission if benchmark is available
+                        if benchmark_instance and hasattr(benchmark_instance, 'grade') and isinstance(result, Path):
+                            try:
+                                logger.info(f"Grading submission: {result}")
+                                score = await benchmark_instance.grade(result)
+                                logger.info(f"✓ Grading complete | Score: {score}")
+                                # Return score as result
+                                result = {"score": score, "submission_path": str(result)}
+                            except Exception as grade_error:
+                                logger.warning(f"Grading failed: {grade_error}")
+                                # Keep the path as result if grading fails
+                                logger.info(f"Submission created at: {result}")
+                        elif isinstance(result, Path):
+                            logger.info(f"Submission created at: {result}")
+
                     logger.info(f"Task '{task.task_id}' evaluation finished successfully.")
 
                 except Exception as execution_error:

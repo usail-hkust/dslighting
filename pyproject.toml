@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.0.4"
+version = "1.3.11"
 description = "Simplified API for Data Science Agent Automation"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
 authors = [
     {name = "DSLighting Team"}
@@ -19,9 +19,9 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
@@ -33,13 +33,14 @@ dependencies = [
     # DSAT framework dependencies (required)
     "openai",
     "anthropic",
-    "litellm",
+    "litellm>=1.80.0",
     "rich",
     "transformers",
     "torch",
     "scikit-learn",
-    # Python 3.9 compatibility
-    "aiohttp<3.10; python_version=='3.9'",
+    # Notebook support
+    "nbformat",
+    "nbclient",
 ]
 
 # Optional dependencies

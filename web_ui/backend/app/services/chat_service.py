@@ -199,7 +199,7 @@ async def _run_chat_pipeline_impl(
     """
     run_id = get_active_run_id(task_id)
     ws = WorkspaceService(run_id, base_dir=str(LOGS_DIR))
-    sandbox = SandboxService(ws)
+    sandbox = SandboxService(ws, auto_matplotlib=True)  # Enable matplotlib for Web UI visualization
     sandbox_dir = ws.get_path("sandbox_workdir")
     bench_dir = BENCHMARKS_DIR / task_id
     llm = await get_llm()

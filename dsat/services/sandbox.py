@@ -245,17 +245,46 @@ class ProcessIsolatedNotebookExecutor:
 class SandboxService:
     """
     Provides unified access to isolated script and notebook code execution environments.
+
+    Args:
+        workspace: Workspace service for managing files
+        timeout: Default timeout for script execution (seconds)
+        auto_matplotlib: Automatically inject matplotlib backend (default: False).
+                        Set to True for Web UI environments that need visualization.
+                        Set to False for standalone package usage.
     """
-    def __init__(self, workspace: WorkspaceService, timeout: int = 600):
+    def __init__(
+        self,
+        workspace: WorkspaceService,
+        timeout: int = 600,
+        auto_matplotlib: bool = False
+    ):
         self.workspace = workspace
         self.timeout = timeout
+        self.auto_matplotlib = auto_matplotlib  # Store matplotlib injection preference
         self.execution_history: List[Dict[str, Any]] = []
 
     def run_script(self, script_code: str, timeout: Optional[int] = None) -> ExecutionResult:
-        """Runs a Python script within the sandbox workspace."""
-        # Force non-interactive backend for matplotlib to prevent blocking plt.show()
-        fixed_code = "import matplotlib\nmatplotlib.use('Agg')\n" + script_code
-        
+        """
+        Runs a Python script within the sandbox workspace.
+
+        Args:
+            script_code: Python code to execute
+            timeout: Optional timeout override (uses self.timeout if None)
+
+        Returns:
+            ExecutionResult with stdout, stderr, success status, etc.
+        """
+        # Optionally inject matplotlib non-interactive backend
+        # This is only done if auto_matplotlib=True (used by Web UI for visualization)
+        if self.auto_matplotlib:
+            # Force non-interactive backend for matplotlib to prevent blocking plt.show()
+            fixed_code = "import matplotlib\nmatplotlib.use('Agg')\n" + script_code
+            logger.debug("Auto-injected matplotlib non-interactive backend")
+        else:
+            # Use code as-is without modification (default for DSLighting package)
+            fixed_code = script_code
+
         script_name = f"_sandbox_script_{uuid.uuid4().hex}.py"
         script_path = self.workspace.run_dir / script_name
         execution_id = uuid.uuid4().hex

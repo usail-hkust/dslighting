@@ -268,6 +268,12 @@ ROOT_GITIGNORE_SUMMARY.md
 !SETUP_GUIDE.md
 web_ui/frontend/MODEL_TRAINING_FEATURES.md
 
+# PyPI publishing documentation (temporary)
+PYPI_*.md
+DEPENDENCY_CONFIGURATION.md
+INSTALLATION.md
+MATPLOTLIB_FIX.md
+
 # Report files in benchmarks (may contain sensitive info)
 benchmarks/mlebench/competitions/*/report.md
 

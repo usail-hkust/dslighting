@@ -1,0 +1,39 @@
+# DSLighting 配置文件示例
+# 复制此文件为 config.yaml 并根据需要修改
+
+# MLE-Bench 竞赛列表（可选）
+competitions:
+  - bike-sharing-demand
+  - titanic
+  - house-prices-advanced-regression
+
+# ScienceBench 竞赛列表（可选）
+# sciencebench_competitions:
+#   - example-science-task
+
+# 自定义模型价格配置（可选）
+# 如果不配置，DSL 将使用 LiteLLM 的默认价格
+# 只有在使用自定义模型或需要覆盖默认价格时才需要配置
+custom_model_pricing:
+  # Qwen 系列模型示例
+  openai/Qwen/Qwen3-Coder-480B-A35B-Instruct:
+    input_cost_per_token: 6.0e-07  # $0.0000006 per token
+    output_cost_per_token: 1.8e-06  # $0.0000018 per token
+
+  openai/Qwen/Qwen3-Coder-30B-A3B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+
+  # OpenAI o4-mini 模型
+  o4-mini-2025-04-16:
+    input_cost_per_token: 1.1e-06
+    output_cost_per_token: 4.4e-06
+
+  # DeepSeek 模型示例
+  openai/deepseek-ai/DeepSeek-V3.1-Terminus:
+    input_cost_per_token: 5.55e-07
+    output_cost_per_token: 1.67e-06
+
+# 轨迹日志记录开关（可选）
+run:
+  log_trajectory: true
