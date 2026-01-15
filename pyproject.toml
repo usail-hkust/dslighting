@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.0.3"
+version = "1.0.4"
 description = "Simplified API for Data Science Agent Automation"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -38,6 +38,8 @@ dependencies = [
     "transformers",
     "torch",
     "scikit-learn",
+    # Python 3.9 compatibility
+    "aiohttp<3.10; python_version=='3.9'",
 ]
 
 # Optional dependencies
