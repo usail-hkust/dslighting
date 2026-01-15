@@ -10,6 +10,10 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/dslighting/logo.png' }]
   ],
 
+  // For personal GitHub Pages
+  // If deploying to https://luckyfan-cs.github.io/dslighting/
+  // base: '/dslighting/'
+
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
