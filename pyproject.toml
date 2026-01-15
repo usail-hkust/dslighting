@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.0.2"
+version = "1.0.3"
 description = "Simplified API for Data Science Agent Automation"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -72,10 +72,11 @@ Repository = "https://github.com/usail-hkust/dslighting"
 
 # Package discovery
 [tool.setuptools.packages.find]
-include = ["dslighting*"]
+include = ["dslighting*", "dsat*"]
 
 [tool.setuptools.package-data]
 dslighting = ["*.yaml", "*.json"]
+dsat = ["*.yaml", "*.json", "configs/*.yaml", "workflows/*.yaml"]
 
 # Black configuration
 [tool.black]
