@@ -323,5 +323,13 @@ PROJECT_RULES.md
 dsat/templates/
 dslighting/templates/
 
-# Claude Code generated documentation
+# Claude Code generated documentation (all in claude_doc/)
 claude_doc/
+
+# Development documentation patterns (additional protection)
+*_FIX.md
+*_SUMMARY.md
+*_IMPROVEMENTS.md
+*_GUIDE.md
+!SETUP_GUIDE.md
+!FEATURE_PACKAGE_CONTEXT.md
