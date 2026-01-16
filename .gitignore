@@ -297,6 +297,15 @@ test_*.py
 verify_*.py
 verify-imports.sh
 
+# User test/development documentation
+@AGENT.md
+@fix_plan.md
+PROMPT.md
+PROMPT_TEMPLATE.md
+AGENT*.md
+FIX*.md
+PLAN*.md
+
 # Project rules (development doc)
 PROJECT_RULES.md
 

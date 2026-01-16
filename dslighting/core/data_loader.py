@@ -27,12 +27,14 @@ class LoadedData:
         data_dir: Data directory path (for file-based sources)
         task_detection: Detected task information
         task_id: Task/Competition ID (extracted from path)
+        registry_dir: Benchmark registry directory (for MLE-Bench grading)
         metadata: Additional metadata
     """
     source: Any
     data_dir: Optional[Path] = None
     task_detection: Optional[TaskDetection] = None
     task_id: Optional[str] = None
+    registry_dir: Optional[Path] = None
     metadata: Dict[str, Any] = None
 
     def __post_init__(self):
@@ -94,6 +96,7 @@ class DataLoader:
         self,
         source: Union[str, Path, pd.DataFrame, dict],
         auto_detect: bool = None,
+        registry_dir: Union[str, Path] = None,
         **kwargs
     ) -> LoadedData:
         """
@@ -103,6 +106,9 @@ class DataLoader:
             source: Data source (path, DataFrame, dict, etc.)
             auto_detect: Override the instance's auto_detect setting.
                         If None (default), use instance setting.
+            registry_dir: Benchmark registry directory (for MLE-Bench grading).
+                        If None (default), will auto-detect from data directory structure.
+                        For DSLighting project: benchmarks/mlebench/competitions/
             **kwargs: Additional parameters
 
         Returns:
@@ -125,14 +131,24 @@ class DataLoader:
         # Extract task_id from path
         task_id = self._extract_task_id(source, data_dir)
 
+        # Auto-detect registry_dir if not provided
+        if registry_dir is None:
+            registry_dir = self._auto_detect_registry_dir(data_dir, task_id)
+        else:
+            registry_dir = Path(registry_dir)
+
         # Create LoadedData
         loaded_data = LoadedData(
             source=source,
             data_dir=data_dir,
             task_detection=task_detection,
             task_id=task_id,
+            registry_dir=registry_dir,
             metadata=kwargs
         )
+
+        if registry_dir:
+            self.logger.info(f"Registry directory: {registry_dir}")
 
         self.logger.info(
             f"Loaded data: task_type={task_detection.task_type}, "
@@ -419,4 +435,106 @@ class DataLoader:
             return data_dir.name
 
         # No task_id found
+        return None
+
+    def _auto_detect_registry_dir(
+        self,
+        data_dir: Optional[Path],
+        task_id: Optional[str]
+    ) -> Optional[Path]:
+        """
+        Auto-detect MLE-Bench registry directory from data directory structure.
+
+        The registry contains competition configs (config.yaml) with grading information.
+        This method looks for the benchmarks directory relative to the data directory.
+
+        Args:
+            data_dir: Data directory path
+            task_id: Task/competition ID
+
+        Returns:
+            Path to registry directory or None
+        """
+        if not data_dir:
+            return None
+
+        self.logger.info(f"Auto-detecting registry directory for data_dir: {data_dir}")
+
+        # Expected structure:
+        # dslighting/
+        #   ├── data/competitions/{task_id}/     <- data_dir points here
+        #   └── benchmarks/mlebench/competitions/ <- registry we need to find
+
+        # Strategy 1: Look for benchmarks/ sibling to data/
+        if data_dir.is_absolute():
+            # data_dir = /path/to/dslighting/data/competitions/bike-sharing-demand
+            # We want: /path/to/dslighting/benchmarks/mlebench/competitions
+
+            # Go up to find data/, then look for benchmarks/ sibling
+            current = data_dir
+            for _ in range(5):  # Don't go up more than 5 levels
+                if current.parent.name == "data":
+                    # Found data/ directory, look for benchmarks/ sibling
+                    benchmarks_root = current.parent.parent / "benchmarks" / "mlebench" / "competitions"
+                    if benchmarks_root.exists():
+                        self.logger.info(f"  ✓ Found benchmarks at: {benchmarks_root}")
+                        return benchmarks_root
+                    break
+                current = current.parent
+
+        # Strategy 2: Check known locations relative to current file
+        try:
+            # dslighting/dslighting/core/data_loader.py
+            # Go up to dslighting/ root, then benchmarks/
+            file_location = Path(__file__).resolve()
+            dslighting_root = file_location.parent.parent.parent  # Up 3 levels
+            benchmarks_root = dslighting_root / "benchmarks" / "mlebench" / "competitions"
+
+            if benchmarks_root.exists():
+                self.logger.info(f"  ✓ Found benchmarks from package structure: {benchmarks_root}")
+                return benchmarks_root
+        except Exception as e:
+            self.logger.debug(f"  Could not determine package structure: {e}")
+
+        # Strategy 3: If data_dir is in standard DSLighting location, infer benchmarks
+        # /Users/liufan/Applications/Github/dslighting/data/competitions/{task_id}
+        # -> /Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/
+        if "Github" in str(data_dir) or "dslighting" in str(data_dir):
+            # Try to reconstruct benchmarks path
+            parts = data_dir.parts
+            try:
+                if "data" in parts:
+                    idx = parts.index("data")
+                    # Rebuild path up to "data", then replace with "benchmarks/mlebench/competitions"
+                    base_parts = parts[:idx]
+                    benchmarks_path = Path(*base_parts) / "benchmarks" / "mlebench" / "competitions"
+
+                    if benchmarks_path.exists():
+                        self.logger.info(f"  ✓ Found benchmarks from path reconstruction: {benchmarks_path}")
+                        return benchmarks_path
+            except Exception as e:
+                self.logger.debug(f"  Path reconstruction failed: {e}")
+
+        # Strategy 4: Check if this is a test_project scenario
+        # /Users/liufan/Applications/Github/dslighting_test_project/
+        # -> /Users/liufan/Applications/Github/dslighting/benchmarks/
+        try:
+            import os
+            cwd = Path.cwd()
+            if "test_project" in str(cwd) or "test" in str(cwd):
+                # Go up to Github/, then into dslighting/
+                github_root = cwd.parent
+                benchmarks_path = github_root / "dslighting" / "benchmarks" / "mlebench" / "competitions"
+
+                if benchmarks_path.exists():
+                    self.logger.info(f"  ✓ Found benchmarks from test project: {benchmarks_path}")
+                    return benchmarks_path
+        except Exception as e:
+            self.logger.debug(f"  Test project detection failed: {e}")
+
+        # Could not auto-detect
+        self.logger.warning("  ⚠️  Could not auto-detect registry directory")
+        self.logger.warning("     Pass registry_dir explicitly to load_data() or Agent.run()")
+        self.logger.warning("     Example: load_data(path, registry_dir='path/to/benchmarks/mlebench/competitions')")
+
         return None

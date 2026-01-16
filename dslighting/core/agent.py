@@ -313,6 +313,12 @@ class Agent:
                     self.logger.info(f"Initializing MLE-Bench grading for: {task_id}")
                     self.logger.info(f"  Data directory: {data_dir_path}")
 
+                    # Check if user provided registry_dir in loaded_data
+                    if loaded_data.registry_dir:
+                        self.logger.info(f"  Registry directory (from loaded_data): {loaded_data.registry_dir}")
+                    else:
+                        self.logger.info(f"  Registry directory: auto-detected from data directory structure")
+
                     # Validate data directory exists
                     if not data_dir_path.exists():
                         self.logger.warning(f"⚠️  Data directory does NOT exist: {data_dir_path}")
@@ -344,7 +350,16 @@ class Agent:
                                 self.logger.warning(f"   Grading will be skipped.")
                             else:
                                 # All checks passed - initialize benchmark
+                                # IMPORTANT: Registry needs data_dir pointing to prepared data base
+                                # The config.yaml will be found automatically by _resolve_competition_root
                                 custom_registry = Registry(data_dir=data_dir_path)
+
+                                # Log registry configuration
+                                self.logger.info(f"  Registry config:")
+                                self.logger.info(f"    data_dir: {data_dir_path}")
+                                if loaded_data.registry_dir:
+                                    self.logger.info(f"    config_dir (auto): {loaded_data.registry_dir}")
+                                self.logger.info(f"    expected private_dir: {private_dir}")
 
                                 # Create simple wrapper class
                                 class SimpleMLEBenchmark:
