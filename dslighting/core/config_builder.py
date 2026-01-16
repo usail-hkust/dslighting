@@ -251,7 +251,7 @@ class ConfigBuilder:
             config.setdefault("run", {})["name"] = run_name
 
         if workspace_dir is not None:
-            config.setdefault("run", {}).setdefault("parameters", {})["workspace_dir"] = workspace_dir
+            config.setdefault("workflow", {}).setdefault("params", {})["workspace_base_dir"] = workspace_dir
 
         if keep_workspace is not None:
             config.setdefault("run", {})["keep_all_workspaces"] = keep_workspace

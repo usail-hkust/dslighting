@@ -188,24 +188,32 @@ class DSATRunner:
                         sandbox_workdir = workspace_service.get_path("sandbox_workdir")
                         generated_file = sandbox_workdir / output_path.name
                         if generated_file.exists():
-                            output_path.parent.mkdir(parents=True, exist_ok=True)
-                            if generated_file.resolve() != output_path.resolve():
-                                logger.info(f"Collecting produced artifact '{output_path.name}' from the sandbox.")
+                            # Only copy if output_path is an absolute path
+                            # If it's a relative path (just filename), keep it in workspace/sandbox
+                            if output_path.is_absolute():
+                                output_path.parent.mkdir(parents=True, exist_ok=True)
+                                if generated_file.resolve() != output_path.resolve():
+                                    logger.info(f"Collecting produced artifact '{output_path.name}' from the sandbox.")
 
-                                # Handle both files and directories (e.g., for open-ended tasks)
-                                if generated_file.is_dir():
-                                    # For directories (like 'artifacts'), use copytree
-                                    if output_path.exists():
-                                        if output_path.is_dir():
-                                            shutil.rmtree(output_path)
-                                        else:
-                                            output_path.unlink()
-                                    shutil.copytree(generated_file, output_path)
-                                    logger.info(f"Copied directory '{generated_file}' to '{output_path}'")
-                                else:
-                                    # For files, use regular copy
-                                    shutil.copy(generated_file, output_path)
-                                    logger.info(f"Copied file '{generated_file}' to '{output_path}'")
+                                    # Handle both files and directories (e.g., for open-ended tasks)
+                                    if generated_file.is_dir():
+                                        # For directories (like 'artifacts'), use copytree
+                                        if output_path.exists():
+                                            if output_path.is_dir():
+                                                shutil.rmtree(output_path)
+                                            else:
+                                                output_path.unlink()
+                                        shutil.copytree(generated_file, output_path)
+                                        logger.info(f"Copied directory '{generated_file}' to '{output_path}'")
+                                    else:
+                                        # For files, use regular copy
+                                        shutil.copy(generated_file, output_path)
+                                        logger.info(f"Copied file '{generated_file}' to '{output_path}'")
+                            else:
+                                # Relative path - file stays in sandbox, use workspace path for result
+                                logger.info(f"Output file '{output_path.name}' remains in workspace sandbox: {generated_file}")
+                                # Update output_path to point to the actual file in workspace
+                                output_path = generated_file
                         else:
                             logger.warning(f"No output '{output_path.name}' found in sandbox '{sandbox_workdir}' after workflow execution.")
 
