@@ -73,8 +73,9 @@ class Competition:
 
 
 class Registry:
-    def __init__(self, data_dir: Path = DEFAULT_DATA_DIR):
+    def __init__(self, data_dir: Path = DEFAULT_DATA_DIR, registry_dir: Path = None):
         self._data_dir = data_dir.resolve()
+        self._custom_registry_dir = registry_dir.resolve() if registry_dir else None
         self.mode = 'test'
 
     def _coerce_file_import(
@@ -106,19 +107,26 @@ class Registry:
     def _resolve_competition_root(self, competition_id: str) -> Path:
         """
         Resolve where a competition config lives.
+        - Prefer custom registry_dir if provided by user.
         - Prefer top-level `dabench/` for DABench-prefixed tasks.
         - Check `data_dir` for user-uploaded tasks.
         - Fallback to legacy `mlebench/competitions/` for everything else.
         """
-        # New layout: benchmarks/mlebench and benchmarks/dabench sit under repo root.
+        # Priority 1: Use custom registry_dir if provided
+        if self._custom_registry_dir:
+            if (self._custom_registry_dir / competition_id / "config.yaml").exists():
+                return self._custom_registry_dir
+            # If custom registry_dir doesn't have config, still try to use it
+            # (user might have custom structure)
+            return self._custom_registry_dir
+
+        # Priority 2: DABench tasks
         repo_dir = get_repo_dir()
         dabench_root = repo_dir / "benchmarks" / "dabench" / "competitions"
-        legacy_root = repo_dir / "benchmarks" / "mlebench" / "competitions"
-
         if competition_id.startswith("dabench-") and (dabench_root / competition_id).exists():
             return dabench_root
-        
-        # Check if the competition is in the data directory (user uploaded)
+
+        # Priority 3: Check if the competition is in the data directory (user uploaded)
         if (self._data_dir / competition_id / "config.yaml").exists():
             return self._data_dir
 

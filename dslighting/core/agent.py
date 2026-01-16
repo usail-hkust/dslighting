@@ -111,6 +111,7 @@ class Agent:
         keep_workspace: bool = False,
         keep_workspace_on_failure: bool = True,
         verbose: bool = True,
+        include_package_context: bool = True,
         **kwargs
     ):
         """
@@ -134,10 +135,12 @@ class Agent:
             keep_workspace: Keep workspace after completion (default: False)
             keep_workspace_on_failure: Keep workspace on failure (default: True)
             verbose: Enable verbose logging
+            include_package_context: Include available package info in prompts (default: True)
             **kwargs: Additional parameters passed to DSATConfig
         """
         self.verbose = verbose
         self.logger = logger
+        self.include_package_context = include_package_context
 
         # Build configuration
         self.config_builder = ConfigBuilder()
@@ -162,6 +165,19 @@ class Agent:
 
         # Track results
         self._results: List[AgentResult] = []
+
+        # Initialize package detector for environment context
+        self._package_detector = None
+        self._package_context: Optional[str] = None
+
+        if self.include_package_context:
+            try:
+                from dslighting.utils.package_detector import PackageDetector
+                self._package_detector = PackageDetector()
+                self.logger.info("Package context enabled: Agent will be aware of available packages")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize package detector: {e}")
+                self.include_package_context = False
 
         self.logger.info(f"Agent initialized with workflow: '{self.config.workflow.name}'")
 
@@ -305,10 +321,15 @@ class Agent:
                     from mlebench.grade import grade_csv
                     from mlebench.registry import Registry
 
-                    # Resolve data_dir - use the same path as the competition data
-                    if data_dir is None:
-                        data_dir = "data/competitions"
-                    data_dir_path = Path(data_dir).expanduser().resolve()
+                    # Resolve data_dir - prioritize loaded_data.data_dir
+                    if loaded_data.data_dir is not None:
+                        # Extract parent directory from loaded_data.data_dir
+                        # e.g., /path/to/competitions/bike-sharing-demand → /path/to/competitions
+                        data_dir_path = loaded_data.data_dir.parent
+                    elif data_dir is None:
+                        data_dir_path = Path("data/competitions").expanduser().resolve()
+                    else:
+                        data_dir_path = Path(data_dir).expanduser().resolve()
 
                     self.logger.info(f"Initializing MLE-Bench grading for: {task_id}")
                     self.logger.info(f"  Data directory: {data_dir_path}")
@@ -351,8 +372,12 @@ class Agent:
                             else:
                                 # All checks passed - initialize benchmark
                                 # IMPORTANT: Registry needs data_dir pointing to prepared data base
-                                # The config.yaml will be found automatically by _resolve_competition_root
-                                custom_registry = Registry(data_dir=data_dir_path)
+                                # If user provided registry_dir, use it for config.yaml lookup
+                                registry_kwargs = {"data_dir": data_dir_path}
+                                if loaded_data.registry_dir:
+                                    registry_kwargs["registry_dir"] = loaded_data.registry_dir
+
+                                custom_registry = Registry(**registry_kwargs)
 
                                 # Log registry configuration
                                 self.logger.info(f"  Registry config:")
@@ -520,6 +545,16 @@ class Agent:
         # Get description
         if description is None:
             description = loaded_data.get_description()
+
+        # Add package context to description if enabled
+        if self.include_package_context and self._package_detector:
+            try:
+                package_context = self._package_detector.format_as_context()
+                # Prepend package context to description
+                description = f"{package_context}\n\nTask Description:\n{description}"
+                self.logger.info("Package context added to task description")
+            except Exception as e:
+                self.logger.warning(f"Failed to add package context: {e}")
 
         # Get I/O instructions
         io_instructions = loaded_data.get_io_instructions()

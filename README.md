@@ -69,6 +69,40 @@ DSLIGHTING 是一个全流程数据科学智能助手系统，采用Agent式工�
 - 📊 **Web可视化界面**：基于Next.js + FastAPI的交互式Dashboard
 - 📝 **完整日志追踪**：记录每次运行的artifacts和摘要
 - 🧩 **可扩展架构**：灵活的任务注册和数据准备流程
+- 📦 **智能包上下文** (v1.4.0+)：自动检测环境中的可用包，避免生成不兼容代码
+
+---
+
+### 🆕 v1.4.0 新特性：包上下文
+
+**Agent 现在知道你的环境中有哪些包！**
+
+```python
+import dslighting
+
+# Agent 自动检测可用包
+agent = dslighting.Agent()
+
+# Agent 会使用已安装的包（如 xgboost, lightgbm）
+# 而不会尝试使用未安装的包（如 catboost）
+result = agent.run(task_id="bike-sharing-demand", data_dir="data/competitions")
+```
+
+**CLI 工具**：
+```bash
+dslighting detect-packages     # 检测并保存包信息
+dslighting show-packages       # 查看已检测的包
+dslighting validate-config     # 验证配置
+```
+
+**可以随时禁用**：
+```python
+agent = dslighting.Agent(include_package_context=False)
+```
+
+📖 **详细文档**: [FEATURE_PACKAGE_CONTEXT.md](FEATURE_PACKAGE_CONTEXT.md)
+
+---
 
 ---
 
