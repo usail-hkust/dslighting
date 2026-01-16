@@ -313,28 +313,58 @@ class Agent:
                     self.logger.info(f"Initializing MLE-Bench grading for: {task_id}")
                     self.logger.info(f"  Data directory: {data_dir_path}")
 
-                    # Create custom registry with correct data_dir
-                    custom_registry = Registry(data_dir=data_dir_path)
+                    # Validate data directory exists
+                    if not data_dir_path.exists():
+                        self.logger.warning(f"⚠️  Data directory does NOT exist: {data_dir_path}")
+                        self.logger.warning(f"   Please ensure competition data is downloaded and prepared.")
+                        self.logger.warning(f"   Grading will be skipped.")
+                    else:
+                        # Check if competition directory exists
+                        competition_dir = data_dir_path / task_id
+                        if not competition_dir.exists():
+                            self.logger.warning(f"⚠️  Competition directory NOT found: {competition_dir}")
+                            self.logger.warning(f"   Task '{task_id}' data not found in {data_dir_path}")
+                            self.logger.warning(f"   Available competitions: {list([d.name for d in data_dir_path.iterdir() if d.is_dir()])}")
+                            self.logger.warning(f"   Grading will be skipped.")
+                        else:
+                            # Check if prepared data exists
+                            prepared_dir = competition_dir / "prepared"
+                            private_dir = prepared_dir / "private"
+                            public_dir = prepared_dir / "public"
 
-                    # Create simple wrapper class
-                    class SimpleMLEBenchmark:
-                        def __init__(self, registry_instance):
-                            self.registry = registry_instance
+                            if not prepared_dir.exists():
+                                self.logger.warning(f"⚠️  Prepared data NOT found: {prepared_dir}")
+                                self.logger.warning(f"   Competition data exists but is not prepared.")
+                                self.logger.warning(f"   Expected: {prepared_dir}")
+                                self.logger.warning(f"   Grading will be skipped.")
+                            elif not private_dir.exists():
+                                self.logger.warning(f"⚠️  Private directory NOT found: {private_dir}")
+                                self.logger.warning(f"   Required for grading but does not exist.")
+                                self.logger.warning(f"   This is unusual if competition data was prepared correctly.")
+                                self.logger.warning(f"   Grading will be skipped.")
+                            else:
+                                # All checks passed - initialize benchmark
+                                custom_registry = Registry(data_dir=data_dir_path)
 
-                        async def grade(self, submission_path):
-                            """Grade submission using custom registry."""
-                            competition = self.registry.get_competition(task_id)
-                            report = grade_csv(
-                                submission_path,
-                                competition,
-                            )
-                            # Return the score (float), not the entire report
-                            return report.score if report.score is not None else 0.0
+                                # Create simple wrapper class
+                                class SimpleMLEBenchmark:
+                                    def __init__(self, registry_instance):
+                                        self.registry = registry_instance
 
-                    benchmark = SimpleMLEBenchmark(custom_registry)
-                    runner = self.get_runner()
-                    runner.benchmark = benchmark
-                    self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
+                                    async def grade(self, submission_path):
+                                        """Grade submission using custom registry."""
+                                        competition = self.registry.get_competition(task_id)
+                                        report = grade_csv(
+                                            submission_path,
+                                            competition,
+                                        )
+                                        # Return the score (float), not the entire report
+                                        return report.score if report.score is not None else 0.0
+
+                                benchmark = SimpleMLEBenchmark(custom_registry)
+                                runner = self.get_runner()
+                                runner.benchmark = benchmark
+                                self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
 
                 except ImportError as e:
                     self.logger.warning(f"MLE-Bench import failed: {e}")
