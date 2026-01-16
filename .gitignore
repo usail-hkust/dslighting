@@ -326,6 +326,9 @@ dslighting/templates/
 # Claude Code generated documentation (all in claude_doc/)
 claude_doc/
 
+# Claude Code development files (all in claude_file/)
+claude_file/
+
 # Development documentation patterns (additional protection)
 *_FIX.md
 *_SUMMARY.md
