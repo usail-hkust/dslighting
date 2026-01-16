@@ -298,13 +298,23 @@ verify_*.py
 verify-imports.sh
 
 # User test/development documentation
+@*.md
 @AGENT.md
 @fix_plan.md
+@RALPH_TEST_FILES_UPDATED.md
+@TEST_STATUS_UPDATE.md
 PROMPT.md
 PROMPT_TEMPLATE.md
 AGENT*.md
 FIX*.md
 PLAN*.md
+FIX_*.md
+GRADING_*.md
+IMPLEMENTATION_*.md
+INSTALLATION_*.md
+MATPLOTLIB_*.md
+PUSH_*.md
+PYPI_*.md
 
 # Project rules (development doc)
 PROJECT_RULES.md
