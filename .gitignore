@@ -322,3 +322,6 @@ PROJECT_RULES.md
 # Template files (auto-generated)
 dsat/templates/
 dslighting/templates/
+
+# Claude Code generated documentation
+claude_doc/
