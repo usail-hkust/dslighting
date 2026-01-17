@@ -72,37 +72,55 @@ DSLIGHTING 是一个全流程数据科学智能助手系统，采用Agent式工�
 - 📝 **完整日志追踪**：记录每次运行的artifacts和摘要
 - 🧩 **可扩展架构**：灵活的任务注册和数据准备流程
 - 📦 **智能包上下文** (v1.4.0+)：自动检测环境中的可用包，避免生成不兼容代码
+- 🎯 **内置数据集** (v1.8.1+)：开箱即用的示例数据集，无需额外准备
 
 ---
 
-### 🆕 v1.4.0 新特性：包上下文
+### 🆕 v1.8.1 新特性：内置数据集 & 全局配置
 
-**Agent 现在知道你的环境中有哪些包！**
+**无需准备数据，直接运行！**
 
+```python
+# run_builtin.py
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+def main():
+    # 使用内置数据集，无需配置数据路径
+    result = dslighting.run_agent(task_id="bike-sharing-demand")
+
+    print(f"✅ 任务完成！")
+    print(f"结果: {result}")
+
+if __name__ == "__main__":
+    main()
+```
+
+**全局配置**（可选）：
 ```python
 import dslighting
 
-# Agent 自动检测可用包
+# 配置一次，全局生效
+dslighting.setup(
+    data_parent_dir="/path/to/data/competitions",
+    registry_parent_dir="/path/to/registry"
+)
+
+# 之后只需 task_id
 agent = dslighting.Agent()
-
-# Agent 会使用已安装的包（如 xgboost, lightgbm）
-# 而不会尝试使用未安装的包（如 catboost）
-result = agent.run(task_id="bike-sharing-demand", data_dir="data/competitions")
+result = agent.run(task_id="my-task")
 ```
 
-**CLI 工具**：
-```bash
-dslighting detect-packages     # 检测并保存包信息
-dslighting show-packages       # 查看已检测的包
-dslighting validate-config     # 验证配置
-```
+**内置数据集**：
+- `bike-sharing-demand` - 共享单车需求预测
+- 包含完整的训练集、测试集和答案文件
+- 开箱即用，无需下载
 
-**可以随时禁用**：
-```python
-agent = dslighting.Agent(include_package_context=False)
-```
+📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/
 
-📖 **详细文档**: [FEATURE_PACKAGE_CONTEXT.md](FEATURE_PACKAGE_CONTEXT.md)
+---
 
 ---
 
