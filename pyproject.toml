@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.8.2"
+version = "1.8.3"
 description = "End-to-End Data Science Agent - Intelligent automation for data science tasks"
-readme = "README_PIP.md"
+readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
 authors = [

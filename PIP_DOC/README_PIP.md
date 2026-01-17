@@ -5,7 +5,7 @@
 **全流程数据科学智能助手 - End-to-End Data Science Agent**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![PyPI](https://img.shields.io/badge/PyPI-1.8.1-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
+[![PyPI](https://img.shields.io/badge/PyPI-1.8.2-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/dslighting?style=flat-square&logo=pypi)](https://pypi.org/project/dslighting/)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](LICENSE)
 
