@@ -5,8 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dslighting"
 version = "1.8.1"
-description = "Simplified API for Data Science Agent Automation"
-readme = "README.md"
+description = "End-to-End Data Science Agent - Intelligent automation for data science tasks"
+readme = "README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
 authors = [
@@ -76,9 +76,11 @@ dev = [
 # Project URLs
 [project.urls]
 Homepage = "https://github.com/usail-hkust/dslighting"
-Documentation = "https://luckyfan-cs.github.io/dslighting-web/"
+Documentation = "https://luckyfan-cs.github.io/dslighting-web/api/getting-started.html"
 Repository = "https://github.com/usail-hkust/dslighting"
 "Bug Tracker" = "https://github.com/usail-hkust/dslighting/issues"
+"Quick Start Guide" = "https://luckyfan-cs.github.io/dslighting-web/api/getting-started.html"
+"Data System Docs" = "https://luckyfan-cs.github.io/dslighting-web/api/data-system.html"
 
 # CLI entry points
 [project.scripts]
