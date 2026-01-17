@@ -219,9 +219,55 @@ class ConfigBuilder:
         keep_workspace_on_failure: bool = None,
         **kwargs
     ) -> Dict[str, Any]:
-        """Build user configuration from parameters."""
+        """
+        Build user configuration from parameters.
+
+        Supports both:
+        1. Nested dictionary format (recommended, v1.9.0+):
+           agent = dslighting.Agent(
+               workflow="autokaggle",
+               autokaggle={"max_attempts_per_phase": 5}
+           )
+
+        2. Flat format (backward compatible):
+           agent = dslighting.Agent(
+               workflow="autokaggle",
+               autokaggle_max_attempts_per_phase=5
+           )
+        """
         config = {}
 
+        # ========== Workflow-specific parameters (nested dict) ==========
+        workflow_specific_params = {}
+        remaining_kwargs = {}
+
+        for key, value in kwargs.items():
+            if key in ['aide', 'autokaggle', 'data_interpreter', 'automind', 'dsagent', 'deepanalyze']:
+                # Nested dictionary format (v1.9.0+)
+                if isinstance(value, dict):
+                    workflow_specific_params[key] = value
+            else:
+                remaining_kwargs[key] = value
+
+        # Process workflow-specific nested parameters
+        for wf_name, wf_params in workflow_specific_params.items():
+            if wf_name == 'autokaggle':
+                # AutoKaggle parameters → agent.autokaggle
+                config.setdefault("agent", {})["autokaggle"] = wf_params
+            elif wf_name == 'aide':
+                # AIDE parameters → agent.search
+                config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
+            elif wf_name in ['automind', 'dsagent']:
+                # AutoMind/DS-Agent parameters → workflow.params
+                config.setdefault("workflow", {}).setdefault("params", {}).update(wf_params)
+            elif wf_name == 'data_interpreter':
+                # DataInterpreter parameters → agent.search (for max_iterations)
+                config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
+            elif wf_name == 'deepanalyze':
+                # DeepAnalyze parameters → agent.search
+                config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
+
+        # ========== Common parameters ==========
         if workflow is not None:
             config.setdefault("workflow", {})["name"] = workflow
 
@@ -259,9 +305,25 @@ class ConfigBuilder:
         if keep_workspace_on_failure is not None:
             config.setdefault("run", {})["keep_workspace_on_failure"] = keep_workspace_on_failure
 
-        # Additional kwargs are added to run.parameters
-        if kwargs:
-            config.setdefault("run", {}).setdefault("parameters", {}).update(kwargs)
+        # ========== Legacy flat parameters (backward compatible) ==========
+        if remaining_kwargs:
+            # Handle legacy flat format: autokaggle_max_attempts_per_phase
+            for key, value in remaining_kwargs.items():
+                if key.startswith('autokaggle_'):
+                    param_name = key.replace('autokaggle_', '')
+                    config.setdefault("agent", {}).setdefault("autokaggle", {})[param_name] = value
+                elif key.startswith('aide_'):
+                    param_name = key.replace('aide_', '')
+                    config.setdefault("agent", {}).setdefault("search", {})[param_name] = value
+                elif key.startswith('automind_'):
+                    param_name = key.replace('automind_', '')
+                    config.setdefault("workflow", {}).setdefault("params", {})[param_name] = value
+                elif key.startswith('dsagent_'):
+                    param_name = key.replace('dsagent_', '')
+                    config.setdefault("workflow", {}).setdefault("params", {})[param_name] = value
+                else:
+                    # Other parameters → run.parameters
+                    config.setdefault("run", {}).setdefault("parameters", {})[key] = value
 
         return config
 

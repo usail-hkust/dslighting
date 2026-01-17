@@ -9,6 +9,8 @@
 - **QUICK_GUIDE.md** - 快速上手指南（4 种使用方式）
 - **API_GUIDE.md** - 完整 API 使用指南
 - **DATA_TASK_MODULE.md** - 数据与任务模块详解
+- **AGENT_PARAMETER_FLOW.md** - Agent 参数传输完整链路（6 种 Workflow 详解）
+- **WORKFLOW_QUICK_REFERENCE.md** - Workflow 快速参考（速查表）
 
 ### 发布说明
 - **RELEASE_NOTES_v1.8.2.md** - v1.8.2 发布说明
