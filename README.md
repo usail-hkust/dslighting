@@ -176,7 +176,7 @@ agent = dslighting.Agent(workflow="aide", model="gpt-4o-mini", temperature=0.7)
 result = agent.run(data)
 ```
 
-📖 **详细文档**：[Python API 快速上手指南](docs/python-api-guide.md) | [API 完整文档](dslighting/README.md)
+📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/api/getting-started.html
 
 > ✨ **特点**：
 > - 🚀 **超简单**：1-3 行代码完成复杂任务
