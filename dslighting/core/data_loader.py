@@ -22,6 +22,9 @@ class LoadedData:
     """
     Container for loaded data with metadata.
 
+    This class provides a structured view of the data that matches what
+    the DSLighting Agent sees - file structure, schema, and metadata.
+
     Attributes:
         source: Original data source (path, DataFrame, etc.)
         data_dir: Data directory path (for file-based sources)
@@ -40,6 +43,144 @@ class LoadedData:
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = {}
+
+    def __repr__(self) -> str:
+        """Return a concise representation of loaded data."""
+        if self.task_id:
+            return f"LoadedData(task_id='{self.task_id}', task_type='{self.get_task_type()}')"
+        elif self.data_dir:
+            return f"LoadedData(data_dir='{self.data_dir.name}', task_type='{self.get_task_type()}')"
+        else:
+            return f"LoadedData(task_type='{self.get_task_type()}')"
+
+    def show(self) -> str:
+        """
+        Display detailed data structure and schema information.
+
+        This shows what the Agent sees - file structure, data schema,
+        and task information. Use this to understand your data before
+        running the Agent.
+
+        Returns:
+            Formatted string with data structure and schema
+
+        Example:
+            >>> data = dslighting.load_data("data/competitions/bike-sharing-demand")
+            >>> print(data.show())
+        """
+        lines = []
+        lines.append("=" * 80)
+        lines.append("DSLighting Data Overview")
+        lines.append("=" * 80)
+        lines.append("")
+
+        # Task Information
+        lines.append("## Task Information")
+        lines.append(f"  Task ID:          {self.task_id or 'N/A'}")
+        lines.append(f"  Task Type:        {self.get_task_type()}")
+        lines.append(f"  Task Mode:        {self.task_detection.task_mode if self.task_detection else 'N/A'}")
+        lines.append(f"  Recommended:      {self.get_recommended_workflow()} workflow")
+        lines.append("")
+
+        # Data Directory
+        if self.data_dir:
+            lines.append("## Data Directory")
+            lines.append(f"  Path: {self.data_dir}")
+
+            # Show MLE structure
+            prepared_dir = self.data_dir / "prepared"
+            if prepared_dir.exists():
+                lines.append(f"  Structure: MLE-Bench format")
+                public_dir = prepared_dir / "public"
+                private_dir = prepared_dir / "private"
+
+                if public_dir.exists():
+                    lines.append(f"  Public dir:  {public_dir}")
+                    lines.append(self._analyze_directory(public_dir, "Public Data"))
+                else:
+                    lines.append(f"  Public dir:  Not found")
+
+                if private_dir.exists():
+                    lines.append(f"  Private dir: {private_dir}")
+            else:
+                # Show raw structure
+                lines.append(f"  Structure: Standard format")
+                lines.append(self._analyze_directory(self.data_dir, "Data Files"))
+            lines.append("")
+
+        # Description
+        description = self.get_description()
+        if description:
+            lines.append("## Task Description")
+            # Truncate long descriptions
+            if len(description) > 500:
+                description = description[:500] + "...\n[Description truncated, use get_description() to see full]"
+            lines.append(f"  {description}")
+            lines.append("")
+
+        # I/O Instructions
+        io_instructions = self.get_io_instructions()
+        if io_instructions:
+            lines.append("## I/O Requirements")
+            instructions = io_instructions.strip().split("\n")
+            for line in instructions[:10]:  # Show first 10 lines
+                lines.append(f"  {line}")
+            if len(instructions) > 10:
+                lines.append(f"  [... {len(instructions) - 10} more lines, use get_io_instructions() to see full]")
+            lines.append("")
+
+        lines.append("=" * 80)
+        lines.append("Use .get_description() for full task description")
+        lines.append("Use .get_io_instructions() for full I/O instructions")
+        lines.append("Use agent.run(data) to run the agent on this data")
+        lines.append("=" * 80)
+
+        return "\n".join(lines)
+
+    def _analyze_directory(self, directory: Path, title: str) -> str:
+        """Analyze directory and return schema information."""
+        lines = []
+        lines.append(f"\n  ### {title}")
+
+        try:
+            # List files
+            files = sorted([f for f in directory.iterdir() if f.is_file()])
+
+            if not files:
+                lines.append("    No files found")
+                return "\n".join(lines)
+
+            for file_path in files:
+                if not file_path.suffix.lower() in ['.csv', '.tsv', '.parquet', '.json']:
+                    continue
+
+                lines.append(f"\n  📄 {file_path.name}")
+
+                # Analyze CSV/TSV files
+                if file_path.suffix.lower() in ['.csv', '.tsv']:
+                    try:
+                        df = pd.read_csv(file_path, nrows=0)  # Read only header
+
+                        # Show columns
+                        lines.append(f"     Columns ({len(df.columns)}): {', '.join(list(df.columns[:5]))}")
+                        if len(df.columns) > 5:
+                            lines.append(f"                ... and {len(df.columns) - 5} more")
+
+                        # Show types for first few columns
+                        lines.append(f"     Types:")
+                        for col in list(df.columns)[:5]:
+                            dtype = str(df[col].dtype)
+                            lines.append(f"       - {col}: {dtype}")
+                        if len(df.columns) > 5:
+                            lines.append(f"       ... and {len(df.columns) - 5} more")
+
+                    except Exception as e:
+                        lines.append(f"     [Error reading file: {e}]")
+
+        except Exception as e:
+            lines.append(f"  [Error analyzing directory: {e}]")
+
+        return "\n".join(lines)
 
     def get_description(self) -> str:
         """Get task description."""

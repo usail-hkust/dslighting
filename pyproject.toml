@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.4.0"
+version = "1.8.1"
 description = "Simplified API for Data Science Agent Automation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,6 +38,13 @@ dependencies = [
     "transformers>=4.30.0",
     "torch>=2.0.0",
     "scikit-learn>=1.0.0",
+    # MLE-Bench dependencies (for grading)
+    "diskcache",
+    "tenacity",
+    "appdirs",
+    "pyyaml",
+    "tqdm",
+    "py7zr",
     # Notebook support
     "nbformat",
     "nbclient",
@@ -80,11 +87,13 @@ dslighting-detect = "dslighting_cli:main"
 
 # Package discovery
 [tool.setuptools.packages.find]
-include = ["dslighting*", "dsat*"]
+include = ["dslighting*", "dsat*", "mlebench*"]
 
 [tool.setuptools.package-data]
-dslighting = ["*.yaml", "*.json"]
+dslighting = ["*.yaml", "*.json", "datasets/**/*.csv", "registry/**/*.yaml", "registry/**/*.md", "registry/**/*.py"]
 dsat = ["*.yaml", "*.json", "configs/*.yaml", "workflows/*.yaml"]
+# Include mlebench for grading functionality
+mlebench = ["*.py", "*.yaml", "*.json", "*.md"]
 
 # Black configuration
 [tool.black]

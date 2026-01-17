@@ -203,96 +203,154 @@ class Agent:
                   If not provided, use task_id + data_dir pattern.
             task_id: Task/Competition identifier (e.g., "bike-sharing-demand").
                      Required when using MLE benchmark format.
-            data_dir: Base data directory containing competition data.
-                     Default: "data/competitions"
+            data_dir: Direct path to task data directory (must contain prepared/ folder).
+                     Example: "/path/to/data/competitions/my-task"
+                     If not provided, will use global config from setup().
             output_path: Custom output path for results
             description: Optional task description (overrides detected)
-            registry_dir: Path to competition registry directory for grading.
-                          Example: "/path/to/mlebench/competitions"
+            registry_dir: Direct path to task registry directory (must contain config.yaml).
+                          Example: "/path/to/registry/my-task"
+                          If not provided, will use global config from setup().
             **kwargs: Additional task parameters
 
         Returns:
             AgentResult with output, metrics, and metadata
 
         Examples:
-            >>> # Method 1: Recommended - using task_id + data_dir
+            >>> # Method 1: Using global setup (recommended for multiple tasks)
+            >>> import dslighting
+            >>> dslighting.setup(
+            ...     data_parent_dir="/path/to/data/competitions",
+            ...     registry_parent_dir="/path/to/registry"
+            ... )
+            >>>
+            >>> agent = dslighting.Agent()
+            >>> result = agent.run(task_id="bike-sharing-demand")
+
+            >>> # Method 2: Using direct paths (explicit and clear)
             >>> result = agent.run(
             ...     task_id="bike-sharing-demand",
-            ...     data_dir="data/competitions"
+            ...     data_dir="/path/to/data/competitions/bike-sharing-demand",
+            ...     registry_dir="/path/to/registry/bike-sharing-demand"
             ... )
 
-            >>> # Method 2: With custom registry for grading
-            >>> result = agent.run(
-            ...     data="data/competitions/bike-sharing-demand",
-            ...     registry_dir="/path/to/mlebench/competitions"
-            ... )
+            >>> # Method 3: Using built-in dataset
+            >>> result = agent.run(task_id="bike-sharing-demand")
 
-            >>> # Method 3: Using DataFrame
+            >>> # Method 4: Using DataFrame
             >>> result = agent.run(df, description="Predict price")
         """
         # Start timing
         start_time = time.time()
 
         try:
-            # ========== New simplified API: task_id + data_dir ==========
-            if task_id:
-                # Set default data_dir if not provided
-                if data_dir is None:
-                    data_dir = "data/competitions"
+            # ========== Path handling: Two clear modes ==========
 
-                self.logger.info(f"Using MLE benchmark format")
-                self.logger.info(f"  task_id: {task_id}")
-                self.logger.info(f"  data_dir: {data_dir}")
+            # Mode 1: Built-in dataset (only task_id provided, no data_dir)
+            if task_id and data is None and data_dir is None:
+                try:
+                    import dslighting.datasets
+                    # Convert "bike-sharing-demand" to "load_bike_sharing_demand"
+                    load_func_name = f'load_{task_id.replace("-", "_")}'
+                    load_func = getattr(dslighting.datasets, load_func_name, None)
 
-                # Resolve paths
-                data_dir_path = Path(data_dir).resolve()
-                competition_dir = data_dir_path / task_id
+                    if load_func:
+                        self.logger.info(f"Using built-in dataset: {task_id}")
+                        loaded_info = load_func()
+                        # Load the built-in data
+                        loader = DataLoader()
+                        loaded_data = loader.load(loaded_info['data_dir'])
+                        # Skip to execution (loaded_data is ready)
+                        data = loaded_data
+                        task_id = None  # Already extracted from loaded_data
+                        data_dir = None
+                except (AttributeError, FileNotFoundError):
+                    # Not a built-in dataset, check global config
+                    pass
 
-                # Check if task exists in benchmarks registry
-                benchmark_dir = self._get_default_benchmark_dir()
-                task_registry = benchmark_dir / task_id
+            # Mode 2: Use global config if no data_dir provided
+            if task_id and data is None and data_dir is None:
+                from dslighting.core.global_config import get_global_config
+                config = get_global_config()
+                data_dir_from_config, registry_dir_from_config = config.get_task_paths(task_id)
 
-                if not task_registry.exists():
-                    self.logger.warning(
-                        f"Task '{task_id}' not found in benchmark registry: {benchmark_dir}"
-                    )
-                    self.logger.warning(
-                        f"This means the task cannot be auto-graded. "
-                        f"To enable grading, register the task at: {task_registry}"
-                    )
-                else:
-                    self.logger.info(f"  ✓ Task registered: {task_registry}")
+                if data_dir_from_config is not None:
+                    self.logger.info(f"Using global config for task: {task_id}")
+                    self.logger.info(f"  Data directory: {data_dir_from_config}")
+                    if registry_dir_from_config is not None:
+                        self.logger.info(f"  Registry directory: {registry_dir_from_config}")
+                        # Use registry from config if not explicitly provided
+                        if registry_dir is None:
+                            registry_dir = str(registry_dir_from_config)
 
-                # Check if data exists
-                if not competition_dir.exists():
-                    raise FileNotFoundError(
-                        f"Data directory not found: {competition_dir}\n"
-                        f"Please ensure data is prepared at: {competition_dir}/prepared/"
-                    )
-
-                self.logger.info(f"  Data directory: {competition_dir}")
-
-                # Load data
-                loader = DataLoader()
-                loaded_data = loader.load(competition_dir)
-
-            # ========== Recommended API: LoadedData with task_id ==========
-            elif data is not None:
-                # Load data if not already loaded
-                if not isinstance(data, LoadedData):
+                    # Load data from configured path
                     loader = DataLoader()
-                    loaded_data = loader.load(data)
+                    loaded_data = loader.load(data_dir_from_config, registry_dir=registry_dir)
+                    data = loaded_data
+                    task_id = None  # Already extracted from loaded_data
+                    data_dir = None
                 else:
-                    loaded_data = data
+                    raise ValueError(
+                        f"No data directory provided and no global config found.\n"
+                        f"Either:\n"
+                        f"  1. Provide data_dir explicitly: agent.run(task_id='{task_id}', data_dir='/path/to/{task_id}')\n"
+                        f"  2. Set up global config: dslighting.setup(data_parent_dir='/path/to/data/competitions')"
+                    )
 
-                # Extract task_id from loaded_data if available
-                if loaded_data.task_id:
-                    # Use task_id from loaded_data for benchmark initialization
-                    extracted_task_id = loaded_data.task_id
-                    self.logger.info(f"Detected task_id from data: {extracted_task_id}")
+            # Mode 3: Direct path provided (data_dir is explicit)
+            if task_id and data is None and data_dir is not None:
+                data_dir_path = Path(data_dir).resolve()
 
-                    # Override task_id parameter for benchmark initialization
-                    task_id = extracted_task_id
+                if not data_dir_path.exists():
+                    raise FileNotFoundError(
+                        f"Data directory not found: {data_dir_path}\n"
+                        f"Please ensure the path exists and contains prepared/ folder."
+                    )
+
+                # Verify it's a task directory (has prepared/public)
+                if not (data_dir_path / "prepared" / "public").exists():
+                    raise ValueError(
+                        f"Invalid data directory: {data_dir_path}\n"
+                        f"Expected structure: {data_dir_path}/prepared/public/train.csv\n"
+                        f"Please provide the direct task directory, not the parent directory."
+                    )
+
+                self.logger.info(f"Using direct task path: {data_dir_path}")
+                if registry_dir:
+                    self.logger.info(f"  Registry directory: {registry_dir}")
+
+                # Load data with explicit paths
+                loader = DataLoader()
+                loaded_data = loader.load(data_dir_path, registry_dir=registry_dir)
+                data = loaded_data
+                task_id = None  # Already extracted from loaded_data
+                data_dir = None
+
+            # ========== Normal handling for remaining cases ==========
+            if data is None:
+                raise ValueError("Either 'data' or 'task_id' must be provided")
+
+            # ========== Load data if needed ==========
+            if not isinstance(data, LoadedData):
+                print(f"[DEBUG] Loading data...")
+                loader = DataLoader()
+                loaded_data = loader.load(data)
+                print(f"[DEBUG] Data loaded, task_id={loaded_data.task_id}")
+            else:
+                print(f"[DEBUG] Data is already LoadedData")
+                loaded_data = data
+                print(f"[DEBUG] LoadedData has task_id={loaded_data.task_id}")
+
+            # Extract task_id from loaded_data if available
+            if loaded_data.task_id:
+                # Use task_id from loaded_data for benchmark initialization
+                extracted_task_id = loaded_data.task_id
+                self.logger.info(f"Detected task_id from data: {extracted_task_id}")
+                print(f"[DEBUG] Extracted task_id={extracted_task_id}, overriding task_id parameter")
+
+                # Override task_id parameter for benchmark initialization
+                task_id = extracted_task_id
+                print(f"[DEBUG] task_id is now set to: {task_id}")
             else:
                 raise ValueError(
                     "Either 'task_id' or 'data' must be provided. "
@@ -316,10 +374,17 @@ class Agent:
             )
 
             # Initialize benchmark for MLE tasks (for grading)
+            print(f"[DEBUG 1] Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
+            self.logger.info(f"[DEBUG] Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
+
             if task_id and loaded_data.get_task_type() == "kaggle":
+                print(f"[DEBUG 2] Condition met: task_id={task_id}, task_type=kaggle")
+                self.logger.info(f"[DEBUG] Condition met: initializing benchmark")
                 try:
+                    print(f"[DEBUG 3] Attempting to import mlebench...")
                     from mlebench.grade import grade_csv
                     from mlebench.registry import Registry
+                    print(f"[DEBUG 4] mlebench imported successfully")
 
                     # Resolve data_dir - prioritize loaded_data.data_dir
                     if loaded_data.data_dir is not None:
@@ -334,84 +399,205 @@ class Agent:
                     self.logger.info(f"Initializing MLE-Bench grading for: {task_id}")
                     self.logger.info(f"  Data directory: {data_dir_path}")
 
-                    # Check if user provided registry_dir in loaded_data
-                    if loaded_data.registry_dir:
-                        self.logger.info(f"  Registry directory (from loaded_data): {loaded_data.registry_dir}")
-                    else:
-                        self.logger.info(f"  Registry directory: auto-detected from data directory structure")
+                    # Try to use built-in registry first
+                    import dslighting
+                    built_in_registry_dir = Path(dslighting.__file__).parent / "registry"
+                    print(f"[DEBUG 5] Built-in registry dir: {built_in_registry_dir}, exists: {built_in_registry_dir.exists()}")
 
-                    # Validate data directory exists
-                    if not data_dir_path.exists():
-                        self.logger.warning(f"⚠️  Data directory does NOT exist: {data_dir_path}")
-                        self.logger.warning(f"   Please ensure competition data is downloaded and prepared.")
-                        self.logger.warning(f"   Grading will be skipped.")
-                    else:
-                        # Check if competition directory exists
-                        competition_dir = data_dir_path / task_id
-                        if not competition_dir.exists():
-                            self.logger.warning(f"⚠️  Competition directory NOT found: {competition_dir}")
-                            self.logger.warning(f"   Task '{task_id}' data not found in {data_dir_path}")
-                            self.logger.warning(f"   Available competitions: {list([d.name for d in data_dir_path.iterdir() if d.is_dir()])}")
-                            self.logger.warning(f"   Grading will be skipped.")
+                    registry_dir = loaded_data.registry_dir
+                    print(f"[DEBUG 6] loaded_data.registry_dir: {registry_dir}")
+                    if not registry_dir or not Path(registry_dir).exists():
+                        print(f"[DEBUG 7] Registry dir not valid, checking built-in...")
+                        if built_in_registry_dir.exists():
+                            registry_dir = built_in_registry_dir
+                            self.logger.info(f"  Using built-in registry: {registry_dir}")
+                            print(f"[DEBUG 8] Using built-in registry: {registry_dir}")
                         else:
-                            # Check if prepared data exists
-                            prepared_dir = competition_dir / "prepared"
-                            private_dir = prepared_dir / "private"
-                            public_dir = prepared_dir / "public"
+                            self.logger.warning(f"⚠️  Registry directory not found")
+                            self.logger.warning(f"  Grading will be skipped.")
+                            print(f"[DEBUG 8a] Built-in registry not found, skipping grading")
+                    else:
+                        self.logger.info(f"  Registry directory (from loaded_data): {registry_dir}")
+                        print(f"[DEBUG 8b] Using loaded_data registry: {registry_dir}")
 
-                            if not prepared_dir.exists():
-                                self.logger.warning(f"⚠️  Prepared data NOT found: {prepared_dir}")
-                                self.logger.warning(f"   Competition data exists but is not prepared.")
-                                self.logger.warning(f"   Expected: {prepared_dir}")
-                                self.logger.warning(f"   Grading will be skipped.")
-                            elif not private_dir.exists():
-                                self.logger.warning(f"⚠️  Private directory NOT found: {private_dir}")
-                                self.logger.warning(f"   Required for grading but does not exist.")
-                                self.logger.warning(f"   This is unusual if competition data was prepared correctly.")
-                                self.logger.warning(f"   Grading will be skipped.")
-                            else:
-                                # All checks passed - initialize benchmark
-                                # IMPORTANT: Registry needs data_dir pointing to prepared data base
-                                # If user provided registry_dir, use it for config.yaml lookup
-                                registry_kwargs = {"data_dir": data_dir_path}
-                                if loaded_data.registry_dir:
-                                    registry_kwargs["registry_dir"] = loaded_data.registry_dir
+                    # Check if registry_dir exists
+                    if not registry_dir or not Path(registry_dir).exists():
+                        self.logger.warning(f"⚠️  Registry directory not available: {registry_dir}")
+                        self.logger.warning(f"   Grading will be skipped.")
+                        print(f"[DEBUG 9] Registry not available, skipping grading")
+                    else:
+                        print(f"[DEBUG 10] Registry available, proceeding with initialization")
+                        # Initialize benchmark with registry (keep as Path objects)
+                        registry_dir_path = Path(registry_dir) if not isinstance(registry_dir, Path) else registry_dir
+                        registry_kwargs = {"data_dir": data_dir_path, "registry_dir": registry_dir_path}
 
-                                custom_registry = Registry(**registry_kwargs)
+                        try:
+                            print(f"[DEBUG 11] Creating Registry with kwargs: {registry_kwargs}")
+                            custom_registry = Registry(**registry_kwargs)
+                            print(f"[DEBUG 12] Registry created successfully")
 
-                                # Log registry configuration
-                                self.logger.info(f"  Registry config:")
-                                self.logger.info(f"    data_dir: {data_dir_path}")
-                                if loaded_data.registry_dir:
-                                    self.logger.info(f"    config_dir (auto): {loaded_data.registry_dir}")
-                                self.logger.info(f"    expected private_dir: {private_dir}")
+                            # Log registry configuration
+                            self.logger.info(f"  Registry config:")
+                            self.logger.info(f"    data_dir: {data_dir_path}")
+                            self.logger.info(f"    registry_dir: {registry_dir}")
 
-                                # Create simple wrapper class
-                                class SimpleMLEBenchmark:
-                                    def __init__(self, registry_instance):
-                                        self.registry = registry_instance
+                            # Create simple wrapper class
+                            class SimpleMLEBenchmark:
+                                def __init__(self, registry_instance, logger, registry_dir, data_dir, task_id):
+                                    self.registry = registry_instance
+                                    self.problems = [{"competition_id": task_id}]
+                                    self.logger = logger
+                                    self.registry_dir = registry_dir
+                                    self.data_dir = data_dir
+                                    self.task_id = task_id
 
-                                    async def grade(self, submission_path):
-                                        """Grade submission using custom registry."""
-                                        competition = self.registry.get_competition(task_id)
+                                async def grade(self, submission_path):
+                                    """Grade submission using custom registry."""
+                                    try:
+                                        # Read config directly from registry
+                                        import yaml
+                                        config_path = self.registry_dir / self.task_id / "config.yaml"
+
+                                        if not config_path.exists():
+                                            self.logger.warning(f"  Config not found: {config_path}")
+                                            return 0.0
+
+                                        with open(config_path) as f:
+                                            config = yaml.safe_load(f)
+
+                                        # Resolve paths relative to data_dir (from config.yaml)
+                                        # self.data_dir is the parent directory (e.g., /path/to/competitions)
+                                        # config["dataset"]["answers"] is relative path like "bike-sharing-demand/prepared/private/test_answer.csv
+                                        answers_rel_path = config.get("dataset", {}).get("answers", "")
+                                        answers_path = self.data_dir / answers_rel_path
+
+                                        # **MANDATORY**: Check for prepared/public and prepared/private structure
+                                        competition_dir = self.data_dir / self.task_id
+                                        prepared_public_dir = competition_dir / "prepared" / "public"
+                                        prepared_private_dir = competition_dir / "prepared" / "private"
+
+                                        if not prepared_public_dir.exists():
+                                            self.logger.error(f"  ❌ Required directory not found: {prepared_public_dir}")
+                                            self.logger.error(f"  ❌ Tasks must have prepared/public/ directory structure")
+                                            self.logger.error(f"  See: https://github.com/usail-hkust/dslighting for setup instructions")
+                                            return 0.0
+
+                                        if not prepared_private_dir.exists():
+                                            self.logger.error(f"  ❌ Required directory not found: {prepared_private_dir}")
+                                            self.logger.error(f"  ❌ Tasks must have prepared/private/ directory structure")
+                                            self.logger.error(f"  See: https://github.com/usail-hkust/dslighting for setup instructions")
+                                            return 0.0
+
+                                        self.logger.info(f"  ✓ Required structure verified:")
+                                        self.logger.info(f"    - prepared/public: {prepared_public_dir}")
+                                        self.logger.info(f"    - prepared/private: {prepared_private_dir}")
+
+                                        if not answers_path.exists():
+                                            self.logger.warning(f"  Answers file not found: {answers_path}")
+                                            self.logger.warning(f"  Looking for: {answers_path}")
+                                            return 0.0
+
+                                        self.logger.info(f"  ✓ Found answers file: {answers_path}")
+
+                                        # Import the actual Competition class from mlebench
+                                        from mlebench.registry import Competition
+                                        from mlebench.grade_helpers import Grader
+
+                                        # Load grader
+                                        grader_config = config.get("grader", {})
+                                        grader_name = grader_config.get("name", "rmsle")
+
+                                        # Import grade function if specified
+                                        grade_fn = None
+                                        if "grade_fn" in grader_config:
+                                            # Parse grade_fn format: mlebench.competitions.bike_sharing_demand.grade:grade
+                                            fn_str = grader_config["grade_fn"]
+                                            if ":" in fn_str:
+                                                module_path, fn_name = fn_str.rsplit(":", 1)
+                                                # Convert to file import if needed
+                                                if not module_path.startswith("file:"):
+                                                    fn_file = self.registry_dir / self.task_id / "grade.py"
+                                                    if fn_file.exists():
+                                                        fn_str = f"file:{fn_file}:{fn_name}"
+                                                else:
+                                                    # Try to import from mlebench
+                                                    try:
+                                                        import importlib
+                                                        importlib.import_module(module_path)
+                                                    except:
+                                                        pass
+
+                                        # Create a simple grader
+                                        if grade_fn or fn_str:
+                                            grader = Grader(
+                                                name=grader_name,
+                                                grade_fn=fn_str if fn_str else grade_fn,
+                                            )
+                                        else:
+                                            # Default RMSLE grader
+                                            grader = Grader(name="rmsle", grade_fn=None)
+
+                                        # Resolve paths - use actual prepared directories (already verified above)
+                                        raw_dir = competition_dir / "raw"
+                                        checksums = competition_dir / "checksums.txt"
+                                        leaderboard = competition_dir / "leaderboard.csv"
+                                        # Use the actual prepared directories that we verified exist
+                                        private_dir = prepared_private_dir
+                                        public_dir = prepared_public_dir
+
+                                        # Create placeholder prepare_fn
+                                        def dummy_prepare_fn(a, b, c):
+                                            return private_dir
+
+                                        # Create actual Competition object with all required fields
+                                        simple_comp = Competition(
+                                            id=config["id"],
+                                            name=config["name"],
+                                            description=config.get("description", ""),
+                                            grader=grader,
+                                            answers=answers_path,
+                                            gold_submission=answers_path,  # Use same as answers for grading
+                                            sample_submission=public_dir / "sampleSubmission.csv",
+                                            competition_type=config.get("competition_type", "standard"),
+                                            prepare_fn=dummy_prepare_fn,
+                                            raw_dir=raw_dir,
+                                            private_dir=private_dir,
+                                            public_dir=public_dir,
+                                            checksums=checksums,
+                                            leaderboard=leaderboard,
+                                        )
+
+                                        # Grade using mlebench's grade_csv
                                         report = grade_csv(
                                             submission_path,
-                                            competition,
+                                            simple_comp,
                                         )
                                         # Return the score (float), not the entire report
-                                        return report.score if report.score is not None else 0.0
+                                        score = report.score if report.score is not None else 0.0
+                                        self.logger.info(f"  Grading result: {score}")
+                                        return score
+                                    except Exception as e:
+                                        self.logger.warning(f"  Grading failed: {e}")
+                                        import traceback
+                                        self.logger.warning(f"  Traceback: {traceback.format_exc()}")
+                                        return 0.0
 
-                                benchmark = SimpleMLEBenchmark(custom_registry)
-                                runner = self.get_runner()
-                                runner.benchmark = benchmark
-                                self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
+                            benchmark = SimpleMLEBenchmark(custom_registry, self.logger, registry_dir_path, data_dir_path, task_id)
+                            runner = self.get_runner()
+                            runner.benchmark = benchmark
+                            print(f"[DEBUG 13] ✓ Benchmark set successfully for task: {task_id}")
+                            self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
+                        except Exception as e:
+                            print(f"[DEBUG ERROR] Benchmark initialization failed: {e}")
+                            self.logger.warning(f"⚠️  Benchmark initialization failed: {e}")
+                            self.logger.warning(f"   Grading will be skipped.")
 
                 except ImportError as e:
                     self.logger.warning(f"MLE-Bench import failed: {e}")
                     self.logger.warning("Grading will be skipped.")
                 except Exception as e:
                     self.logger.warning(f"Benchmark initialization failed: {e}")
-                    self.logger.warning("Grading will be skipped")
+                    self.logger.warning(f"Grading will be skipped: {e}")
 
             # Execute task (async wrapper)
             result = asyncio.run(self._execute_task(task, loaded_data))
@@ -640,7 +826,10 @@ class Agent:
         Get the default benchmark registry directory.
 
         This is where task registration files (grade.py, description.md, etc.) are stored.
-        Default: benchmarks/mlebench/competitions/
+        Priority:
+        1. Built-in registry in dslighting package (dslighting/registry/)
+        2. Local benchmarks/mlebench/competitions/
+        3. Config-provided benchmark_dir
 
         Returns:
             Path to benchmark registry directory
@@ -653,9 +842,21 @@ class Agent:
             if hasattr(run_config, 'parameters') and run_config.parameters:
                 benchmark_dir = run_config.parameters.get('benchmark_dir')
 
-        # Fallback to default benchmark directory
+        # Fallback 1: Try built-in registry in dslighting package
         if benchmark_dir is None:
-            # Use relative path from current working directory
+            try:
+                import dslighting
+                dslighting_path = Path(dslighting.__file__).parent
+                built_in_registry = dslighting_path / "registry"
+
+                if built_in_registry.exists():
+                    self.logger.info(f"Using built-in registry: {built_in_registry}")
+                    return built_in_registry.resolve()
+            except Exception as e:
+                self.logger.debug(f"Could not access built-in registry: {e}")
+
+        # Fallback 2: Use relative path from current working directory
+        if benchmark_dir is None:
             # Default: benchmarks/mlebench/competitions/
             benchmark_dir = "benchmarks/mlebench/competitions"
 

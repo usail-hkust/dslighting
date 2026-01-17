@@ -162,18 +162,21 @@ pip install -e .
 **一行代码运行数据科学任务**：
 
 ```python
+# run_builtin.py
+from dotenv import load_dotenv
+load_dotenv()
+
 import dslighting
 
-# 快速运行
-result = dslighting.run_agent("data/competitions/bike-sharing-demand")
+def main():
+    # 无需配置，直接使用内置数据
+    result = dslighting.run_agent(task_id="bike-sharing-demand")
 
-# 查看结果
-print(f"得分: {result.score}, 成本: ${result.cost:.4f}")
+    print(f"✅ 任务完成！")
+    print(f"结果: {result}")
 
-# 或者更多控制
-data = dslighting.load_data("data/competitions/bike-sharing-demand")
-agent = dslighting.Agent(workflow="aide", model="gpt-4o-mini", temperature=0.7)
-result = agent.run(data)
+if __name__ == "__main__":
+    main()
 ```
 
 📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/api/getting-started.html
