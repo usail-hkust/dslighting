@@ -1,0 +1,16 @@
+id: dabench-376-feature-engineering-dataset
+name: DABench Task - 3. Perform feature engineering on the dataset by c
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-376-feature-engineering-dataset/description.md
+
+dataset:
+  answers: dabench-376-feature-engineering-dataset/prepared/private/answer.csv
+  sample_submission: dabench-376-feature-engineering-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-376-feature-engineering-dataset.grade:grade
+
+preparer: mlebench.competitions.dabench-376-feature-engineering-dataset.prepare:prepare

@@ -1,0 +1,8 @@
+description: description.md
+id: mcm_2024_c
+metric: Accuracy
+name: Wimbledon Point Outcome Prediction
+private_dir: mcm_2024_c/prepared/private
+public_dir: mcm_2024_c/prepared/public
+raw_dir: mcm_2024_c/raw
+task_type: Binary Classification

@@ -1,0 +1,16 @@
+id: dabench-757-there-outliers-observation
+name: DABench Task - 3. Are there any outliers in the observation value
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-757-there-outliers-observation/description.md
+
+dataset:
+  answers: dabench-757-there-outliers-observation/prepared/private/answer.csv
+  sample_submission: dabench-757-there-outliers-observation/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-757-there-outliers-observation.grade:grade
+
+preparer: mlebench.competitions.dabench-757-there-outliers-observation.prepare:prepare

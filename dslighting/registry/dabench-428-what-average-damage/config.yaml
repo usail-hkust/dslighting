@@ -1,0 +1,16 @@
+id: dabench-428-what-average-damage
+name: DABench Task - 1. What is the average damage in USD caused by sto
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-428-what-average-damage/description.md
+
+dataset:
+  answers: dabench-428-what-average-damage/prepared/private/answer.csv
+  sample_submission: dabench-428-what-average-damage/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-428-what-average-damage.grade:grade
+
+preparer: mlebench.competitions.dabench-428-what-average-damage.prepare:prepare

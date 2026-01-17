@@ -1,0 +1,16 @@
+id: dabench-449-what-distribution-wind
+name: DABench Task - 1. What is the distribution of wind speeds (WINDSP
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-449-what-distribution-wind/description.md
+
+dataset:
+  answers: dabench-449-what-distribution-wind/prepared/private/answer.csv
+  sample_submission: dabench-449-what-distribution-wind/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-449-what-distribution-wind.grade:grade
+
+preparer: mlebench.competitions.dabench-449-what-distribution-wind.prepare:prepare

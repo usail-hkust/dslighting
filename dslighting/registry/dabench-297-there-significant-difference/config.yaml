@@ -1,0 +1,16 @@
+id: dabench-297-there-significant-difference
+name: DABench Task - 1. Is there a significant difference in the mean v
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-297-there-significant-difference/description.md
+
+dataset:
+  answers: dabench-297-there-significant-difference/prepared/private/answer.csv
+  sample_submission: dabench-297-there-significant-difference/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-297-there-significant-difference.grade:grade
+
+preparer: mlebench.competitions.dabench-297-there-significant-difference.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-738-distribution-column-credit
+name: DABench Task - Check if the distribution of the "Age" column in t
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-738-distribution-column-credit/description.md
+
+dataset:
+  answers: dabench-738-distribution-column-credit/prepared/private/answer.csv
+  sample_submission: dabench-738-distribution-column-credit/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-738-distribution-column-credit.grade:grade
+
+preparer: mlebench.competitions.dabench-738-distribution-column-credit.prepare:prepare

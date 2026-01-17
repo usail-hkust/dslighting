@@ -1,0 +1,16 @@
+id: dabench-521-using-machine-learning
+name: DABench Task - Using machine learning algorithms, build a classif
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-521-using-machine-learning/description.md
+
+dataset:
+  answers: dabench-521-using-machine-learning/prepared/private/answer.csv
+  sample_submission: dabench-521-using-machine-learning/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-521-using-machine-learning.grade:grade
+
+preparer: mlebench.competitions.dabench-521-using-machine-learning.prepare:prepare

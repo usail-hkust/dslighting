@@ -1,0 +1,16 @@
+id: dabench-665-data-preprocessing-filling
+name: DABench Task - Perform data preprocessing by filling the missing 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-665-data-preprocessing-filling/description.md
+
+dataset:
+  answers: dabench-665-data-preprocessing-filling/prepared/private/answer.csv
+  sample_submission: dabench-665-data-preprocessing-filling/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-665-data-preprocessing-filling.grade:grade
+
+preparer: mlebench.competitions.dabench-665-data-preprocessing-filling.prepare:prepare

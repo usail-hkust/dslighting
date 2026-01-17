@@ -1,0 +1,16 @@
+id: dabench-136-distribution-analysis-fare
+name: DABench Task - Perform distribution analysis on the fare paid by 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-136-distribution-analysis-fare/description.md
+
+dataset:
+  answers: dabench-136-distribution-analysis-fare/prepared/private/answer.csv
+  sample_submission: dabench-136-distribution-analysis-fare/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-136-distribution-analysis-fare.grade:grade
+
+preparer: mlebench.competitions.dabench-136-distribution-analysis-fare.prepare:prepare

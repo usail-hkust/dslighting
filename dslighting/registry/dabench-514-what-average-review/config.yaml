@@ -1,0 +1,16 @@
+id: dabench-514-what-average-review
+name: DABench Task - 3. What is the average review count for hotels in 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-514-what-average-review/description.md
+
+dataset:
+  answers: dabench-514-what-average-review/prepared/private/answer.csv
+  sample_submission: dabench-514-what-average-review/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-514-what-average-review.grade:grade
+
+preparer: mlebench.competitions.dabench-514-what-average-review.prepare:prepare

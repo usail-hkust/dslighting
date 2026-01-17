@@ -1,0 +1,16 @@
+id: dabench-423-feature-engineering-given
+name: DABench Task - 2. Perform feature engineering on the given datase
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-423-feature-engineering-given/description.md
+
+dataset:
+  answers: dabench-423-feature-engineering-given/prepared/private/answer.csv
+  sample_submission: dabench-423-feature-engineering-given/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-423-feature-engineering-given.grade:grade
+
+preparer: mlebench.competitions.dabench-423-feature-engineering-given.prepare:prepare

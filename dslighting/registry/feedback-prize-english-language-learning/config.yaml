@@ -1,0 +1,15 @@
+id: feedback-prize-english-language-learning
+name: Feedback Prize - English Language Learning
+competition_type: simple
+awards_medals: false
+description: mlebench/competitions/feedback-prize-english-language-learning/description.md
+
+dataset:
+  answers: feedback-prize-english-language-learning/prepared/private/test.csv
+  sample_submission: feedback-prize-english-language-learning/prepared/public/sample_submission.csv
+
+grader:
+  name: mcrmse
+  grade_fn: mlebench.competitions.feedback_prize_english_language_learning.grade:grade
+
+preparer: mlebench.competitions.feedback_prize_english_language_learning.prepare:prepare

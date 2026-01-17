@@ -1,0 +1,16 @@
+id: dabench-719-mean-median-column
+name: DABench Task - 1. Calculate the mean and median of the 'mpg' colu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-719-mean-median-column/description.md
+
+dataset:
+  answers: dabench-719-mean-median-column/prepared/private/answer.csv
+  sample_submission: dabench-719-mean-median-column/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-719-mean-median-column.grade:grade
+
+preparer: mlebench.competitions.dabench-719-mean-median-column.prepare:prepare

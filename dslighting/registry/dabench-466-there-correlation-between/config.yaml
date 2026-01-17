@@ -1,0 +1,16 @@
+id: dabench-466-there-correlation-between
+name: DABench Task - 3. Is there a correlation between the count of off
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-466-there-correlation-between/description.md
+
+dataset:
+  answers: dabench-466-there-correlation-between/prepared/private/answer.csv
+  sample_submission: dabench-466-there-correlation-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-466-there-correlation-between.grade:grade
+
+preparer: mlebench.competitions.dabench-466-there-correlation-between.prepare:prepare

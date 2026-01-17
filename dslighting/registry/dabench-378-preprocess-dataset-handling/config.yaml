@@ -1,0 +1,16 @@
+id: dabench-378-preprocess-dataset-handling
+name: DABench Task - 2. Preprocess the dataset by handling missing valu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-378-preprocess-dataset-handling/description.md
+
+dataset:
+  answers: dabench-378-preprocess-dataset-handling/prepared/private/answer.csv
+  sample_submission: dabench-378-preprocess-dataset-handling/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-378-preprocess-dataset-handling.grade:grade
+
+preparer: mlebench.competitions.dabench-378-preprocess-dataset-handling.prepare:prepare

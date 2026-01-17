@@ -1,0 +1,16 @@
+id: dabench-250-feature-called-which
+name: DABench Task - Create a new feature called "batting_average_minus
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-250-feature-called-which/description.md
+
+dataset:
+  answers: dabench-250-feature-called-which/prepared/private/answer.csv
+  sample_submission: dabench-250-feature-called-which/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-250-feature-called-which.grade:grade
+
+preparer: mlebench.competitions.dabench-250-feature-called-which.prepare:prepare

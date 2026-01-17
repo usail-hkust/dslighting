@@ -1,0 +1,16 @@
+id: dabench-523-preprocess-dataset-using
+name: DABench Task - Preprocess the dataset by using comprehensive data
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-523-preprocess-dataset-using/description.md
+
+dataset:
+  answers: dabench-523-preprocess-dataset-using/prepared/private/answer.csv
+  sample_submission: dabench-523-preprocess-dataset-using/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-523-preprocess-dataset-using.grade:grade
+
+preparer: mlebench.competitions.dabench-523-preprocess-dataset-using.prepare:prepare

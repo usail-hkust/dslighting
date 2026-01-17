@@ -1,0 +1,16 @@
+id: dabench-352-identify-outliers-fare
+name: DABench Task - Identify any outliers in the Fare column using the
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-352-identify-outliers-fare/description.md
+
+dataset:
+  answers: dabench-352-identify-outliers-fare/prepared/private/answer.csv
+  sample_submission: dabench-352-identify-outliers-fare/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-352-identify-outliers-fare.grade:grade
+
+preparer: mlebench.competitions.dabench-352-identify-outliers-fare.prepare:prepare

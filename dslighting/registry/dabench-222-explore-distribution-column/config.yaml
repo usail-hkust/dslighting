@@ -1,0 +1,16 @@
+id: dabench-222-explore-distribution-column
+name: DABench Task - Explore the distribution of the abs_diffsel column
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-222-explore-distribution-column/description.md
+
+dataset:
+  answers: dabench-222-explore-distribution-column/prepared/private/answer.csv
+  sample_submission: dabench-222-explore-distribution-column/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-222-explore-distribution-column.grade:grade
+
+preparer: mlebench.competitions.dabench-222-explore-distribution-column.prepare:prepare

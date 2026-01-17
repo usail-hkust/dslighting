@@ -1,0 +1,16 @@
+competition_type: open_ended
+dataset:
+  answers: mcm_2024_c_test/raw/answer.csv
+  gold_submission: mcm_2024_c_test/raw/answer.csv
+  sample_submission: mcm_2024_c_test/raw/sampleSubmission.csv
+description: description.md
+grader:
+  grade_fn: file:/Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/mcm_2024_c_test/grade.py:grade
+  name: LLMJudge
+id: mcm_2024_c_test
+metric: LLM Score
+name: Tennis Match Flow and Performance Analysis
+preparer: file:/Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/mcm_2024_c_test/prepare.py:prepare
+private_dir: mcm_2024_c_test/prepared/private
+public_dir: mcm_2024_c_test/prepared/public
+raw_dir: mcm_2024_c_test/raw

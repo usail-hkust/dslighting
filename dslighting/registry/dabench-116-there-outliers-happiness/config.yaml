@@ -1,0 +1,16 @@
+id: dabench-116-there-outliers-happiness
+name: DABench Task - Are there any outliers in the happiness scores of 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-116-there-outliers-happiness/description.md
+
+dataset:
+  answers: dabench-116-there-outliers-happiness/prepared/private/answer.csv
+  sample_submission: dabench-116-there-outliers-happiness/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-116-there-outliers-happiness.grade:grade
+
+preparer: mlebench.competitions.dabench-116-there-outliers-happiness.prepare:prepare

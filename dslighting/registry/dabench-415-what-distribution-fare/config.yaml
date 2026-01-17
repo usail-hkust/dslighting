@@ -1,0 +1,16 @@
+id: dabench-415-what-distribution-fare
+name: DABench Task - What is the distribution of fare paid by male pass
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-415-what-distribution-fare/description.md
+
+dataset:
+  answers: dabench-415-what-distribution-fare/prepared/private/answer.csv
+  sample_submission: dabench-415-what-distribution-fare/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-415-what-distribution-fare.grade:grade
+
+preparer: mlebench.competitions.dabench-415-what-distribution-fare.prepare:prepare

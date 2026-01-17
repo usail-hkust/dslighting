@@ -1,0 +1,16 @@
+id: dabench-25-distribution-values-dataset
+name: DABench Task - Check if the distribution of BMI values in the dat
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-25-distribution-values-dataset/description.md
+
+dataset:
+  answers: dabench-25-distribution-values-dataset/prepared/private/answer.csv
+  sample_submission: dabench-25-distribution-values-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-25-distribution-values-dataset.grade:grade
+
+preparer: mlebench.competitions.dabench-25-distribution-values-dataset.prepare:prepare

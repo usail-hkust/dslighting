@@ -1,0 +1,16 @@
+id: dabench-207-which-column-contain
+name: DABench Task - 1. Which column(s) contain missing values in the d
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-207-which-column-contain/description.md
+
+dataset:
+  answers: dabench-207-which-column-contain/prepared/private/answer.csv
+  sample_submission: dabench-207-which-column-contain/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-207-which-column-contain.grade:grade
+
+preparer: mlebench.competitions.dabench-207-which-column-contain.prepare:prepare

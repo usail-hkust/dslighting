@@ -1,0 +1,16 @@
+id: dabench-70-machine-learning-training
+name: DABench Task - Perform machine learning by training a linear regr
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-70-machine-learning-training/description.md
+
+dataset:
+  answers: dabench-70-machine-learning-training/prepared/private/answer.csv
+  sample_submission: dabench-70-machine-learning-training/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-70-machine-learning-training.grade:grade
+
+preparer: mlebench.competitions.dabench-70-machine-learning-training.prepare:prepare

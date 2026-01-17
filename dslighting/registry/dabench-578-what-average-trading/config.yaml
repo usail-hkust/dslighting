@@ -1,0 +1,16 @@
+id: dabench-578-what-average-trading
+name: DABench Task - What is the average trading volume of AAPL stock?
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-578-what-average-trading/description.md
+
+dataset:
+  answers: dabench-578-what-average-trading/prepared/private/answer.csv
+  sample_submission: dabench-578-what-average-trading/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-578-what-average-trading.grade:grade
+
+preparer: mlebench.competitions.dabench-578-what-average-trading.prepare:prepare

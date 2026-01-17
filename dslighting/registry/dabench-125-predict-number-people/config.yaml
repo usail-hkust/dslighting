@@ -1,0 +1,16 @@
+id: dabench-125-predict-number-people
+name: DABench Task - Can we predict the number of people fully vaccinat
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-125-predict-number-people/description.md
+
+dataset:
+  answers: dabench-125-predict-number-people/prepared/private/answer.csv
+  sample_submission: dabench-125-predict-number-people/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-125-predict-number-people.grade:grade
+
+preparer: mlebench.competitions.dabench-125-predict-number-people.prepare:prepare

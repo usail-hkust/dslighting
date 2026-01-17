@@ -1,0 +1,16 @@
+id: dabench-586-find-total-number
+name: DABench Task - Find out the total number of calls that were aband
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-586-find-total-number/description.md
+
+dataset:
+  answers: dabench-586-find-total-number/prepared/private/answer.csv
+  sample_submission: dabench-586-find-total-number/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-586-find-total-number.grade:grade
+
+preparer: mlebench.competitions.dabench-586-find-total-number.prepare:prepare

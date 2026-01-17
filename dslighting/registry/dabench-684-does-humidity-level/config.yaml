@@ -1,0 +1,16 @@
+id: dabench-684-does-humidity-level
+name: DABench Task - 2. Does the humidity level in the dataset adhere t
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-684-does-humidity-level/description.md
+
+dataset:
+  answers: dabench-684-does-humidity-level/prepared/private/answer.csv
+  sample_submission: dabench-684-does-humidity-level/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-684-does-humidity-level.grade:grade
+
+preparer: mlebench.competitions.dabench-684-does-humidity-level.prepare:prepare

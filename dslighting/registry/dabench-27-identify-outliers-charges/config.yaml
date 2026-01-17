@@ -1,0 +1,16 @@
+id: dabench-27-identify-outliers-charges
+name: DABench Task - Identify the outliers in the charges incurred by i
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-27-identify-outliers-charges/description.md
+
+dataset:
+  answers: dabench-27-identify-outliers-charges/prepared/private/answer.csv
+  sample_submission: dabench-27-identify-outliers-charges/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-27-identify-outliers-charges.grade:grade
+
+preparer: mlebench.competitions.dabench-27-identify-outliers-charges.prepare:prepare

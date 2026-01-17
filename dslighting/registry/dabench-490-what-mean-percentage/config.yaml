@@ -1,0 +1,16 @@
+id: dabench-490-what-mean-percentage
+name: DABench Task - What is the mean percentage of graduates in the fi
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-490-what-mean-percentage/description.md
+
+dataset:
+  answers: dabench-490-what-mean-percentage/prepared/private/answer.csv
+  sample_submission: dabench-490-what-mean-percentage/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-490-what-mean-percentage.grade:grade
+
+preparer: mlebench.competitions.dabench-490-what-mean-percentage.prepare:prepare

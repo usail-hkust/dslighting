@@ -1,0 +1,16 @@
+id: dabench-350-fare-column-follows
+name: DABench Task - Check if the Fare column follows a normal distribu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-350-fare-column-follows/description.md
+
+dataset:
+  answers: dabench-350-fare-column-follows/prepared/private/answer.csv
+  sample_submission: dabench-350-fare-column-follows/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-350-fare-column-follows.grade:grade
+
+preparer: mlebench.competitions.dabench-350-fare-column-follows.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-412-feature-called-familysize
+name: DABench Task - Create a new feature called "FamilySize" by adding
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-412-feature-called-familysize/description.md
+
+dataset:
+  answers: dabench-412-feature-called-familysize/prepared/private/answer.csv
+  sample_submission: dabench-412-feature-called-familysize/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-412-feature-called-familysize.grade:grade
+
+preparer: mlebench.competitions.dabench-412-feature-called-familysize.prepare:prepare

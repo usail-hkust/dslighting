@@ -1,0 +1,16 @@
+id: dabench-139-question-percentage-votes
+name: "DABench Task - Question 2: Are the percentage of votes received b"
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-139-question-percentage-votes/description.md
+
+dataset:
+  answers: dabench-139-question-percentage-votes/prepared/private/answer.csv
+  sample_submission: dabench-139-question-percentage-votes/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-139-question-percentage-votes.grade:grade
+
+preparer: mlebench.competitions.dabench-139-question-percentage-votes.prepare:prepare

@@ -1,0 +1,15 @@
+id: playground-series-s3e1
+name: Playground Series S3E1
+competition_type: simple
+awards_medals: false
+description: mlebench/competitions/playground-series-s3e1/description.md
+
+dataset:
+  answers: playground-series-s3e1/prepared/private/test.csv
+  sample_submission: playground-series-s3e1/prepared/public/sample_submission.csv
+
+grader:
+  name: rmse
+  grade_fn: mlebench.competitions.playground_series_s3e1.grade:grade
+
+preparer: mlebench.competitions.playground_series_s3e1.prepare:prepare

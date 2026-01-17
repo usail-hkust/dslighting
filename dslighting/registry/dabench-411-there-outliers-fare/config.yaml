@@ -1,0 +1,16 @@
+id: dabench-411-there-outliers-fare
+name: DABench Task - Are there any outliers in the fare paid by the pas
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-411-there-outliers-fare/description.md
+
+dataset:
+  answers: dabench-411-there-outliers-fare/prepared/private/answer.csv
+  sample_submission: dabench-411-there-outliers-fare/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-411-there-outliers-fare.grade:grade
+
+preparer: mlebench.competitions.dabench-411-there-outliers-fare.prepare:prepare

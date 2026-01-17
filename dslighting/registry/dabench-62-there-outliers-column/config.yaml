@@ -1,0 +1,16 @@
+id: dabench-62-there-outliers-column
+name: DABench Task - Are there any outliers in the "No. of deaths_max" 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-62-there-outliers-column/description.md
+
+dataset:
+  answers: dabench-62-there-outliers-column/prepared/private/answer.csv
+  sample_submission: dabench-62-there-outliers-column/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-62-there-outliers-column.grade:grade
+
+preparer: mlebench.competitions.dabench-62-there-outliers-column.prepare:prepare

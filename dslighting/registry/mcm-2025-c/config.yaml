@@ -1,0 +1,8 @@
+description: description.md
+id: mcm-2025-c
+metric: successful_file_read_rate
+name: Summer Olympics Dataset Analysis
+private_dir: mcm-2025-c/prepared/private
+public_dir: mcm-2025-c/prepared/public
+raw_dir: mcm-2025-c/raw
+task_type: data_cleaning

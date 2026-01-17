@@ -1,0 +1,16 @@
+id: dabench-272-feature-named-dividing
+name: DABench Task - Create a new feature named "TOTUSJZ_TOTUSJH_RATIO"
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-272-feature-named-dividing/description.md
+
+dataset:
+  answers: dabench-272-feature-named-dividing/prepared/private/answer.csv
+  sample_submission: dabench-272-feature-named-dividing/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-272-feature-named-dividing.grade:grade
+
+preparer: mlebench.competitions.dabench-272-feature-named-dividing.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-552-column-column-correlated
+name: DABench Task - Are the HT_M column and the BA_M2 column correlate
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-552-column-column-correlated/description.md
+
+dataset:
+  answers: dabench-552-column-column-correlated/prepared/private/answer.csv
+  sample_submission: dabench-552-column-column-correlated/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-552-column-column-correlated.grade:grade
+
+preparer: mlebench.competitions.dabench-552-column-column-correlated.prepare:prepare

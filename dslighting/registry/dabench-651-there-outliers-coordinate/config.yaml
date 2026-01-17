@@ -1,0 +1,16 @@
+id: dabench-651-there-outliers-coordinate
+name: DABench Task - 3. Are there any outliers in the Z-coordinate colu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-651-there-outliers-coordinate/description.md
+
+dataset:
+  answers: dabench-651-there-outliers-coordinate/prepared/private/answer.csv
+  sample_submission: dabench-651-there-outliers-coordinate/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-651-there-outliers-coordinate.grade:grade
+
+preparer: mlebench.competitions.dabench-651-there-outliers-coordinate.prepare:prepare

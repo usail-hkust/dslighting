@@ -1,0 +1,16 @@
+id: dabench-527-what-average-male
+name: DABench Task - What is the average age of male passengers in each
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-527-what-average-male/description.md
+
+dataset:
+  answers: dabench-527-what-average-male/prepared/private/answer.csv
+  sample_submission: dabench-527-what-average-male/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-527-what-average-male.grade:grade
+
+preparer: mlebench.competitions.dabench-527-what-average-male.prepare:prepare

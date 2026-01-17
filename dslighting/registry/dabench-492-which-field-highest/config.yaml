@@ -1,0 +1,16 @@
+id: dabench-492-which-field-highest
+name: DABench Task - Which field has the highest percentage of graduate
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-492-which-field-highest/description.md
+
+dataset:
+  answers: dabench-492-which-field-highest/prepared/private/answer.csv
+  sample_submission: dabench-492-which-field-highest/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-492-which-field-highest.grade:grade
+
+preparer: mlebench.competitions.dabench-492-which-field-highest.prepare:prepare

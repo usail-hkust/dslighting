@@ -1,0 +1,16 @@
+id: dabench-431-there-relationship-between
+name: DABench Task - 1. Is there a relationship between the maximum sto
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-431-there-relationship-between/description.md
+
+dataset:
+  answers: dabench-431-there-relationship-between/prepared/private/answer.csv
+  sample_submission: dabench-431-there-relationship-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-431-there-relationship-between.grade:grade
+
+preparer: mlebench.competitions.dabench-431-there-relationship-between.prepare:prepare

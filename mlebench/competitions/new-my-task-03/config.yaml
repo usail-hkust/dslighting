@@ -1,0 +1,16 @@
+competition_type: open_ended
+dataset:
+  answers: new-my-task-03/raw/answer.csv
+  gold_submission: new-my-task-03/raw/answer.csv
+  sample_submission: new-my-task-03/raw/sampleSubmission.csv
+description: description.md
+grader:
+  grade_fn: file:/Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/new-my-task-03/grade.py:grade
+  name: LLMJudge
+id: new-my-task-03
+metric: LLM Score
+name: Tennis Match Momentum and Performance Flow Analysis
+preparer: file:/Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/new-my-task-03/prepare.py:prepare
+private_dir: new-my-task-03/prepared/private
+public_dir: new-my-task-03/prepared/public
+raw_dir: new-my-task-03/raw

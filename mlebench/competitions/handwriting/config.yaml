@@ -1,0 +1,16 @@
+id: handwriting
+name: Handwriting Time Series Classification
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/handwriting/description.md
+
+dataset:
+  answers: handwriting/prepared/private/test_labels.csv
+  sample_submission: handwriting/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: mlebench.competitions.handwriting.grade:grade
+
+preparer: mlebench.competitions.handwriting.prepare:prepare

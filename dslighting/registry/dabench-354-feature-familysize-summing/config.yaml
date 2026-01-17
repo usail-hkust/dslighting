@@ -1,0 +1,16 @@
+id: dabench-354-feature-familysize-summing
+name: DABench Task - Create a new feature "FamilySize" by summing the I
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-354-feature-familysize-summing/description.md
+
+dataset:
+  answers: dabench-354-feature-familysize-summing/prepared/private/answer.csv
+  sample_submission: dabench-354-feature-familysize-summing/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-354-feature-familysize-summing.grade:grade
+
+preparer: mlebench.competitions.dabench-354-feature-familysize-summing.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-729-does-distribution-capita
+name: DABench Task - Does the distribution of GDP per capita adhere to 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-729-does-distribution-capita/description.md
+
+dataset:
+  answers: dabench-729-does-distribution-capita/prepared/private/answer.csv
+  sample_submission: dabench-729-does-distribution-capita/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-729-does-distribution-capita.grade:grade
+
+preparer: mlebench.competitions.dabench-729-does-distribution-capita.prepare:prepare

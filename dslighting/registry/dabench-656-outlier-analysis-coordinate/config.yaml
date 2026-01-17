@@ -1,0 +1,16 @@
+id: dabench-656-outlier-analysis-coordinate
+name: DABench Task - 3. Perform an outlier analysis on the X-coordinate
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-656-outlier-analysis-coordinate/description.md
+
+dataset:
+  answers: dabench-656-outlier-analysis-coordinate/prepared/private/answer.csv
+  sample_submission: dabench-656-outlier-analysis-coordinate/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-656-outlier-analysis-coordinate.grade:grade
+
+preparer: mlebench.competitions.dabench-656-outlier-analysis-coordinate.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-647-feature-called-price
+name: DABench Task - Create a new feature called "Price Range" by calcu
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-647-feature-called-price/description.md
+
+dataset:
+  answers: dabench-647-feature-called-price/prepared/private/answer.csv
+  sample_submission: dabench-647-feature-called-price/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-647-feature-called-price.grade:grade
+
+preparer: mlebench.competitions.dabench-647-feature-called-price.prepare:prepare

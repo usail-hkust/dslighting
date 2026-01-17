@@ -1,0 +1,16 @@
+id: dabench-589-generate-feature-representing
+name: DABench Task - Can we generate a new feature representing the cal
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-589-generate-feature-representing/description.md
+
+dataset:
+  answers: dabench-589-generate-feature-representing/prepared/private/answer.csv
+  sample_submission: dabench-589-generate-feature-representing/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-589-generate-feature-representing.grade:grade
+
+preparer: mlebench.competitions.dabench-589-generate-feature-representing.prepare:prepare

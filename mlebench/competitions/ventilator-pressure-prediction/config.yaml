@@ -1,0 +1,15 @@
+id: ventilator-pressure-prediction
+name: Ventilator Pressure Prediction
+competition_type: simple
+awards_medals: false
+description: mlebench/competitions/ventilator-pressure-prediction/description.md
+
+dataset:
+  answers: ventilator-pressure-prediction/prepared/private/test.csv
+  sample_submission: ventilator-pressure-prediction/prepared/public/sample_submission.csv
+
+grader:
+  name: mae
+  grade_fn: mlebench.competitions.ventilator_pressure_prediction.grade:grade
+
+preparer: mlebench.competitions.ventilator_pressure_prediction.prepare:prepare

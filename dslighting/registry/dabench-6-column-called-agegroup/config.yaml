@@ -1,0 +1,16 @@
+id: dabench-6-column-called-agegroup
+name: DABench Task - Create a new column called "AgeGroup" that categor
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-6-column-called-agegroup/description.md
+
+dataset:
+  answers: dabench-6-column-called-agegroup/prepared/private/answer.csv
+  sample_submission: dabench-6-column-called-agegroup/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-6-column-called-agegroup.grade:grade
+
+preparer: mlebench.competitions.dabench-6-column-called-agegroup.prepare:prepare

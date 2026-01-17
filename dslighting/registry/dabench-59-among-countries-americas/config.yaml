@@ -1,0 +1,16 @@
+id: dabench-59-among-countries-americas
+name: DABench Task - Among the countries in the "Americas" region, whic
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-59-among-countries-americas/description.md
+
+dataset:
+  answers: dabench-59-among-countries-americas/prepared/private/answer.csv
+  sample_submission: dabench-59-among-countries-americas/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-59-among-countries-americas.grade:grade
+
+preparer: mlebench.competitions.dabench-59-among-countries-americas.prepare:prepare

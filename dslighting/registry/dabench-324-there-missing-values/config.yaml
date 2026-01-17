@@ -1,0 +1,16 @@
+id: dabench-324-there-missing-values
+name: DABench Task - Are there any missing values in the dataset? If so
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-324-there-missing-values/description.md
+
+dataset:
+  answers: dabench-324-there-missing-values/prepared/private/answer.csv
+  sample_submission: dabench-324-there-missing-values/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-324-there-missing-values.grade:grade
+
+preparer: mlebench.competitions.dabench-324-there-missing-values.prepare:prepare

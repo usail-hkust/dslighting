@@ -1,0 +1,16 @@
+id: dabench-75-column-called-daily
+name: DABench Task - Create a new column called "Daily Return" that cal
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-75-column-called-daily/description.md
+
+dataset:
+  answers: dabench-75-column-called-daily/prepared/private/answer.csv
+  sample_submission: dabench-75-column-called-daily/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-75-column-called-daily.grade:grade
+
+preparer: mlebench.competitions.dabench-75-column-called-daily.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-24-mean-individuals-dataset
+name: DABench Task - Calculate the mean age of the individuals in the d
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-24-mean-individuals-dataset/description.md
+
+dataset:
+  answers: dabench-24-mean-individuals-dataset/prepared/private/answer.csv
+  sample_submission: dabench-24-mean-individuals-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-24-mean-individuals-dataset.grade:grade
+
+preparer: mlebench.competitions.dabench-24-mean-individuals-dataset.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-349-mean-passengers
+name: DABench Task - Calculate the mean age of the passengers.
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-349-mean-passengers/description.md
+
+dataset:
+  answers: dabench-349-mean-passengers/prepared/private/answer.csv
+  sample_submission: dabench-349-mean-passengers/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-349-mean-passengers.grade:grade
+
+preparer: mlebench.competitions.dabench-349-mean-passengers.prepare:prepare

@@ -1,0 +1,16 @@
+id: dabench-517-find-correlation-coefficient
+name: DABench Task - Find the correlation coefficient between the passe
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-517-find-correlation-coefficient/description.md
+
+dataset:
+  answers: dabench-517-find-correlation-coefficient/prepared/private/answer.csv
+  sample_submission: dabench-517-find-correlation-coefficient/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-517-find-correlation-coefficient.grade:grade
+
+preparer: mlebench.competitions.dabench-517-find-correlation-coefficient.prepare:prepare

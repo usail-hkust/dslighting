@@ -1,0 +1,15 @@
+id: demand-forecasting-kernels-only
+name: Demand Forecasting Kernels Only
+competition_type: simple
+awards_medals: false
+description: mlebench/competitions/demand-forecasting-kernels-only/description.md
+
+dataset:
+  answers: demand-forecasting-kernels-only/prepared/private/test.csv
+  sample_submission: demand-forecasting-kernels-only/prepared/public/sample_submission.csv
+
+grader:
+  name: smape
+  grade_fn: mlebench.competitions.demand_forecasting_kernels_only.grade:grade
+
+preparer: mlebench.competitions.demand_forecasting_kernels_only.prepare:prepare

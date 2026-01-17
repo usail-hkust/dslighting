@@ -1,0 +1,16 @@
+id: dabench-542-what-mean-length
+name: DABench Task - What is the mean length of the abalone in mm?
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-542-what-mean-length/description.md
+
+dataset:
+  answers: dabench-542-what-mean-length/prepared/private/answer.csv
+  sample_submission: dabench-542-what-mean-length/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-542-what-mean-length.grade:grade
+
+preparer: mlebench.competitions.dabench-542-what-mean-length.prepare:prepare

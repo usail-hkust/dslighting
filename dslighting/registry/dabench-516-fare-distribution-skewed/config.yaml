@@ -1,0 +1,16 @@
+id: dabench-516-fare-distribution-skewed
+name: DABench Task - Check if the fare distribution is skewed.
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-516-fare-distribution-skewed/description.md
+
+dataset:
+  answers: dabench-516-fare-distribution-skewed/prepared/private/answer.csv
+  sample_submission: dabench-516-fare-distribution-skewed/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-516-fare-distribution-skewed.grade:grade
+
+preparer: mlebench.competitions.dabench-516-fare-distribution-skewed.prepare:prepare

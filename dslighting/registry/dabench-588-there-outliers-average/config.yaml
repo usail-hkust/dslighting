@@ -1,0 +1,16 @@
+id: dabench-588-there-outliers-average
+name: DABench Task - Are there any outliers in the average wait time fo
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-588-there-outliers-average/description.md
+
+dataset:
+  answers: dabench-588-there-outliers-average/prepared/private/answer.csv
+  sample_submission: dabench-588-there-outliers-average/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-588-there-outliers-average.grade:grade
+
+preparer: mlebench.competitions.dabench-588-there-outliers-average.prepare:prepare

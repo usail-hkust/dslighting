@@ -1,0 +1,16 @@
+id: dabench-310-correlation-analysis-numerical
+name: DABench Task - Perform a correlation analysis on the numerical va
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-310-correlation-analysis-numerical/description.md
+
+dataset:
+  answers: dabench-310-correlation-analysis-numerical/prepared/private/answer.csv
+  sample_submission: dabench-310-correlation-analysis-numerical/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-310-correlation-analysis-numerical.grade:grade
+
+preparer: mlebench.competitions.dabench-310-correlation-analysis-numerical.prepare:prepare

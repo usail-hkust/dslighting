@@ -1,0 +1,16 @@
+id: dabench-655-correlation-analysis-coordinate
+name: DABench Task - 1. Perform a correlation analysis on the X, Y, and
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-655-correlation-analysis-coordinate/description.md
+
+dataset:
+  answers: dabench-655-correlation-analysis-coordinate/prepared/private/answer.csv
+  sample_submission: dabench-655-correlation-analysis-coordinate/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-655-correlation-analysis-coordinate.grade:grade
+
+preparer: mlebench.competitions.dabench-655-correlation-analysis-coordinate.prepare:prepare

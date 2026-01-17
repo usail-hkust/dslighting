@@ -1,0 +1,16 @@
+id: dabench-273-correlation-analysis-between
+name: DABench Task - Perform a correlation analysis between the MEANGAM
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-273-correlation-analysis-between/description.md
+
+dataset:
+  answers: dabench-273-correlation-analysis-between/prepared/private/answer.csv
+  sample_submission: dabench-273-correlation-analysis-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-273-correlation-analysis-between.grade:grade
+
+preparer: mlebench.competitions.dabench-273-correlation-analysis-between.prepare:prepare

@@ -1,0 +1,17 @@
+id: conways-reverse-game-of-life-2020
+name: Conway's Reverse Game of Life 2020
+competition_type: simple
+awards_medals: false
+prizes: null
+description: mlebench/competitions/conways-reverse-game-of-life-2020/description.md
+
+dataset:
+  answers: conways-reverse-game-of-life-2020/prepared/private/test.csv
+  gold_submission: conways-reverse-game-of-life-2020/prepared/private/gold_submission.csv
+  sample_submission: conways-reverse-game-of-life-2020/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: mlebench.competitions.conways-reverse-game-of-life-2020.grade:grade
+
+preparer: mlebench.competitions.conways-reverse-game-of-life-2020.prepare:prepare

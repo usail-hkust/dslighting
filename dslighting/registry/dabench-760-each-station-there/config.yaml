@@ -1,0 +1,16 @@
+id: dabench-760-each-station-there
+name: DABench Task - 6. For each station, are there any missing values 
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-760-each-station-there/description.md
+
+dataset:
+  answers: dabench-760-each-station-there/prepared/private/answer.csv
+  sample_submission: dabench-760-each-station-there/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-760-each-station-there.grade:grade
+
+preparer: mlebench.competitions.dabench-760-each-station-there.prepare:prepare

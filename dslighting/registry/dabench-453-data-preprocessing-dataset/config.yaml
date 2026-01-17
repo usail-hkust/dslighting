@@ -1,0 +1,16 @@
+id: dabench-453-data-preprocessing-dataset
+name: DABench Task - 2. Perform data preprocessing on the dataset, whic
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-453-data-preprocessing-dataset/description.md
+
+dataset:
+  answers: dabench-453-data-preprocessing-dataset/prepared/private/answer.csv
+  sample_submission: dabench-453-data-preprocessing-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-453-data-preprocessing-dataset.grade:grade
+
+preparer: mlebench.competitions.dabench-453-data-preprocessing-dataset.prepare:prepare

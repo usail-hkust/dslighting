@@ -1,0 +1,16 @@
+id: dabench-518-identify-remove-outliers
+name: DABench Task - Identify and remove any outliers in the fare colum
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-518-identify-remove-outliers/description.md
+
+dataset:
+  answers: dabench-518-identify-remove-outliers/prepared/private/answer.csv
+  sample_submission: dabench-518-identify-remove-outliers/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-518-identify-remove-outliers.grade:grade
+
+preparer: mlebench.competitions.dabench-518-identify-remove-outliers.prepare:prepare

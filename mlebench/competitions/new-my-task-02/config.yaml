@@ -1,0 +1,9 @@
+competition_type: standard_ml
+description: description.md
+id: new-my-task-02
+metric: Mean Squared Error
+name: Tennis Match Flow and Performance Analysis
+private_dir: new-my-task-02/prepared/private
+public_dir: new-my-task-02/prepared/public
+raw_dir: new-my-task-02/raw
+task_type: Time Series Analysis

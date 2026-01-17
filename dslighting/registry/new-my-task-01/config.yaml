@@ -1,0 +1,15 @@
+competition_type: generic
+dataset:
+  answers: new-my-task-01/prepared/private/answer.csv
+  sample_submission: new-my-task-01/prepared/public/sample.csv
+description: description.md
+grader:
+  grade_fn: mlebench.grade:simple_accuracy_grader
+id: new-my-task-01
+metric: RMSE
+name: Bike Sharing Demand Prediction
+preparer: file:/Users/liufan/Applications/Github/dslighting/benchmarks/mlebench/competitions/new-my-task-01/prepare.py:prepare
+private_dir: new-my-task-01/prepared/private
+public_dir: new-my-task-01/prepared/public
+raw_dir: new-my-task-01/raw
+task_type: regression

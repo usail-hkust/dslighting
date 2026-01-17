@@ -1,0 +1,16 @@
+id: dabench-19-distribution-column-adheres
+name: DABench Task - Check if the distribution of the "Mar.2020" column
+competition_type: code
+awards_medals: false
+prizes: null
+description: mlebench/competitions/dabench-19-distribution-column-adheres/description.md
+
+dataset:
+  answers: dabench-19-distribution-column-adheres/prepared/private/answer.csv
+  sample_submission: dabench-19-distribution-column-adheres/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: mlebench.competitions.dabench-19-distribution-column-adheres.grade:grade
+
+preparer: mlebench.competitions.dabench-19-distribution-column-adheres.prepare:prepare
