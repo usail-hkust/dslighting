@@ -34,31 +34,5 @@ class TaskDefinition(BaseModel):
     )
 
     model_config = ConfigDict(
-        """
-        Pydantic configuration with documentation examples.
-
-        Payload examples:
-        - task_type='kaggle':
-          {
-              "description": "Predict sales prices for houses in Ames, Iowa.",
-              "public_data_dir": "/path/to/benchmark/data",
-              "output_submission_path": "/path/to/run/artifacts/submission.csv"
-          }
-        - task_type='qa':
-          {
-              "question": "What is the result of 9*8-2?"
-          }
-        - task_type='code':
-          {
-              "prompt": "Write a Python function that computes the nth Fibonacci number.",
-              "entry_point": "fibonacci",
-              "test_cases": "[...]"
-          }
-        - task_type='open_ended':
-          {
-              "description": "Design a mathematical model to optimize traffic flow in a city.",
-              "rubric": "Evaluation criteria: model accuracy (40%), creativity (30%), clarity (30%)",
-              "output_submission_path": "/path/to/run/artifacts"
-          }
-        """
         frozen = True  # Task definitions should be immutable after creation.
+    )
