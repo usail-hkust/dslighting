@@ -26,18 +26,19 @@ classifiers = [
 ]
 
 # Core dependencies for pip installation
+# These are the minimum required dependencies for all workflows
 dependencies = [
-    "pandas>=1.5.0",
-    "pydantic>=2.10.0",  # Updated for better OpenAI/litellm compatibility
+    "pandas>=1.5.0,<3.0.0",
+    "pydantic>=2.10.0,<3.0.0",  # Updated for better OpenAI/litellm compatibility
     "python-dotenv>=1.0.0",
     # DSAT framework dependencies (required)
     "openai>=1.0.0",
     "anthropic>=0.34.0",
     "litellm>=1.80.0",
     "rich>=13.0.0",
-    "transformers>=4.30.0",
-    "torch>=2.0.0",
-    "scikit-learn>=1.0.0",
+    "transformers>=4.30.0",  # Required for VDBService (RAG)
+    "torch>=2.0.0",  # Required for VDBService (RAG)
+    "scikit-learn>=1.0.0,<2.0.0",
     # MLE-Bench dependencies (for grading)
     "diskcache",
     "tenacity",
@@ -46,33 +47,53 @@ dependencies = [
     "tqdm",
     "py7zr",
     # Notebook support (required for data_interpreter workflow)
-    "nbformat",
-    "nbclient",
+    "nbformat>=5.0.0",
+    "nbclient>=0.5.0",
     "ipykernel>=7.0.0",  # Required for Jupyter kernel in data_interpreter
 ]
 
-# Optional dependencies
+# Optional dependencies for extended functionality
 [project.optional-dependencies]
-# Full installation with DSAT framework dependencies
-full = [
+# Minimal installation (for testing/custom builds)
+# Note: transformers and torch are still required for VDBService
+minimal = [
+    "pandas>=1.5.0,<3.0.0",
+    "pydantic>=2.10.0,<3.0.0",
+    "python-dotenv>=1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.34.0",
-    "litellm>=1.0.0",
+    "litellm>=1.80.0",
     "rich>=13.0.0",
     "transformers>=4.30.0",
     "torch>=2.0.0",
-    "scikit-learn>=1.0.0",
+    "scikit-learn>=1.0.0,<2.0.0",
+    "diskcache",
+    "tenacity",
+    "appdirs",
+    "pyyaml",
+    "tqdm",
+    "py7zr",
+    "nbformat>=5.0.0",
+    "nbclient>=0.5.0",
+    "ipykernel>=7.0.0",
 ]
-# Development dependencies
+
+# Development dependencies (testing, linting, building)
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
     "black>=23.0",
     "mypy>=1.0",
     "ruff>=0.1.0",
     "build>=0.10.0",
     "twine>=4.0.0",
 ]
+
+# Legacy compatibility - keep 'full' and 'all' as aliases
+# They now refer to the default installation since all dependencies are required
+full = []
+all = []
 
 # Project URLs
 [project.urls]

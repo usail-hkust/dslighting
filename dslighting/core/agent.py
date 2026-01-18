@@ -332,25 +332,25 @@ class Agent:
 
             # ========== Load data if needed ==========
             if not isinstance(data, LoadedData):
-                print(f"[DEBUG] Loading data...")
+                self.logger.debug("Loading data...")
                 loader = DataLoader()
                 loaded_data = loader.load(data)
-                print(f"[DEBUG] Data loaded, task_id={loaded_data.task_id}")
+                self.logger.debug(f"Data loaded, task_id={loaded_data.task_id}")
             else:
-                print(f"[DEBUG] Data is already LoadedData")
+                self.logger.debug("Data is already LoadedData")
                 loaded_data = data
-                print(f"[DEBUG] LoadedData has task_id={loaded_data.task_id}")
+                self.logger.debug(f"LoadedData has task_id={loaded_data.task_id}")
 
             # Extract task_id from loaded_data if available
             if loaded_data.task_id:
                 # Use task_id from loaded_data for benchmark initialization
                 extracted_task_id = loaded_data.task_id
                 self.logger.info(f"Detected task_id from data: {extracted_task_id}")
-                print(f"[DEBUG] Extracted task_id={extracted_task_id}, overriding task_id parameter")
+                self.logger.debug(f"Extracted task_id={extracted_task_id}, overriding task_id parameter")
 
                 # Override task_id parameter for benchmark initialization
                 task_id = extracted_task_id
-                print(f"[DEBUG] task_id is now set to: {task_id}")
+                self.logger.debug(f"task_id is now set to: {task_id}")
             else:
                 raise ValueError(
                     "Either 'task_id' or 'data' must be provided. "
@@ -374,17 +374,17 @@ class Agent:
             )
 
             # Initialize benchmark for MLE tasks (for grading)
-            print(f"[DEBUG 1] Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
-            self.logger.info(f"[DEBUG] Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
+            self.logger.debug(f"Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
+            self.logger.info(f"Checking benchmark initialization: task_id={task_id}, task_type={loaded_data.get_task_type()}")
 
             if task_id and loaded_data.get_task_type() == "kaggle":
-                print(f"[DEBUG 2] Condition met: task_id={task_id}, task_type=kaggle")
-                self.logger.info(f"[DEBUG] Condition met: initializing benchmark")
+                self.logger.debug(f"Condition met: task_id={task_id}, task_type=kaggle")
+                self.logger.info(f"Initializing benchmark for task: {task_id}")
                 try:
-                    print(f"[DEBUG 3] Attempting to import mlebench...")
+                    self.logger.debug("Attempting to import mlebench...")
                     from mlebench.grade import grade_csv
                     from mlebench.registry import Registry
-                    print(f"[DEBUG 4] mlebench imported successfully")
+                    self.logger.debug("mlebench imported successfully")
 
                     # Resolve data_dir - prioritize loaded_data.data_dir
                     if loaded_data.data_dir is not None:
@@ -402,39 +402,39 @@ class Agent:
                     # Try to use built-in registry first
                     import dslighting
                     built_in_registry_dir = Path(dslighting.__file__).parent / "registry"
-                    print(f"[DEBUG 5] Built-in registry dir: {built_in_registry_dir}, exists: {built_in_registry_dir.exists()}")
+                    self.logger.debug(f"Built-in registry dir: {built_in_registry_dir}, exists: {built_in_registry_dir.exists()}")
 
                     registry_dir = loaded_data.registry_dir
-                    print(f"[DEBUG 6] loaded_data.registry_dir: {registry_dir}")
+                    self.logger.debug(f"loaded_data.registry_dir: {registry_dir}")
                     if not registry_dir or not Path(registry_dir).exists():
-                        print(f"[DEBUG 7] Registry dir not valid, checking built-in...")
+                        self.logger.debug("Registry dir not valid, checking built-in...")
                         if built_in_registry_dir.exists():
                             registry_dir = built_in_registry_dir
                             self.logger.info(f"  Using built-in registry: {registry_dir}")
-                            print(f"[DEBUG 8] Using built-in registry: {registry_dir}")
+                            self.logger.debug(f"Using built-in registry: {registry_dir}")
                         else:
                             self.logger.warning(f"⚠️  Registry directory not found")
                             self.logger.warning(f"  Grading will be skipped.")
-                            print(f"[DEBUG 8a] Built-in registry not found, skipping grading")
+                            self.logger.debug("Built-in registry not found, skipping grading")
                     else:
                         self.logger.info(f"  Registry directory (from loaded_data): {registry_dir}")
-                        print(f"[DEBUG 8b] Using loaded_data registry: {registry_dir}")
+                        self.logger.debug(f"Using loaded_data registry: {registry_dir}")
 
                     # Check if registry_dir exists
                     if not registry_dir or not Path(registry_dir).exists():
                         self.logger.warning(f"⚠️  Registry directory not available: {registry_dir}")
                         self.logger.warning(f"   Grading will be skipped.")
-                        print(f"[DEBUG 9] Registry not available, skipping grading")
+                        self.logger.debug("Registry not available, skipping grading")
                     else:
-                        print(f"[DEBUG 10] Registry available, proceeding with initialization")
+                        self.logger.debug("Registry available, proceeding with initialization")
                         # Initialize benchmark with registry (keep as Path objects)
                         registry_dir_path = Path(registry_dir) if not isinstance(registry_dir, Path) else registry_dir
                         registry_kwargs = {"data_dir": data_dir_path, "registry_dir": registry_dir_path}
 
                         try:
-                            print(f"[DEBUG 11] Creating Registry with kwargs: {registry_kwargs}")
+                            self.logger.debug(f"Creating Registry with kwargs: {registry_kwargs}")
                             custom_registry = Registry(**registry_kwargs)
-                            print(f"[DEBUG 12] Registry created successfully")
+                            self.logger.debug("Registry created successfully")
 
                             # Log registry configuration
                             self.logger.info(f"  Registry config:")
@@ -585,10 +585,10 @@ class Agent:
                             benchmark = SimpleMLEBenchmark(custom_registry, self.logger, registry_dir_path, data_dir_path, task_id)
                             runner = self.get_runner()
                             runner.benchmark = benchmark
-                            print(f"[DEBUG 13] ✓ Benchmark set successfully for task: {task_id}")
+                            self.logger.debug(f"✓ Benchmark set successfully for task: {task_id}")
                             self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
                         except Exception as e:
-                            print(f"[DEBUG ERROR] Benchmark initialization failed: {e}")
+                            self.logger.debug(f"Benchmark initialization failed: {e}")
                             self.logger.warning(f"⚠️  Benchmark initialization failed: {e}")
                             self.logger.warning(f"   Grading will be skipped.")
 
