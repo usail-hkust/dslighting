@@ -26,7 +26,7 @@ Advanced Usage:
 For more information, see: https://github.com/usail-hkust/dslighting
 """
 
-__version__ = "1.9.8"
+__version__ = "1.9.9"
 __author__ = "DSLighting Team"
 
 # Core API classes
