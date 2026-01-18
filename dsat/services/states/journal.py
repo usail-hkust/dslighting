@@ -85,7 +85,6 @@ class Node(BaseModel):
         self.exec_metadata = exec_result.metadata or {}
 
     model_config = ConfigDict(
-        """Pydantic configuration."""
         # Note: json_encoders deprecated in Pydantic V2
         # Sets are now automatically serialized to lists
     )

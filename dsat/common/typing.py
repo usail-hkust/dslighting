@@ -15,6 +15,5 @@ class ExecutionResult(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary execution metadata (timestamps, paths, etc.).")
 
     model_config = ConfigDict(
-        """Pydantic configuration."""
-        extra='forbid'
+        extra='forbid'  # Pydantic configuration
     )

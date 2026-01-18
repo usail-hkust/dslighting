@@ -12,6 +12,5 @@ class WorkflowCandidate(BaseModel):
     round_num: Optional[int] = Field(default=None, description="The optimization round this candidate was generated in.")
 
     model_config = ConfigDict(
-        """Pydantic configuration."""
-        extra='forbid'
+        extra='forbid'  # Pydantic configuration
     )

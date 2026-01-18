@@ -75,6 +75,5 @@ class DSATConfig(BaseModel):
     optimizer: Optional[OptimizerConfig] = None
 
     model_config = ConfigDict(
-        """Pydantic configuration."""
-        extra='forbid'
+        extra='forbid'  # Pydantic configuration
     )
