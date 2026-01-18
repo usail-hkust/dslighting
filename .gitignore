@@ -319,6 +319,9 @@ PYPI_*.md
 # Project rules (development doc)
 PROJECT_RULES.md
 
+# Claude Code project documentation
+CLAUDE.md
+
 # Template files (auto-generated)
 dsat/templates/
 dslighting/templates/
