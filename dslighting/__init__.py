@@ -26,7 +26,7 @@ Advanced Usage:
 For more information, see: https://github.com/usail-hkust/dslighting
 """
 
-__version__ = "1.9.0"
+__version__ = "1.9.7"
 __author__ = "DSLighting Team"
 
 # Core API classes
@@ -254,9 +254,366 @@ __all__ = [
     "load_data",
     "run_agent",
 
+    # Help functions
+    "help",
+    "list_workflows",
+    "show_example",
+
     # Example datasets
     "datasets",
 ]
+
+
+# ============================================================================
+# Help Functions
+# ============================================================================
+
+def help():
+    """
+    Show DSLighting help and quick start guide.
+
+    This is the main help function for DSLighting. It displays:
+    - Quick start guide
+    - Available workflows
+    - Useful commands
+    - Documentation links
+
+    Examples:
+        >>> import dslighting
+        >>> dslighting.help()
+    """
+    print("=" * 70)
+    print("DSLighting - Data Science Agent Framework")
+    print("=" * 70)
+    print()
+    print("🚀 Quick Start:")
+    print("-" * 70)
+    print("""
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+# Method 1: Use built-in dataset
+data = dslighting.load_data("bike-sharing-demand")
+agent = dslighting.Agent(workflow="aide")
+result = agent.run(data)
+
+# Method 2: Quick one-liner
+result = dslighting.run_agent(task_id="bike-sharing-demand")
+""")
+
+    print("📋 Available Workflows:")
+    print("-" * 70)
+    print("""
+  1. aide              - Adaptive Iteration & Debugging (Default)
+  2. autokaggle        - Advanced competition solver
+  3. data_interpreter  - Interactive data analysis
+  4. automind          - Complex planning with knowledge base
+  5. dsagent           - Long-term planning with logging
+  6. deepanalyze       - Deep analysis with structured tags
+""")
+
+    print("💡 Python Help Functions:")
+    print("-" * 70)
+    print("""
+  dslighting.list_workflows()         - List all workflows with details
+  dslighting.show_example("aide")      - Show workflow example code
+""")
+
+    print("🖥️  CLI Commands:")
+    print("-" * 70)
+    print("""
+  dslighting help                      - Show this help
+  dslighting workflows                  - Show all workflows
+  dslighting example <workflow>         - Show workflow example
+  dslighting quickstart                 - Show quick start guide
+  dslighting detect-packages            - Detect Python packages
+""")
+
+    print("📚 Documentation:")
+    print("-" * 70)
+    print("""
+  Online:  https://luckyfan-cs.github.io/dslighting-web/
+  GitHub:  https://github.com/usail-hkust/dslighting
+  PyPI:    https://pypi.org/project/dslighting/
+""")
+
+
+def list_workflows():
+    """
+    List all available workflows with detailed information.
+
+    Shows workflow name, description, use cases, default parameters,
+    and unique parameters for each workflow.
+
+    Returns:
+        None (prints to console)
+
+    Examples:
+        >>> import dslighting
+        >>> dslighting.list_workflows()
+    """
+    workflows = [
+        {
+            "name": "aide",
+            "full_name": "AIDE (Adaptive Iteration & Debugging Enhancement)",
+            "description": "Self-improving code with iterative debugging",
+            "use_cases": ["Kaggle competitions (simple)", "Data analysis", "Quick prototyping"],
+            "default_model": "gpt-4o",
+            "parameters": {"max_iterations": 10, "temperature": 0.7},
+            "unique_params": None
+        },
+        {
+            "name": "autokaggle",
+            "full_name": "AutoKaggle",
+            "description": "Advanced competition solver with dynamic phase planning",
+            "use_cases": ["Kaggle competitions (complex)", "High-stakes competitions", "Multi-phase problems"],
+            "default_model": "gpt-4o",
+            "parameters": {"temperature": 0.5},
+            "unique_params": {
+                "max_attempts_per_phase": "Max retries per phase (default: 5)",
+                "success_threshold": "Score threshold 1-5 (default: 3.0)"
+            }
+        },
+        {
+            "name": "data_interpreter",
+            "full_name": "DataInterpreter",
+            "description": "Interactive data analysis and exploration",
+            "use_cases": ["Data exploration", "Visualization", "Quick analysis"],
+            "default_model": "gpt-4o-mini",
+            "parameters": {"max_iterations": 5, "temperature": 0.7},
+            "unique_params": None
+        },
+        {
+            "name": "automind",
+            "full_name": "AutoMind",
+            "description": "Complex planning with knowledge base and experience replay",
+            "use_cases": ["Complex tasks", "Multi-step problems", "Need historical context"],
+            "default_model": "gpt-4o",
+            "parameters": {"max_iterations": 10, "temperature": 0.5},
+            "unique_params": {
+                "case_dir": "Experience replay directory (e.g., ./experience_replay)",
+                "enable_rag": "Enable RAG/knowledge base (default: True). Set to False to disable HuggingFace downloads"
+            }
+        },
+        {
+            "name": "dsagent",
+            "full_name": "DS-Agent",
+            "description": "Long-term planning with Plan-Execute-Log loop",
+            "use_cases": ["Long-running tasks", "Need detailed logging", "Step-by-step refinement"],
+            "default_model": "gpt-4o",
+            "parameters": {"max_iterations": 15, "temperature": 0.6},
+            "unique_params": {
+                "case_dir": "Experience replay directory (e.g., ./experience_replay)",
+                "enable_rag": "Enable RAG/knowledge base (default: True). Set to False to disable HuggingFace downloads"
+            }
+        },
+        {
+            "name": "deepanalyze",
+            "full_name": "DeepAnalyze",
+            "description": "Deep analysis with structured thinking tags",
+            "use_cases": ["Deep data analysis", "Complex reasoning", "Structured outputs"],
+            "default_model": "gpt-4o",
+            "parameters": {"max_iterations": 10, "temperature": 0.8},
+            "unique_params": None
+        }
+    ]
+
+    print("=" * 70)
+    print("DSLighting Workflows")
+    print("=" * 70)
+    print()
+
+    for idx, wf in enumerate(workflows, 1):
+        print(f"{idx}. {wf['name'].upper()}")
+        print(f"   Full Name: {wf['full_name']}")
+        print(f"   Description: {wf['description']}")
+        print(f"   Use Cases: {', '.join(wf['use_cases'])}")
+        print(f"   Default Model: {wf['default_model']}")
+
+        if wf['unique_params']:
+            print(f"   Unique Parameters:")
+            for param, desc in wf['unique_params'].items():
+                print(f"     - {param}: {desc}")
+        else:
+            print(f"   Unique Parameters: None (uses common params only)")
+
+        print()
+
+    print("💡 Use dslighting.show_example('workflow_name') to see example code")
+
+
+def show_example(workflow_name: str):
+    """
+    Show workflow example code.
+
+    Args:
+        workflow_name: Name of the workflow (e.g., "aide", "autokaggle")
+
+    Returns:
+        None (prints to console)
+
+    Examples:
+        >>> import dslighting
+        >>> dslighting.show_example("aide")
+        >>> dslighting.show_example("autokaggle")
+    """
+    workflow_name = workflow_name.lower()
+
+    examples = {
+        "aide": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("bike-sharing-demand")
+
+agent = dslighting.Agent(
+    workflow="aide",
+    model="gpt-4o",
+    temperature=0.7,
+    max_iterations=10,
+)
+
+result = agent.run(data)
+
+print(f"Score: {result.score}")
+print(f"Cost: ${result.cost:.2f}")
+""",
+        "autokaggle": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("bike-sharing-demand")
+
+agent = dslighting.Agent(
+    workflow="autokaggle",
+    model="gpt-4o",
+    temperature=0.5,
+
+    autokaggle={
+        "max_attempts_per_phase": 5,
+        "success_threshold": 3.5
+    }
+)
+
+result = agent.run(data)
+
+print(f"Score: {result.score}")
+print(f"Duration: {result.duration:.1f}s")
+print(f"Cost: ${result.cost:.2f}")
+""",
+        "data_interpreter": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("sales_data.csv")
+
+agent = dslighting.Agent(
+    workflow="data_interpreter",
+    model="gpt-4o-mini",
+    temperature=0.7,
+    max_iterations=5,
+)
+
+result = agent.run(data, description="分析销售趋势")
+
+print(f"Output: {result.output}")
+print(f"Cost: ${result.cost:.2f}")
+""",
+        "automind": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("bike-sharing-demand")
+
+agent = dslighting.Agent(
+    workflow="automind",
+    model="gpt-4o",
+    temperature=0.5,
+    max_iterations=10,
+
+    automind={
+        "case_dir": "./experience_replay",
+        "enable_rag": True  # Set False to disable HuggingFace downloads
+    }
+)
+
+result = agent.run(data)
+
+print(f"Score: {result.score}")
+print(f"Output: {result.output}")
+print(f"Cost: ${result.cost:.2f}")
+""",
+        "dsagent": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("bike-sharing-demand")
+
+agent = dslighting.Agent(
+    workflow="dsagent",
+    model="gpt-4o",
+    temperature=0.6,
+    max_iterations=15,
+
+    dsagent={
+        "case_dir": "./experience_replay",
+        "enable_rag": True  # Set False to disable HuggingFace downloads
+    }
+)
+
+result = agent.run(data)
+
+print(f"Score: {result.score}")
+print(f"Output: {result.output}")
+print(f"Cost: ${result.cost:.2f}")
+""",
+        "deepanalyze": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("your_data.csv")
+
+agent = dslighting.Agent(
+    workflow="deepanalyze",
+    model="gpt-4o",
+    temperature=0.8,
+    max_iterations=10,
+)
+
+result = agent.run(data, description="深度分析数据")
+
+print(f"Output: {result.output}")
+print(f"Cost: ${result.cost:.2f}")
+"""
+    }
+
+    if workflow_name not in examples:
+        print(f"❌ Unknown workflow: {workflow_name}")
+        print(f"\nAvailable workflows: {', '.join(examples.keys())}")
+        print(f"\nUse dslighting.list_workflows() to see all workflows")
+        return
+
+    print("=" * 70)
+    print(f"Example: {workflow_name.upper()}")
+    print("=" * 70)
+    print(examples[workflow_name])
+    print("=" * 70)
+    print(f"💡 Copy this code and run it!")
+    print(f"💡 Use dslighting.list_workflows() for more workflow details")
 
 
 # Import logging configuration

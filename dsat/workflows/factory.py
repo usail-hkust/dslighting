@@ -130,8 +130,17 @@ class AutoMindWorkflowFactory(WorkflowFactory):
         workspace = WorkspaceService(run_name=config.run.name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = SandboxService(workspace=workspace, timeout=config.sandbox.timeout)
-        case_dir = config.workflow.params.get('case_dir', 'experience_replay')
-        vdb_service = VDBService(case_dir=case_dir)
+
+        # VDBService (RAG) is optional - can be disabled via enable_rag parameter
+        enable_rag = config.workflow.params.get('enable_rag', True)
+        vdb_service = None
+        if enable_rag:
+            case_dir = config.workflow.params.get('case_dir', 'experience_replay')
+            vdb_service = VDBService(case_dir=case_dir)
+            logger.info(f"RAG enabled: Using knowledge base from {case_dir}")
+        else:
+            logger.info("RAG disabled: Running without knowledge base retrieval")
+
         state = JournalState()
         
         # 2. Instantiate all operators required by this workflow, injecting their service dependencies
@@ -176,8 +185,17 @@ class DSAgentWorkflowFactory(WorkflowFactory):
         workspace = WorkspaceService(run_name=config.run.name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = SandboxService(workspace=workspace, timeout=config.sandbox.timeout)
-        case_dir = config.workflow.params.get('case_dir', 'experience_replay')
-        vdb_service = VDBService(case_dir=case_dir)
+
+        # VDBService (RAG) is optional - can be disabled via enable_rag parameter
+        enable_rag = config.workflow.params.get('enable_rag', True)
+        vdb_service = None
+        if enable_rag:
+            case_dir = config.workflow.params.get('case_dir', 'experience_replay')
+            vdb_service = VDBService(case_dir=case_dir)
+            logger.info(f"RAG enabled: Using knowledge base from {case_dir}")
+        else:
+            logger.info("RAG disabled: Running without knowledge base retrieval")
+
         state = DSAgentState()
 
         operators = {

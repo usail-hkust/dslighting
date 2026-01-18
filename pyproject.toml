@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.9.0"
+version = "1.9.7"
 description = "End-to-End Data Science Agent - Intelligent automation for data science tasks"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
@@ -45,9 +45,10 @@ dependencies = [
     "pyyaml",
     "tqdm",
     "py7zr",
-    # Notebook support
+    # Notebook support (required for data_interpreter workflow)
     "nbformat",
     "nbclient",
+    "ipykernel>=7.0.0",  # Required for Jupyter kernel in data_interpreter
 ]
 
 # Optional dependencies
@@ -90,6 +91,10 @@ dslighting-detect = "dslighting_cli:main"
 # Package discovery
 [tool.setuptools.packages.find]
 include = ["dslighting*", "dsat*", "mlebench*"]
+
+# Include top-level Python modules
+[tool.setuptools]
+py-modules = ["dslighting_cli"]
 
 [tool.setuptools.package-data]
 dslighting = ["*.yaml", "*.json", "datasets/**/*.csv", "registry/**/*.yaml", "registry/**/*.md", "registry/**/*.py"]
