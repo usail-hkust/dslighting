@@ -1,5 +1,5 @@
 # dsat/common/typing.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 
 class ExecutionResult(BaseModel):
@@ -14,6 +14,7 @@ class ExecutionResult(BaseModel):
     artifacts: List[str] = Field(default_factory=list, description="A list of generated artifacts, like image filenames.")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary execution metadata (timestamps, paths, etc.).")
 
-    class Config:
+    model_config = ConfigDict(
         """Pydantic configuration."""
-        extra = 'forbid'
+        extra='forbid'
+    )

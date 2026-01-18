@@ -134,7 +134,13 @@ include = '\.pyi?$'
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, may require external dependencies)",
+    "slow: Slow-running tests (skip with -m 'not slow')",
+    "requires_llm: Tests that require actual LLM API calls (may cost money)",
+    "requires_data: Tests that require dataset files",
+]
 
 # MyPy configuration
 [tool.mypy]

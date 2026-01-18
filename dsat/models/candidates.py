@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 class WorkflowCandidate(BaseModel):
@@ -11,6 +11,7 @@ class WorkflowCandidate(BaseModel):
     lineage: List[str] = Field(default_factory=list, description="IDs of parent workflow candidates.")
     round_num: Optional[int] = Field(default=None, description="The optimization round this candidate was generated in.")
 
-    class Config:
+    model_config = ConfigDict(
         """Pydantic configuration."""
-        extra = 'forbid'
+        extra='forbid'
+    )

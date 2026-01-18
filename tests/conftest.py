@@ -248,13 +248,18 @@ def reset_global_config():
     """
     # Reset global config before test
     import dslighting.core.global_config as gc
-    original_config = gc.GLOBAL_CONFIG.copy()
-    gc.GLOBAL_CONFIG.clear()
+    config = gc.get_global_config()
+    original_data_dir = config.data_parent_dir
+    original_registry_dir = config.registry_parent_dir
+    config.reset()
 
     yield
 
     # Restore after test
-    gc.GLOBAL_CONFIG.update(original_config)
+    config.set_parent_dirs(
+        data_parent_dir=original_data_dir,
+        registry_parent_dir=original_registry_dir
+    )
 
 
 # ============================================================================

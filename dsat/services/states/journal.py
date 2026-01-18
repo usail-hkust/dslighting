@@ -8,7 +8,7 @@ import uuid
 from functools import total_ordering
 from typing import Optional, Any, List, Dict, Set
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from dsat.common.typing import ExecutionResult
 from dsat.utils.context import truncate_output
@@ -84,9 +84,11 @@ class Node(BaseModel):
         self.is_buggy = not exec_result.success
         self.exec_metadata = exec_result.metadata or {}
 
-    class Config:
+    model_config = ConfigDict(
         """Pydantic configuration."""
-        json_encoders = {set: list} # Allow sets to be serialized to lists in JSON
+        # Note: json_encoders deprecated in Pydantic V2
+        # Sets are now automatically serialized to lists
+    )
 
 class JournalState(State, BaseModel):
     """

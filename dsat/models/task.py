@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Dict, Any
 
 # Define a controlled vocabulary for task types.
@@ -33,7 +33,7 @@ class TaskDefinition(BaseModel):
         description="A dictionary containing task-specific data."
     )
 
-    class Config:
+    model_config = ConfigDict(
         """
         Pydantic configuration with documentation examples.
 

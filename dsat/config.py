@@ -1,7 +1,7 @@
 # dsat/config.py
 
 from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class LLMConfig(BaseModel):
     """LLM service settings."""
@@ -74,6 +74,7 @@ class DSATConfig(BaseModel):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     optimizer: Optional[OptimizerConfig] = None
 
-    class Config:
+    model_config = ConfigDict(
         """Pydantic configuration."""
-        extra = 'forbid'
+        extra='forbid'
+    )
