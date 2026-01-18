@@ -193,16 +193,31 @@ class PackageDetector:
 
         return "\n".join(lines)
 
-    def save_to_config(self, config_path: Path, packages: Optional[Dict[str, str]] = None):
+    def save_to_config(
+        self,
+        config_path: Path,
+        packages: Optional[Dict[str, str]] = None,
+        data_science_only: bool = True
+    ):
         """
         Save detected packages to a config file.
 
         Args:
             config_path: Path to config.yaml file
             packages: Package dictionary to save (detects if None)
+            data_science_only: If True, only save data science packages (default: True)
         """
         if packages is None:
             packages = self.detect_packages()
+
+        # Filter to only data science packages if requested
+        if data_science_only:
+            packages = {
+                name: version
+                for name, version in packages.items()
+                if name in self.DATA_SCIENCE_PACKAGES
+            }
+            logger.info(f"Filtered to {len(packages)} data science packages")
 
         try:
             # Read existing config

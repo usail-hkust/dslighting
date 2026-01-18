@@ -27,9 +27,17 @@ NOTEBOOK_INIT_CODE = """
 import warnings
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 
+# Optional: matplotlib (for plotting)
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('Agg')  # Use non-interactive backend
+except Exception:
+    pass
+
+# Optional: seaborn (for better plots)
 try:
     import seaborn as sns
     sns.set_theme(style="whitegrid")
@@ -135,15 +143,28 @@ class NotebookExecutor:
 # ==============================================================================
 
 def notebook_worker(
-    task_queue: Queue, 
-    result_queue: Queue, 
-    workspace: WorkspaceService, 
+    task_queue: Queue,
+    result_queue: Queue,
+    run_dir: str,  # Changed: Pass run_dir path string instead of WorkspaceService object
     timeout: int
 ):
     """
     This function runs in a separate process. It creates an asyncio event loop,
     manages a NotebookExecutor, and processes tasks from the queue.
+
+    IMPORTANT: On macOS (and any system using 'spawn' for multiprocessing),
+    we must pass only picklable objects (like strings) to the worker process.
+    We reconstruct WorkspaceService inside the worker from the run_dir path.
     """
+    # Reconstruct WorkspaceService inside the worker process
+    # We pass the parent directory as base_dir and run_dir name as run_name
+    from pathlib import Path
+    run_dir_path = Path(run_dir)
+    base_dir = str(run_dir_path.parent)
+    run_name = run_dir_path.name
+
+    workspace = WorkspaceService(run_name, base_dir)
+
     async def main_loop():
         # The executor's lifecycle is tied to this async function
         executor = NotebookExecutor(workspace, timeout)
@@ -179,9 +200,12 @@ class ProcessIsolatedNotebookExecutor:
     def __init__(self, workspace: WorkspaceService, timeout: int):
         self.task_queue = Queue()
         self.result_queue = Queue()
+        # Pass workspace path as string instead of WorkspaceService object
+        # This ensures compatibility with macOS 'spawn' multiprocessing mode
+        workspace_path = str(workspace.run_dir)
         self.worker_process = Process(
             target=notebook_worker,
-            args=(self.task_queue, self.result_queue, workspace, timeout),
+            args=(self.task_queue, self.result_queue, workspace_path, timeout),
             daemon=True  # Set as daemon process to prevent main process from hanging
         )
 
