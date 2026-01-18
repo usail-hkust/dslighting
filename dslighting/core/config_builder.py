@@ -171,6 +171,11 @@ class ConfigBuilder:
               "temperature": 0.7
             }
           }
+
+        Note:
+            - api_key can be a single string or a list of strings for rotation
+            - If api_key is a list, it's converted to api_keys for rotation support
+            - api_keys takes precedence over api_key in the final config
         """
         raw = os.getenv(ENV_LLM_MODEL_CONFIGS)
         if not raw:
@@ -188,18 +193,34 @@ class ConfigBuilder:
 
         # Process each model config
         result = {}
-        for k, v in parsed.items():
-            if not isinstance(k, str) or not isinstance(v, dict):
+        for model_name, model_config in parsed.items():
+            if not isinstance(model_name, str) or not isinstance(model_config, dict):
+                logger.warning(f"Skipping invalid model config: {model_name}")
                 continue
 
-            # Handle api_key as list (take the first one)
-            if "api_key" in v and isinstance(v["api_key"], list):
-                if len(v["api_key"]) > 0:
-                    v = v.copy()  # Shallow copy to avoid mutating original
-                    v["api_key"] = v["api_key"][0]
-                    logger.debug(f"Model '{k}': using first API key from list of {len(v['api_key'])}")
+            # Handle api_key as list (convert to api_keys for rotation)
+            config_copy = model_config.copy()
+            if "api_key" in config_copy:
+                api_key_value = config_copy["api_key"]
+                if isinstance(api_key_value, list):
+                    # Convert list of keys to api_keys field
+                    if len(api_key_value) > 0:
+                        config_copy["api_keys"] = api_key_value
+                        del config_copy["api_key"]
+                        logger.info(f"Model '{model_name}': loaded {len(api_key_value)} API keys for rotation")
+                    else:
+                        logger.warning(f"Model '{model_name}': api_key list is empty, skipping")
+                        continue
+                elif isinstance(api_key_value, str):
+                    # Single key - keep as api_key
+                    if not api_key_value or api_key_value == "your_key":
+                        logger.warning(f"Model '{model_name}': api_key is placeholder, skipping")
+                        continue
+                else:
+                    logger.warning(f"Model '{model_name}': api_key must be string or list, skipping")
+                    continue
 
-            result[k] = v
+            result[model_name] = config_copy
 
         return result
 

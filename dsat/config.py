@@ -7,10 +7,25 @@ class LLMConfig(BaseModel):
     """LLM service settings."""
     model: str = "gpt-4o-mini"
     temperature: float = 0.7
-    api_key: Optional[str] = Field(None, description="API key, defaults to API_KEY env var if not set.")
+    api_key: Optional[str] = Field(None, description="API key (single key or first from list). For key rotation, use api_keys.")
+    api_keys: Optional[List[str]] = Field(None, description="List of API keys for rotation. If both api_key and api_keys are set, api_keys takes precedence.")
     api_base: Optional[str] = "https://api.openai.com/v1"
     provider: Optional[str] = Field(None, description="Optional LiteLLM provider alias, e.g. 'siliconflow'.")
     max_retries: int = 3
+
+    def get_api_keys(self) -> List[str]:
+        """
+        Get list of API keys for rotation.
+
+        Returns:
+            List of API keys. Priority: api_keys > api_key > []
+        """
+        if self.api_keys:
+            return self.api_keys
+        elif self.api_key:
+            return [self.api_key]
+        else:
+            return []
 
 class SandboxConfig(BaseModel):
     """Code execution sandbox settings."""
