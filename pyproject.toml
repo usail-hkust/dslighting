@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "1.9.11"
-description = "End-to-End Data Science Agent - Intelligent automation for data science tasks"
+version = "2.1.1"
+description = "DSLighting 2.1.1 - Bug fixes: Operators import paths and SandboxService initialization"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
