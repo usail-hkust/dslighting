@@ -319,6 +319,11 @@ PYPI_*.md
 # Project rules (development doc)
 PROJECT_RULES.md
 
+# AI assistant documentation (may contain sensitive info)
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+
 # Template files (auto-generated)
 dsat/templates/
 dslighting/templates/
