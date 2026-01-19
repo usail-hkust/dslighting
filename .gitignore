@@ -111,8 +111,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-dsat/
-# Note: dslighting/ is now part of the package (not ignored)
+# Note: dsat/ and dslighting/ are now part of the package (not ignored)
 
 # Spyder project settings
 .spyderproject
@@ -306,6 +305,7 @@ verify-imports.sh
 PROMPT.md
 PROMPT_TEMPLATE.md
 AGENT*.md
+AGENTS*.md
 FIX*.md
 PLAN*.md
 FIX_*.md
@@ -319,15 +319,16 @@ PYPI_*.md
 # Project rules (development doc)
 PROJECT_RULES.md
 
-# Claude Code project documentation
-CLAUDE.md
-
 # Template files (auto-generated)
 dsat/templates/
 dslighting/templates/
 
 # Claude Code generated documentation (all in claude_doc/)
 claude_doc/
+dslighting_doc/
+
+# PyPI documentation (all in PIP_DOC/)
+PIP_DOC/
 
 # Claude Code development files (all in claude_file/)
 claude_file/
