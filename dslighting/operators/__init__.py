@@ -30,7 +30,7 @@ except ImportError:
 
 # Code Operators
 try:
-    from dsat.operators.code.execute import ExecuteAndTestOperator
+    from dsat.operators.code import ExecuteAndTestOperator
 except ImportError:
     ExecuteAndTestOperator = None
 

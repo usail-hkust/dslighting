@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "2.1.1"
-description = "DSLighting 2.1.1 - Bug fixes: Operators import paths and SandboxService initialization"
+version = "2.1.2"
+description = "DSLighting 2.1.2 - Fix ExecuteAndTestOperator import path"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
