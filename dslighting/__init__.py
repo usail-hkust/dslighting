@@ -17,7 +17,7 @@ Quick Start:
 Documentation: https://github.com/usail-hkust/dslighting
 """
 
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 __author__ = "DSLighting Team"
 
 # ============================================================================
