@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data (sensitive)
+data/raw/
+data/competitions/*/prepared/private/
+
+# Results
+runs/
+
+# Kaggle
+*.zip
+kaggle.json
+
+# Environment variables
+.env
