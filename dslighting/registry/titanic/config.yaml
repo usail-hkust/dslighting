@@ -1,0 +1,12 @@
+id: titanic
+name: Titanic - Machine Learning from Disaster
+competition_type: simple
+task_type: kaggle
+awards_medals: true
+description: description.md
+dataset:
+  answers: titanic/prepared/private/test_answer.csv
+  sample_submission: titanic/prepared/public/sampleSubmission.csv
+grader:
+  name: accuracy
+  grade_fn: grade:grade

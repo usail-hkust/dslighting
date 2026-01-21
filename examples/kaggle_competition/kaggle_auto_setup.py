@@ -510,24 +510,23 @@ def grade(submission_path: str, answer_path: str) -> dict:
     merged = submission.merge(answers, on=id_col, suffixes=('_pred', '_true'))
 
     # 计算指标
-    if "{metric}" == "accuracy":
+    metric = "{metric}"
+
+    if metric == "accuracy":
         from sklearn.metrics import accuracy_score
-        score = accuracy_score(
-            merged.iloc[:, 1],
-            merged.iloc[:, -1]
-        )
-    elif "{metric}" == "rmse":
+        pred_col = submission.columns[1]
+        true_col = answers.columns[1]
+        score = accuracy_score(merged[true_col], merged[pred_col])
+    elif metric == "rmse":
         from sklearn.metrics import mean_squared_error
-        score = np.sqrt(mean_squared_error(
-            merged.iloc[:, -1],
-            merged.iloc[:, 1]
-        ))
-    elif "{metric}" == "mae":
+        pred_col = submission.columns[1]
+        true_col = answers.columns[1]
+        score = np.sqrt(mean_squared_error(merged[true_col], merged[pred_col]))
+    elif metric == "mae":
         from sklearn.metrics import mean_absolute_error
-        score = mean_absolute_error(
-            merged.iloc[:, -1],
-            merged.iloc[:, 1]
-        )
+        pred_col = submission.columns[1]
+        true_col = answers.columns[1]
+        score = mean_absolute_error(merged[true_col], merged[pred_col])
     else:
         raise ValueError(f"Unknown metric: {{metric}}")
 
