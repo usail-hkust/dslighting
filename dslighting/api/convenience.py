@@ -39,6 +39,7 @@ def load_data(
     data: Union[str, Path],
     task: Optional[str] = None,
     target: Optional[str] = None,
+    registry_dir: Union[str, Path, None] = None,
 ) -> TaskContext:
     """
     Load data for agent processing.
@@ -47,6 +48,7 @@ def load_data(
         data: Path to data file or directory, OR built-in dataset name (e.g., "bike-sharing-demand")
         task: Optional task description
         target: Optional target variable name
+        registry_dir: Optional registry directory path (for grading). Example: "registry/titanic"
 
     Returns:
         TaskContext object (Agent's view of the task, NOT just data)
@@ -59,6 +61,12 @@ def load_data(
 
         # Way 2: Use explicit path
         data = load_data("path/to/data", task="Predict bike sharing demand")
+
+        # Way 3: Explicit data and registry paths (for custom projects)
+        data = load_data(
+            "data/competitions/titanic",
+            registry_dir="registry/titanic"
+        )
     """
     import_path = data
 
@@ -98,7 +106,7 @@ def load_data(
 
     # Always treat loaded data as kaggle/competition type for benchmark grading
     loader = DataLoader()
-    loaded_data = loader.load(import_path, task=task, target=target)
+    loaded_data = loader.load(import_path, task=task, target=target, registry_dir=registry_dir)
 
     # Override task_type to ensure benchmark grading works
     if loaded_data.task_detection and loaded_data.task_detection.task_type != "kaggle":
