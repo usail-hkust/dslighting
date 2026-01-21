@@ -53,7 +53,7 @@ class Workflow(DSATWorkflow):
         # 2. Execute the code in the sandbox
         # The sandbox will have its own isolated workspace.
         print("  Initial Workflow: Executing generated script in sandbox...")
-        exec_result = self.sandbox_service.run_script(code_to_execute)
+        exec_result = await self.sandbox_service.run_script(code_to_execute)
 
         if not exec_result.success:
             print(f"  ERROR: Code execution failed.\\\\n{exec_result.stderr}")

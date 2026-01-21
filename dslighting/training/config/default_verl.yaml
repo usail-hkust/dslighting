@@ -1,0 +1,32 @@
+# DSLighting 默认 VERL 配置
+
+algorithm:
+  adv_estimator: grpo
+  use_kl_in_reward: false
+
+data:
+  train_batch_size: 32
+  max_prompt_length: 4096
+  max_response_length: 2048
+
+actor_rollout_ref:
+  rollout:
+    name: vllm
+    n: 4  # GRPO group size
+    multi_turn:
+      format: hermes
+
+  actor:
+    ppo_mini_batch_size: 32
+    optim:
+      lr: 1.0e-6
+
+  model:
+    path: Qwen/Qwen2.5-Coder-1.5B-Instruct
+
+trainer:
+  n_gpus_per_node: 1
+  val_before_train: true
+  test_freq: 32
+  save_freq: 64
+  total_epochs: 2

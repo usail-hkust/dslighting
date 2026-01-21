@@ -1,627 +1,431 @@
 """
-DSLighting: Simplified API for Data Science Agent Automation
+DSLighting 2.0 - Data Science Agent Framework
 
-A progressive API that provides sensible defaults with full control when needed.
+A complete 5-layer architecture for building and running data science agents.
+
+Architecture:
+    🧠 agents/     - Strategy and orchestration center
+    💪 operators/  - Atomic, reusable capability units
+    ⚙️ services/   - Infrastructure support
+    📝 state/      - Memory and context management
+    🗣️ prompts/    - Prompt engineering components
 
 Quick Start:
-    >>> import dslighting
-    >>>
-    >>> # Simple usage
-    >>> data = dslighting.load_data("path/to/data")
-    >>> agent = dslighting.Agent()
-    >>> result = agent.run(data)
-    >>>
-    >>> # One-liner
-    >>> result = dslighting.run_agent("path/to/data")
+    >>> from dslighting import run_agent
+    >>> result = run_agent(task_id="bike-sharing-demand")
 
-Advanced Usage:
-    >>> agent = dslighting.Agent(
-    ...     workflow="autokaggle",
-    ...     model="gpt-4o",
-    ...     temperature=0.5,
-    ...     max_iterations=10
-    ... )
-    >>> result = agent.run(data)
-
-For more information, see: https://github.com/usail-hkust/dslighting
+Documentation: https://github.com/usail-hkust/dslighting
 """
 
-__version__ = "1.9.11"
+__version__ = "2.4.0"
 __author__ = "DSLighting Team"
 
-# Core API classes
-from dslighting.core.agent import Agent, AgentResult
-from dslighting.core.data_loader import DataLoader, LoadedData
+# ============================================================================
+# DSLighting 2.0 - User Layer (Top Level API)
+# ============================================================================
+
+from dslighting.api import Agent, AgentResult, DataLoader, TaskContext
+from dslighting.api.convenience import run_agent, load_data, setup
+
+# New unified API (recommended)
+from dslighting.core.dataset import Dataset, load_dataset as load_dataset_new, DatasetInfo
+
+# ============================================================================
+# DSLighting 2.0 - DSAT Inheritance (推理模式)
+# ============================================================================
+
+# DSAT Types & Config
+try:
+    from dslighting.core.types import (
+        TaskDefinition,
+        TaskType,
+        TaskMode,
+        WorkflowCandidate,
+        ReviewResult,
+        Plan,
+    )
+    from dslighting.core.config import (
+        LLMConfig,
+        TaskConfig,
+    )
+except ImportError:
+    pass
+
+# ============================================================================
+# DSLighting 2.0 - Training Integration (训练模式)
+# ============================================================================
+
+try:
+    from dslighting.training import (
+        LitDSAgent,
+        RewardEvaluator,
+        KaggleReward,
+        ClassificationReward,
+        RegressionReward,
+        DatasetConverter,
+        VerlConfigBuilder,
+    )
+except ImportError:
+    pass
+
+# ============================================================================
+# DSLighting 2.0 - Five Layer Architecture
+# ============================================================================
+
+# 🧠 agents/ - Strategy and Orchestration Center
+try:
+    from dslighting.agents import BaseAgent  # DSATWorkflow alias
+except ImportError:
+    BaseAgent = None
+
+# patterns 已弃用 - 所有功能通过 DSAT workflows 提供
+
+try:
+    from dslighting.agents.presets import (
+        AIDE,                # AIDEWorkflow
+        AutoKaggle,          # AutoKaggleWorkflow
+        DataInterpreter,     # DataInterpreterWorkflow
+        DeepAnalyze,         # DeepAnalyzeWorkflow
+        DSAgent,             # DSAgentWorkflow
+        AutoMind,            # AutoMindWorkflow
+        AFlow,               # AFlowWorkflow
+    )
+except ImportError:
+    AIDE = None
+    AutoKaggle = None
+    DataInterpreter = None
+    DeepAnalyze = None
+    DSAgent = None
+    AutoMind = None
+    AFlow = None
+
+try:
+    from dslighting.agents.strategies import (
+        SearchStrategy,      # Base class for search strategies
+        GreedyStrategy,      # Greedy search
+        BeamSearchStrategy,  # Beam search
+        MCTSStrategy,        # Monte Carlo Tree Search
+        EvolutionaryStrategy, # Evolutionary algorithm
+    )
+except ImportError:
+    SearchStrategy = None
+    GreedyStrategy = None
+    BeamSearchStrategy = None
+    MCTSStrategy = None
+    EvolutionaryStrategy = None
+
+# 💪 operators/ - Atomic Capability Units
+from dslighting.operators import (
+    Operator,            # Base operator class
+    GenerateCodeAndPlanOperator,  # LLM code generation
+    PlanOperator,        # LLM planning
+    ReviewOperator,      # LLM review
+    SummarizeOperator,   # LLM summarization
+    ExecuteAndTestOperator,  # Code execution
+)
+
+from dslighting.operators.orchestration import (
+    Pipeline,            # Sequential orchestration
+    Parallel,            # Parallel orchestration
+    Conditional,         # Conditional orchestration
+)
+
+# ⚙️ services/ - Infrastructure Support
+from dslighting.services import (
+    LLMService,          # LLM invocation service
+    SandboxService,      # Sandboxed code execution
+    WorkspaceService,    # Workspace management
+    DataAnalyzer,        # Data analysis service (optional)
+    VDBService,          # Vector database service (optional)
+)
+
+# 📝 state/ - Memory and Context Management
+from dslighting.state import (
+    JournalState,        # Search tree state
+    Node,                # Search tree node
+    MetricValue,         # Comparable metric value
+    Experience,          # Meta-optimization experience (optional)
+    MemoryManager,       # Memory manager (optional)
+    ContextManager,      # Context manager (optional)
+)
+
+# 🗣️ prompts/ - Prompt Engineering
+from dslighting.prompts import (
+    PromptBuilder,       # Fluent API for building prompts
+    create_prompt_template,  # Create prompt from dict
+    get_common_guidelines,   # Get common DS guidelines
+    create_modeling_prompt,  # Create modeling prompt
+    create_eda_prompt,       # Create EDA prompt
+    create_debug_prompt,     # Create debugging prompt
+)
+
+# ============================================================================
+# Legacy Support (v1.x - Backward Compatible)
+# ============================================================================
+
+# Legacy core API
+try:
+    from dslighting.core.agent import Agent as LegacyAgent
+    from dslighting.core.data_loader import DataLoader as LegacyDataLoader
+except ImportError:
+    # Legacy components may not be available
+    pass
 
 # Example datasets
 from dslighting import datasets
 
-# Convenience functions
-def setup(data_parent_dir=None, registry_parent_dir=None):
-    """
-    Configure default parent directories for DSLighting.
+# ============================================================================
+# Custom Workflow Support
+# ============================================================================
 
-    This function sets up global configuration for data and registry directories.
-    Once configured, you can run agents using only task_id.
+try:
+    from dslighting.workflows import BaseWorkflowFactory
+except ImportError:
+    BaseWorkflowFactory = None
 
-    Args:
-        data_parent_dir: Parent directory containing competition data folders.
-                        Example: "/path/to/data/competitions"
-                        Each task should be in: data_parent_dir/task_name/
-        registry_parent_dir: Parent directory containing registry folders.
-                            Example: "/path/to/registry"
-                            Each task config should be in: registry_parent_dir/task_name/
-
-    Returns:
-        GlobalConfig instance for further customization
-
-    Examples:
-        >>> # Configure once at the start of your script
-        >>> import dslighting
-        >>> dslighting.setup(
-        ...     data_parent_dir="/path/to/data/competitions",
-        ...     registry_parent_dir="/path/to/registry"
-        ... )
-        >>>
-        >>> # Now run tasks with just task_id
-        >>> agent = dslighting.Agent()
-        >>> result = agent.run(task_id="bike-sharing-demand")
-        >>>
-        >>> # Or use the one-liner
-        >>> result = dslighting.run_agent(task_id="bike-sharing-demand")
-
-    Notes:
-        - This configuration is global and thread-safe
-        - Call this once at the start of your application
-        - Use reset() to clear the configuration
-    """
-    from dslighting.core.global_config import get_global_config
-    config = get_global_config()
-    config.set_parent_dirs(
-        data_parent_dir=data_parent_dir,
-        registry_parent_dir=registry_parent_dir
-    )
-    return config
-
-
-def load_data(source, **kwargs):
-    """
-    Load and auto-detect data type.
-
-    This is a convenience function that creates a DataLoader and loads data.
-    For Kaggle/MLE-Bench competitions, it automatically extracts task_id from the path.
-
-    Args:
-        source: Data source (path, DataFrame, dict, etc.)
-        **kwargs: Additional parameters passed to DataLoader
-
-    Returns:
-        LoadedData with auto-detected task information and task_id
-
-    Examples:
-        >>> # Load from competition path (task_id auto-detected)
-        >>> data = dslighting.load_data("data/competitions/bike-sharing-demand")
-        >>> print(data.task_id)  # "bike-sharing-demand"
-        >>>
-        >>> agent = dslighting.Agent()
-        >>> result = agent.run(data)  # Auto-graded using task_id
-
-        >>> # Load DataFrame (no task_id)
-        >>> df = pd.read_csv("data.csv")
-        >>> data = dslighting.load_data(df)
-
-        >>> data = dslighting.load_data("data/house-prices")
-        >>> print(data.task_detection.task_type)
-        'kaggle'
-    """
-    loader = DataLoader()
-    return loader.load(source, **kwargs)
-
-
-def run_agent(data=None, task_id=None, data_dir=None, registry_dir=None,
-               keep_workspace=False, keep_workspace_on_failure=True, **kwargs):
-    """
-    Quick one-liner: load data and run with defaults.
-
-    This function creates an Agent with the specified parameters and runs it on the data.
-
-    Args:
-        data: Optional data source (path, DataFrame, dict, or LoadedData)
-        task_id: Task/Competition identifier (e.g., "bike-sharing-demand")
-               For built-in datasets, just provide task_id without data_dir
-        data_dir: Direct path to task data directory (must contain prepared/ folder).
-                 Example: "/path/to/data/competitions/my-task"
-                 If not provided, will use global config from setup().
-        registry_dir: Direct path to task registry directory (must contain config.yaml).
-                     Example: "/path/to/registry/my-task"
-                     If not provided, will use global config from setup().
-        keep_workspace: Keep workspace after completion (default: False)
-        keep_workspace_on_failure: Keep workspace on failure (default: True)
-        **kwargs: Parameters passed to Agent.__init__ and Agent.run
-
-    Returns:
-        AgentResult with output, metrics, and metadata
-
-    Examples:
-        >>> # Method 1: Using global setup (recommended)
-        >>> import dslighting
-        >>> dslighting.setup(
-        ...     data_parent_dir="/path/to/data/competitions",
-        ...     registry_parent_dir="/path/to/registry"
-        ... )
-        >>> result = dslighting.run_agent(task_id="bike-sharing-demand")
-
-        >>> # Method 2: Built-in dataset (simplest)
-        >>> result = dslighting.run_agent(task_id="bike-sharing-demand")
-
-        >>> # Method 3: Direct paths (explicit)
-        >>> result = dslighting.run_agent(
-        ...     task_id="my-task",
-        ...     data_dir="/path/to/data/competitions/my-task",
-        ...     registry_dir="/path/to/registry/my-task"
-        ... )
-
-        >>> # Using LoadedData
-        >>> data = dslighting.load_data("./datasets/bike-sharing-demand")
-        >>> result = dslighting.run_agent(data)
-
-        >>> # With custom parameters
-        >>> result = dslighting.run_agent(
-        ...     task_id="bike-sharing-demand",
-        ...     workflow="autokaggle",
-        ...     model="gpt-4o",
-        ...     keep_workspace=True
-        ... )
-    """
-    from pathlib import Path
-
-    # Extract run-specific parameters if present
-    run_kwargs = {}
-    agent_params = {}
-
-    # Parameters that should go to run(), not __init__
-    run_only_params = {'task_id', 'data_dir', 'registry_dir', 'output_path', 'description'}
-
-    for key, value in kwargs.items():
-        if key in run_only_params:
-            run_kwargs[key] = value
-        else:
-            agent_params[key] = value
-
-    # Handle data loading
-    if task_id and data is None:
-        # Case 1: Built-in dataset with no data_dir specified
-        if data_dir is None:
-            # Check if it's a built-in dataset
-            try:
-                import dslighting.datasets
-                load_func = getattr(dslighting.datasets, f'load_{task_id.replace("-", "_")}', None)
-                if load_func:
-                    # Use built-in dataset
-                    loaded_info = load_func()
-                    data = dslighting.load_data(loaded_info['data_dir'])
-                    # task_id and data_dir will be extracted from LoadedData
-                    run_kwargs.pop('task_id', None)
-                    run_kwargs.pop('data_dir', None)
-                    run_kwargs.pop('registry_dir', None)
-            except (AttributeError, FileNotFoundError):
-                pass
-
-        # Case 2: data_dir is provided - verify it's a direct task directory
-        if data is None and data_dir is not None:
-            data_dir_path = Path(data_dir)
-            if data_dir_path.exists():
-                # Verify it points to a task directory (has prepared/public)
-                if (data_dir_path / "prepared" / "public").exists():
-                    # data_dir is the task directory - load it
-                    data = dslighting.load_data(data_dir_path, registry_dir=registry_dir)
-                    run_kwargs.pop('task_id', None)
-                    run_kwargs.pop('data_dir', None)
-                    run_kwargs.pop('registry_dir', None)
-                # else: keep data_dir for Agent.run() to handle (will use with task_id)
-
-    # Add explicit parameters to run_kwargs
-    if task_id is not None:
-        run_kwargs['task_id'] = task_id
-    if data_dir is not None:
-        run_kwargs['data_dir'] = data_dir
-    if registry_dir is not None:
-        run_kwargs['registry_dir'] = registry_dir
-
-    # Add workspace preservation parameters to agent
-    agent_params['keep_workspace'] = keep_workspace
-    agent_params['keep_workspace_on_failure'] = keep_workspace_on_failure
-
-    # Create agent and run
-    agent = Agent(**agent_params)
-    return agent.run(data, **run_kwargs)
-
-
-# Public API
-__all__ = [
-    # Version info
-    "__version__",
-    "__author__",
-
-    # Core classes
-    "Agent",
-    "AgentResult",
-    "DataLoader",
-    "LoadedData",
-
-    # Convenience functions
-    "setup",
-    "load_data",
-    "run_agent",
-
-    # Help functions
-    "help",
-    "list_workflows",
-    "show_example",
-
-    # Example datasets
-    "datasets",
-]
-
+try:
+    from dslighting.tasks import MLETaskLoader
+except ImportError:
+    MLETaskLoader = None
 
 # ============================================================================
 # Help Functions
 # ============================================================================
 
 def help():
-    """
-    Show DSLighting help and quick start guide.
-
-    This is the main help function for DSLighting. It displays:
-    - Quick start guide
-    - Available workflows
-    - Useful commands
-    - Documentation links
-
-    Examples:
-        >>> import dslighting
-        >>> dslighting.help()
-    """
+    """Show DSLighting 2.0 help and quick start guide."""
     print("=" * 70)
-    print("DSLighting - Data Science Agent Framework")
+    print("DSLighting 2.0 - Data Science Agent Framework")
     print("=" * 70)
     print()
     print("🚀 Quick Start:")
     print("-" * 70)
     print("""
-from dotenv import load_dotenv
-load_dotenv()
+# Scenario 1: One-liner (simplest)
+from dslighting import run_agent
+result = run_agent(task_id="bike-sharing-demand")
 
-import dslighting
+# Scenario 2: Use Agent with preset workflow
+from dslighting import Agent
+agent = Agent(workflow="aide")
+result = agent.run(data="path/to/data")
 
-# Method 1: Use built-in dataset
-data = dslighting.load_data("bike-sharing-demand")
-agent = dslighting.Agent(workflow="aide")
-result = agent.run(data)
+# Scenario 3: Custom agent with patterns
+from dslighting import IterativeAgent, PromptBuilder
 
-# Method 2: Quick one-liner
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+agent = IterativeAgent(operators, services, agent_config)
+await agent.solve(description, io_instructions, data_dir, output_path)
 """)
 
-    print("📋 Available Workflows:")
+    print("\n📋 Available Workflows (from DSAT):")
     print("-" * 70)
     print("""
-  1. aide              - Adaptive Iteration & Debugging (Default)
-  2. autokaggle        - Advanced competition solver
-  3. data_interpreter  - Interactive data analysis
-  4. automind          - Complex planning with knowledge base
-  5. dsagent           - Long-term planning with logging
-  6. deepanalyze       - Deep analysis with structured tags
+Manual Workflows:
+  1. AIDE              - Adaptive Iteration & Debugging Enhancement
+  2. AutoKaggle        - Advanced competition solver
+  3. DataInterpreter   - Data analysis and exploration
+  4. DeepAnalyze       - Analysis-focused workflow
+  5. DSAgent           - Structured operator-based workflow
+
+Search Workflows:
+  6. AutoMind          - Planning + reasoning with knowledge base
+  7. AFlow             - Meta-optimization workflow selector
 """)
 
-    print("💡 Python Help Functions:")
+    print("\n🧱 Five Layer Architecture:")
     print("-" * 70)
     print("""
-  dslighting.list_workflows()         - List all workflows with details
-  dslighting.show_example("aide")      - Show workflow example code
+  1. 🧠 agents/     - BaseAgent, SimpleAgent, IterativeAgent, presets, strategies
+  2. 💪 operators/  - LLM, code, data, orchestration (Pipeline, Parallel)
+  3. ⚙️ services/   - LLMService, SandboxService, WorkspaceService
+  4. 📝 state/      - JournalState, Experience, MemoryManager
+  5. 🗣️ prompts/    - PromptBuilder, templates
 """)
 
-    print("🖥️  CLI Commands:")
+    print("\n📚 Documentation:")
     print("-" * 70)
     print("""
-  dslighting help                      - Show this help
-  dslighting workflows                  - Show all workflows
-  dslighting example <workflow>         - Show workflow example
-  dslighting quickstart                 - Show quick start guide
-  dslighting detect-packages            - Detect Python packages
-""")
-
-    print("📚 Documentation:")
-    print("-" * 70)
-    print("""
-  Online:  https://luckyfan-cs.github.io/dslighting-web/
   GitHub:  https://github.com/usail-hkust/dslighting
   PyPI:    https://pypi.org/project/dslighting/
 """)
 
 
 def list_workflows():
-    """
-    List all available workflows with detailed information.
-
-    Shows workflow name, description, use cases, default parameters,
-    and unique parameters for each workflow.
-
-    Returns:
-        None (prints to console)
-
-    Examples:
-        >>> import dslighting
-        >>> dslighting.list_workflows()
-    """
-    workflows = [
-        {
-            "name": "aide",
-            "full_name": "AIDE (Adaptive Iteration & Debugging Enhancement)",
-            "description": "Self-improving code with iterative debugging",
-            "use_cases": ["Kaggle competitions (simple)", "Data analysis", "Quick prototyping"],
-            "default_model": "gpt-4o",
-            "parameters": {"max_iterations": 10, "temperature": 0.7},
-            "unique_params": None
-        },
-        {
-            "name": "autokaggle",
-            "full_name": "AutoKaggle",
-            "description": "Advanced competition solver with dynamic phase planning",
-            "use_cases": ["Kaggle competitions (complex)", "High-stakes competitions", "Multi-phase problems"],
-            "default_model": "gpt-4o",
-            "parameters": {"temperature": 0.5},
-            "unique_params": {
-                "max_attempts_per_phase": "Max retries per phase (default: 5)",
-                "success_threshold": "Score threshold 1-5 (default: 3.0)"
-            }
-        },
-        {
-            "name": "data_interpreter",
-            "full_name": "DataInterpreter",
-            "description": "Interactive data analysis and exploration",
-            "use_cases": ["Data exploration", "Visualization", "Quick analysis"],
-            "default_model": "gpt-4o-mini",
-            "parameters": {"max_iterations": 5, "temperature": 0.7},
-            "unique_params": None
-        },
-        {
-            "name": "automind",
-            "full_name": "AutoMind",
-            "description": "Complex planning with knowledge base and experience replay",
-            "use_cases": ["Complex tasks", "Multi-step problems", "Need historical context"],
-            "default_model": "gpt-4o",
-            "parameters": {"max_iterations": 10, "temperature": 0.5},
-            "unique_params": {
-                "case_dir": "Experience replay directory (e.g., ./experience_replay)",
-                "enable_rag": "Enable RAG/knowledge base (default: True). Set to False to disable HuggingFace downloads"
-            }
-        },
-        {
-            "name": "dsagent",
-            "full_name": "DS-Agent",
-            "description": "Long-term planning with Plan-Execute-Log loop",
-            "use_cases": ["Long-running tasks", "Need detailed logging", "Step-by-step refinement"],
-            "default_model": "gpt-4o",
-            "parameters": {"max_iterations": 15, "temperature": 0.6},
-            "unique_params": {
-                "case_dir": "Experience replay directory (e.g., ./experience_replay)",
-                "enable_rag": "Enable RAG/knowledge base (default: True). Set to False to disable HuggingFace downloads"
-            }
-        },
-        {
-            "name": "deepanalyze",
-            "full_name": "DeepAnalyze",
-            "description": "Deep analysis with structured thinking tags",
-            "use_cases": ["Deep data analysis", "Complex reasoning", "Structured outputs"],
-            "default_model": "gpt-4o",
-            "parameters": {"max_iterations": 10, "temperature": 0.8},
-            "unique_params": None
-        }
-    ]
-
+    """List all available workflows."""
     print("=" * 70)
-    print("DSLighting Workflows")
+    print("DSLighting 2.0 Workflows (from DSAT)")
     print("=" * 70)
     print()
 
-    for idx, wf in enumerate(workflows, 1):
-        print(f"{idx}. {wf['name'].upper()}")
-        print(f"   Full Name: {wf['full_name']}")
-        print(f"   Description: {wf['description']}")
-        print(f"   Use Cases: {', '.join(wf['use_cases'])}")
-        print(f"   Default Model: {wf['default_model']}")
+    workflows = [
+        ("AIDE", "Adaptive Iteration & Debugging Enhancement",
+         "Most data science tasks", "gpt-4o"),
+        ("AutoKaggle", "Competition-solving agent",
+         "Kaggle competitions, benchmarks", "gpt-4o"),
+        ("DataInterpreter", "Data analysis and exploration",
+         "Data exploration, EDA", "gpt-4o-mini"),
+        ("DeepAnalyze", "Analysis-focused workflow",
+         "Deep analysis tasks", "gpt-4o"),
+        ("DSAgent", "Structured operator-based workflow",
+         "Tasks with logging", "gpt-4o"),
+        ("AutoMind", "Planning + reasoning with knowledge base",
+         "Tasks requiring RAG", "gpt-4o"),
+        ("AFlow", "Meta-optimization workflow selector",
+         "Automated workflow selection", "gpt-4o"),
+    ]
 
-        if wf['unique_params']:
-            print(f"   Unique Parameters:")
-            for param, desc in wf['unique_params'].items():
-                print(f"     - {param}: {desc}")
-        else:
-            print(f"   Unique Parameters: None (uses common params only)")
-
+    for name, full_name, use_case, model in workflows:
+        print(f"  {name}")
+        print(f"    Full Name: {full_name}")
+        print(f"    Use Case: {use_case}")
+        print(f"    Default Model: {model}")
         print()
-
-    print("💡 Use dslighting.show_example('workflow_name') to see example code")
 
 
 def show_example(workflow_name: str):
-    """
-    Show workflow example code.
-
-    Args:
-        workflow_name: Name of the workflow (e.g., "aide", "autokaggle")
-
-    Returns:
-        None (prints to console)
-
-    Examples:
-        >>> import dslighting
-        >>> dslighting.show_example("aide")
-        >>> dslighting.show_example("autokaggle")
-    """
-    workflow_name = workflow_name.lower()
-
+    """Show workflow example code."""
     examples = {
         "aide": """
-from dotenv import load_dotenv
-load_dotenv()
+from dslighting import Agent
 
-import dslighting
-
-data = dslighting.load_data("bike-sharing-demand")
-
-agent = dslighting.Agent(
-    workflow="aide",
-    model="gpt-4o",
-    temperature=0.7,
-    max_iterations=10,
-)
-
-result = agent.run(data)
-
-print(f"Score: {result.score}")
-print(f"Cost: ${result.cost:.2f}")
+agent = Agent(workflow="aide", model="gpt-4o")
+result = agent.run(data="path/to/data")
+print(f"Success: {result.success}")
 """,
         "autokaggle": """
-from dotenv import load_dotenv
-load_dotenv()
+from dslighting import Agent
 
-import dslighting
-
-data = dslighting.load_data("bike-sharing-demand")
-
-agent = dslighting.Agent(
-    workflow="autokaggle",
-    model="gpt-4o",
-    temperature=0.5,
-
-    autokaggle={
-        "max_attempts_per_phase": 5,
-        "success_threshold": 3.5
-    }
-)
-
-result = agent.run(data)
-
-print(f"Score: {result.score}")
-print(f"Duration: {result.duration:.1f}s")
-print(f"Cost: ${result.cost:.2f}")
+agent = Agent(workflow="autokaggle", model="gpt-4o")
+result = agent.run(data="path/to/data")
+print(f"Success: {result.success}")
 """,
         "data_interpreter": """
-from dotenv import load_dotenv
-load_dotenv()
+from dslighting import Agent
 
-import dslighting
-
-data = dslighting.load_data("sales_data.csv")
-
-agent = dslighting.Agent(
-    workflow="data_interpreter",
-    model="gpt-4o-mini",
-    temperature=0.7,
-    max_iterations=5,
-)
-
-result = agent.run(data, description="分析销售趋势")
-
-print(f"Output: {result.output}")
-print(f"Cost: ${result.cost:.2f}")
+agent = Agent(workflow="data_interpreter", model="gpt-4o")
+result = agent.run(data="path/to/data")
+print(f"Success: {result.success}")
 """,
-        "automind": """
-from dotenv import load_dotenv
-load_dotenv()
-
-import dslighting
-
-data = dslighting.load_data("bike-sharing-demand")
-
-agent = dslighting.Agent(
-    workflow="automind",
-    model="gpt-4o",
-    temperature=0.5,
-    max_iterations=10,
-
-    automind={
-        "case_dir": "./experience_replay",
-        "enable_rag": True  # Set False to disable HuggingFace downloads
-    }
-)
-
-result = agent.run(data)
-
-print(f"Score: {result.score}")
-print(f"Output: {result.output}")
-print(f"Cost: ${result.cost:.2f}")
-""",
-        "dsagent": """
-from dotenv import load_dotenv
-load_dotenv()
-
-import dslighting
-
-data = dslighting.load_data("bike-sharing-demand")
-
-agent = dslighting.Agent(
-    workflow="dsagent",
-    model="gpt-4o",
-    temperature=0.6,
-    max_iterations=15,
-
-    dsagent={
-        "case_dir": "./experience_replay",
-        "enable_rag": True  # Set False to disable HuggingFace downloads
-    }
-)
-
-result = agent.run(data)
-
-print(f"Score: {result.score}")
-print(f"Output: {result.output}")
-print(f"Cost: ${result.cost:.2f}")
-""",
-        "deepanalyze": """
-from dotenv import load_dotenv
-load_dotenv()
-
-import dslighting
-
-data = dslighting.load_data("your_data.csv")
-
-agent = dslighting.Agent(
-    workflow="deepanalyze",
-    model="gpt-4o",
-    temperature=0.8,
-    max_iterations=10,
-)
-
-result = agent.run(data, description="深度分析数据")
-
-print(f"Output: {result.output}")
-print(f"Cost: ${result.cost:.2f}")
-"""
     }
 
-    if workflow_name not in examples:
-        print(f"❌ Unknown workflow: {workflow_name}")
-        print(f"\nAvailable workflows: {', '.join(examples.keys())}")
-        print(f"\nUse dslighting.list_workflows() to see all workflows")
-        return
-
-    print("=" * 70)
-    print(f"Example: {workflow_name.upper()}")
-    print("=" * 70)
-    print(examples[workflow_name])
-    print("=" * 70)
-    print(f"💡 Copy this code and run it!")
-    print(f"💡 Use dslighting.list_workflows() for more workflow details")
+    if workflow_name.lower() in examples:
+        print(examples[workflow_name.lower()])
+    else:
+        print(f"Unknown workflow: {workflow_name}")
+        print(f"Available: {', '.join(examples.keys())}")
 
 
-# Import logging configuration
+# ============================================================================
+# Public API
+# ============================================================================
+
+__all__ = [
+    # Version info
+    "__version__",
+    "__author__",
+
+    # ========== User Layer (Top Level) ==========
+    "Agent",
+    "AgentResult",
+    "DataLoader",
+    "TaskContext",
+    "run_agent",
+    "load_data",
+    "setup",
+
+    # ========== DSAT Inheritance (推理模式) ==========
+    "TaskDefinition",
+    "TaskType",
+    "TaskMode",
+    "WorkflowCandidate",
+    "ReviewResult",
+    "Plan",
+    "LLMConfig",
+    "TaskConfig",
+    "BaseAgent",
+
+    # ========== Training Integration (训练模式) ==========
+    "LitDSAgent",
+    "RewardEvaluator",
+    "KaggleReward",
+    "ClassificationReward",
+    "RegressionReward",
+    "DatasetConverter",
+    "VerlConfigBuilder",
+
+    # ========== agents/ - Strategy Center ==========
+    "BaseAgent",
+    # DSAT 预设 workflows
+    "AIDE",
+    "AutoKaggle",
+    "DataInterpreter",
+    "DeepAnalyze",
+    "DSAgent",
+    "AutoMind",
+    "AFlow",
+    # 搜索策略
+    "SearchStrategy",
+    "GreedyStrategy",
+    "BeamSearchStrategy",
+    "MCTSStrategy",
+    "EvolutionaryStrategy",
+
+    # ========== operators/ - Atomic Capabilities ==========
+    "Operator",
+    "GenerateCodeAndPlanOperator",
+    "PlanOperator",
+    "ReviewOperator",
+    "SummarizeOperator",
+    "ExecuteAndTestOperator",
+    "Pipeline",
+    "Parallel",
+    "Conditional",
+
+    # ========== services/ - Infrastructure ==========
+    "LLMService",
+    "SandboxService",
+    "WorkspaceService",
+    "DataAnalyzer",
+    "VDBService",
+
+    # ========== state/ - Memory Management ==========
+    "JournalState",
+    "Node",
+    "MetricValue",
+    "Experience",
+    "MemoryManager",
+    "ContextManager",
+
+    # ========== prompts/ - Prompt Engineering ==========
+    "PromptBuilder",
+    "create_prompt_template",
+    "get_common_guidelines",
+    "create_modeling_prompt",
+    "create_eda_prompt",
+    "create_debug_prompt",
+
+    # ========== Help Functions ==========
+    "help",
+    "list_workflows",
+    "show_example",
+
+    # ========== Custom Workflow Support ==========
+    "BaseWorkflowFactory",
+    "MLETaskLoader",
+
+    # ========== Legacy ==========
+    "datasets",
+]
+
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+
 try:
     import logging
     from rich.logging import RichHandler
 
-    # Set up rich logging if available
     logging.basicConfig(
         level="INFO",
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -629,8 +433,133 @@ try:
         handlers=[RichHandler(show_path=False)],
     )
 except ImportError:
-    # Fallback to basic logging
     logging.basicConfig(
         level="INFO",
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
+
+
+# ============================================================================
+# Discovery Functions - Help users discover available components
+# ============================================================================
+
+def list_prompts(category: str = "all") -> dict[str, list[str]]:
+    """
+    List all available prompt functions by category.
+
+    This is a convenience wrapper around dslighting.prompts.list_available_prompts
+
+    Args:
+        category: Filter by category ('all', 'aide', 'autokaggle', 'automind',
+                  'aflow', 'data_interpreter', 'dsagent', 'native')
+                  Default: 'all'
+
+    Returns:
+        Dictionary mapping category names to lists of prompt functions
+
+    Example:
+        >>> import dslighting
+        >>> prompts = dslighting.list_prompts()
+        >>> for cat, funcs in prompts.items():
+        ...     print(f"{cat}: {len(funcs)} prompts")
+    """
+    try:
+        from dslighting.prompts import list_available_prompts
+        return list_available_prompts(category)
+    except ImportError:
+        return {}
+
+
+def list_operators(category: str = "all") -> dict[str, list[str]]:
+    """
+    List all available operators by category.
+
+    This is a convenience wrapper around dslighting.operators.list_available_operators
+
+    Args:
+        category: Filter by category ('all', 'llm', 'code', 'data', 'orchestration', 'custom')
+                  Default: 'all'
+
+    Returns:
+        Dictionary mapping category names to lists of operator names
+
+    Example:
+        >>> import dslighting
+        >>> ops = dslighting.list_operators()
+        >>> for cat, names in ops.items():
+        ...     print(f"{cat}: {len(names)} operators")
+    """
+    try:
+        from dslighting.operators import list_available_operators
+        return list_available_operators(category)
+    except ImportError:
+        return {}
+
+
+def explore():
+    """
+    Interactive exploration of DSLighting components.
+
+    Shows all available prompts, operators, and workflows with descriptions.
+
+    Example:
+        >>> import dslighting
+        >>> dslighting.explore()
+    """
+    print("=" * 80)
+    print("DSLighting 2.0 - Component Explorer")
+    print("=" * 80)
+    print()
+
+    # Prompts
+    print("\n🗣️  Available Prompts")
+    print("-" * 80)
+    prompts = list_prompts()
+    for category, functions in prompts.items():
+        if functions:
+            print(f"\n{category.upper()} ({len(functions)} items):")
+            for func in functions[:5]:  # Show first 5
+                print(f"  - {func}")
+            if len(functions) > 5:
+                print(f"  ... and {len(functions) - 5} more")
+
+    # Operators
+    print("\n\n💪 Available Operators")
+    print("-" * 80)
+    operators = list_operators()
+    for category, names in operators.items():
+        if names:
+            print(f"\n{category.upper()} ({len(names)} items):")
+            for name in names[:5]:  # Show first 5
+                print(f"  - {name}")
+            if len(names) > 5:
+                print(f"  ... and {len(names) - 5} more")
+
+    # Workflows
+    print("\n\n🚀 Available Workflows")
+    print("-" * 80)
+    print("""
+  AIDE              - Adaptive Iteration & Debugging Enhancement
+  AutoKaggle        - Competition-solving agent
+  DataInterpreter   - Data analysis and exploration
+  DeepAnalyze       - Analysis-focused workflow
+  DSAgent           - Structured operator-based workflow
+  AutoMind          - Planning + reasoning with knowledge base
+  AFlow             - Meta-optimization workflow selector
+    """)
+
+    print("\n" + "=" * 80)
+    print("For more information:")
+    print("  - dslighting.help()              - Show quick start guide")
+    print("  - dslighting.list_workflows()    - List all workflows")
+    print("  - dslighting.list_prompts()      - List all prompts")
+    print("  - dslighting.list_operators()    - List all operators")
+    print("=" * 80)
+
+
+# Add discovery functions to __all__
+__all__.extend([
+    "list_prompts",
+    "list_operators",
+    "explore",
+])

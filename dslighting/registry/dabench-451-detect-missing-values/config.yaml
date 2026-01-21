@@ -1,16 +1,13 @@
 id: dabench-451-detect-missing-values
-name: "DABench Task - 3. Can you detect any missing values in the datase"
+name: DABench Task - 3. Can you detect any missing values in the datase
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-451-detect-missing-values/description.md
-
+description: description.md
 dataset:
   answers: dabench-451-detect-missing-values/prepared/private/answer.csv
   sample_submission: dabench-451-detect-missing-values/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-451-detect-missing-values.grade:grade
-
-preparer: mlebench.competitions.dabench-451-detect-missing-values.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

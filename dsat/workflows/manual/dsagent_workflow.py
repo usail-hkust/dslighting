@@ -69,7 +69,7 @@ class DSAgentWorkflow(DSATWorkflow):
             logger.info(f"Step {step + 1} complete. Code has been refined.")
 
         logger.info("Max iterations reached. Executing the final refined code to produce the output file...")
-        final_exec_result = self.sandbox_service.run_script(self.state.final_code)
+        final_exec_result = await self.sandbox_service.run_script(self.state.final_code)
         
         if not final_exec_result.success:
             logger.error(f"Final code execution failed!\\n{final_exec_result.stderr}")

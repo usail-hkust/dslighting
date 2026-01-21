@@ -44,6 +44,7 @@ from dsat.workflows.manual.deepanalyze_workflow import DeepAnalyzeWorkflow
 from dsat.workflows.manual.dsagent_workflow import DSAgentWorkflow
 from dsat.workflows.manual.data_interpreter_workflow import DataInterpreterWorkflow
 from dsat.workflows.manual.autokaggle_workflow import AutoKaggleWorkflow
+from dsat.workflows.manual.my_custom_agent_workflow import MyCustomAgentWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -321,6 +322,48 @@ class DeepAnalyzeWorkflowFactory(WorkflowFactory):
         )
 
         logger.info("DeepAnalyze workflow assembled successfully.")
+        return workflow
+
+
+# ==============================================================================
+# ==                      MY CUSTOM AGENT WORKFLOW FACTORY                      ==
+# ==============================================================================
+class MyCustomAgentWorkflowFactory(WorkflowFactory):
+    """
+    Factory for MyCustomAgentWorkflow.
+
+    这是一个示例 Factory，展示如何创建自定义 Agent 的工厂类。
+    """
+    def create_workflow(self, config: DSATConfig, benchmark: Optional[BaseBenchmark] = None) -> MyCustomAgentWorkflow:
+        logger.info("MyCustomAgentWorkflowFactory: Assembling MyCustomAgent workflow...")
+
+        workspace = WorkspaceService(run_name=config.run.name)
+        llm_service = LLMService(config=config.llm)
+        sandbox_service = SandboxService(workspace=workspace, timeout=config.sandbox.timeout)
+        data_analyzer = DataAnalyzer()
+        state = JournalState()
+
+        operators = {
+            "generate": GenerateCodeAndPlanOperator(llm_service=llm_service),
+            "execute": ExecuteAndTestOperator(sandbox_service=sandbox_service),
+            "review": ReviewOperator(llm_service=llm_service),
+        }
+
+        services = {
+            "llm": llm_service,
+            "sandbox": sandbox_service,
+            "workspace": workspace,
+            "data_analyzer": data_analyzer,
+            "state": state,
+        }
+
+        workflow = MyCustomAgentWorkflow(
+            operators=operators,
+            services=services,
+            agent_config=config.agent.model_dump()
+        )
+
+        logger.info("MyCustomAgent workflow assembled successfully.")
         return workflow
 
 

@@ -1,16 +1,13 @@
 id: dabench-309-distribution-analysis-fare
-name: DABench Task - Perform distribution analysis on the age and fare 
+name: DABench Task - Perform distribution analysis on the age and fare
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-309-distribution-analysis-fare/description.md
-
+description: description.md
 dataset:
   answers: dabench-309-distribution-analysis-fare/prepared/private/answer.csv
   sample_submission: dabench-309-distribution-analysis-fare/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-309-distribution-analysis-fare.grade:grade
-
-preparer: mlebench.competitions.dabench-309-distribution-analysis-fare.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

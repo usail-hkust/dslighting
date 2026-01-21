@@ -5,8 +5,9 @@ from .base import DSATWorkflow
 from .factory import (
     WorkflowFactory,
     AIDEWorkflowFactory,
-    AutoMindWorkflowFactory, 
+    AutoMindWorkflowFactory,
     DSAgentWorkflowFactory,
     DataInterpreterWorkflowFactory,
-    AutoKaggleWorkflowFactory
+    AutoKaggleWorkflowFactory,
+    MyCustomAgentWorkflowFactory
 )

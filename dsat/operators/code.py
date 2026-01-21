@@ -30,9 +30,8 @@ class ExecuteAndTestOperator(Operator):
         """
         if mode == "script":
             logger.info("Executing code as a script...")
-            # run_script is synchronous in the sandbox service, but we call it from an async operator
-            # A fully async sandbox would use asyncio.to_thread
-            return self.sandbox.run_script(code)
+            # run_script is async in DSLighting 2.2.0+ (unified async API)
+            return await self.sandbox.run_script(code)
         
         elif mode == "notebook":
             if not isinstance(executor_context, ProcessIsolatedNotebookExecutor):

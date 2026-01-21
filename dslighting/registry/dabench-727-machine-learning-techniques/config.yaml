@@ -1,16 +1,13 @@
 id: dabench-727-machine-learning-techniques
-name: DABench Task - 3. Use machine learning techniques to predict the 
+name: DABench Task - 3. Use machine learning techniques to predict the
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-727-machine-learning-techniques/description.md
-
+description: description.md
 dataset:
   answers: dabench-727-machine-learning-techniques/prepared/private/answer.csv
   sample_submission: dabench-727-machine-learning-techniques/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-727-machine-learning-techniques.grade:grade
-
-preparer: mlebench.competitions.dabench-727-machine-learning-techniques.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

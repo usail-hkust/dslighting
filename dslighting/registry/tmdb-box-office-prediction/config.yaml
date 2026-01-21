@@ -2,14 +2,11 @@ id: tmdb-box-office-prediction
 name: TMDB Box Office Prediction
 competition_type: simple
 awards_medals: false
-description: mlebench/competitions/tmdb-box-office-prediction/description.md
-
+description: description.md
 dataset:
   answers: tmdb-box-office-prediction/prepared/private/test.csv
   sample_submission: tmdb-box-office-prediction/prepared/public/sample_submission.csv
-
 grader:
   name: rmsle
-  grade_fn: mlebench.competitions.tmdb_box_office_prediction.grade:grade
-
-preparer: mlebench.competitions.tmdb_box_office_prediction.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

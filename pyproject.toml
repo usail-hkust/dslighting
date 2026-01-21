@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "2.1.2"
-description = "DSLighting 2.1.2 - Fix ExecuteAndTestOperator import path"
+version = "2.6.24"
+description = "DSLighting 2.6.17 - Use English comments and logs for international standards"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
@@ -39,6 +39,8 @@ dependencies = [
     "transformers>=4.30.0",  # Required for VDBService (RAG)
     "torch>=2.0.0",  # Required for VDBService (RAG)
     "scikit-learn>=1.0.0,<2.0.0",
+    "xgboost>=1.7.0",  # Common ML library used by agents
+    "lightgbm>=3.3.0",  # Common ML library used by agents
     # MLE-Bench dependencies (for grading)
     "diskcache",
     "tenacity",
@@ -67,6 +69,8 @@ minimal = [
     "transformers>=4.30.0",
     "torch>=2.0.0",
     "scikit-learn>=1.0.0,<2.0.0",
+    "xgboost>=1.7.0",
+    "lightgbm>=3.3.0",
     "diskcache",
     "tenacity",
     "appdirs",
@@ -111,7 +115,8 @@ dslighting-detect = "dslighting_cli:main"
 
 # Package discovery
 [tool.setuptools.packages.find]
-include = ["dslighting*", "dsat*", "mlebench*"]
+include = ["dslighting*", "dsat*"]
+exclude = ["dsat.benchmark.dabench*", "dsat.benchmark.mlebench*", "dsat.benchmark.sciencebench*"]
 
 # Include top-level Python modules
 [tool.setuptools]
@@ -120,8 +125,6 @@ py-modules = ["dslighting_cli"]
 [tool.setuptools.package-data]
 dslighting = ["*.yaml", "*.json", "datasets/**/*.csv", "registry/**/*.yaml", "registry/**/*.md", "registry/**/*.py"]
 dsat = ["*.yaml", "*.json", "configs/*.yaml", "workflows/*.yaml"]
-# Include mlebench for grading functionality
-mlebench = ["*.py", "*.yaml", "*.json", "*.md"]
 
 # Black configuration
 [tool.black]

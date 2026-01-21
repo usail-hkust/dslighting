@@ -3,14 +3,11 @@ name: DABench Task - 1. Perform a distribution analysis on the X-coordi
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-652-distribution-analysis-coordinate/description.md
-
+description: description.md
 dataset:
   answers: dabench-652-distribution-analysis-coordinate/prepared/private/answer.csv
   sample_submission: dabench-652-distribution-analysis-coordinate/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-652-distribution-analysis-coordinate.grade:grade
-
-preparer: mlebench.competitions.dabench-652-distribution-analysis-coordinate.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

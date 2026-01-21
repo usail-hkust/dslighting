@@ -2,7 +2,15 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_log_error
 
-from mlebench.grade_helpers import InvalidSubmissionError
+try:
+    from mlebench.grade_helpers import InvalidSubmissionError
+except ImportError:
+    try:
+        from benchmarks.mlebench.grade_helpers import InvalidSubmissionError
+    except ImportError:
+        # Fallback: define InvalidSubmissionError locally
+        class InvalidSubmissionError(Exception):
+            pass
 
 
 def prepare_for_metric(submission: pd.DataFrame, answers: pd.DataFrame):

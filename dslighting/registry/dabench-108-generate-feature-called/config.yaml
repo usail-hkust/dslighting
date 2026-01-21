@@ -3,14 +3,11 @@ name: DABench Task - Generate a new feature called "TotalIncome" by add
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-108-generate-feature-called/description.md
-
+description: description.md
 dataset:
   answers: dabench-108-generate-feature-called/prepared/private/answer.csv
   sample_submission: dabench-108-generate-feature-called/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-108-generate-feature-called.grade:grade
-
+  grade_fn: grade:grade
 preparer: mlebench.competitions.dabench-108-generate-feature-called.prepare:prepare

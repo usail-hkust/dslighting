@@ -1,0 +1,4 @@
+# Exclude benchmark directories from package
+recursive-exclude dsat/benchmark/dabench/ *
+recursive-exclude dsat/benchmark/mlebench/ *
+recursive-exclude dsat/benchmark/sciencebench/ *

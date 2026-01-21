@@ -1,16 +1,13 @@
 id: sciencebench-051-brain-blood-qsar
-name: "ScienceBench - brain_blood_qsar.py"
+name: ScienceBench - brain_blood_qsar.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-051-brain-blood-qsar/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-051-brain-blood-qsar/prepared/private/answer.csv
   sample_submission: sciencebench-051-brain-blood-qsar/prepared/public/sample_submission.csv
-
 grader:
   name: balanced_accuracy
-  grade_fn: benchmarks.sciencebench.competitions.sciencebench-051-brain-blood-qsar.grade:grade
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-051-brain-blood-qsar.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

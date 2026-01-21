@@ -1,16 +1,13 @@
 id: dabench-66-correlation-between-wage
-name: DABench Task - Calculate the correlation between the wage column 
+name: DABench Task - Calculate the correlation between the wage column
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-66-correlation-between-wage/description.md
-
+description: description.md
 dataset:
   answers: dabench-66-correlation-between-wage/prepared/private/answer.csv
   sample_submission: dabench-66-correlation-between-wage/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-66-correlation-between-wage.grade:grade
-
-preparer: mlebench.competitions.dabench-66-correlation-between-wage.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

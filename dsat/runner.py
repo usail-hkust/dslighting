@@ -28,6 +28,7 @@ from dsat.workflows.factory import (
     AFlowWorkflowFactory,
     DeepAnalyzeWorkflowFactory,
     DynamicWorkflowFactory,
+    MyCustomAgentWorkflowFactory,
 )
 # Import AFlow workflow for type checking
 from dsat.workflows.search.aflow_workflow import AFlowWorkflow
@@ -47,6 +48,7 @@ WORKFLOW_FACTORIES: Dict[str, WorkflowFactory] = {
     "autokaggle": AutoKaggleWorkflowFactory(),
     "aflow": AFlowWorkflowFactory(),
     "deepanalyze": DeepAnalyzeWorkflowFactory(),
+    "my_custom_agent": MyCustomAgentWorkflowFactory(),
 }
 
 TASK_HANDLER_CLASSES: Dict[TaskType, Type[TaskHandler]] = {
@@ -220,6 +222,16 @@ class DSATRunner:
                     if output_path:
                         result = handler.parse_output(output_path)
 
+                        # Debug: Check why grading is not happening
+                        logger.info(f"[DEBUG] Grading check:")
+                        logger.info(f"  benchmark_instance: {benchmark_instance}")
+                        logger.info(f"  benchmark_instance is None: {benchmark_instance is None}")
+                        if benchmark_instance:
+                            logger.info(f"  hasattr(benchmark_instance, 'grade'): {hasattr(benchmark_instance, 'grade')}")
+                        logger.info(f"  result type: {type(result)}")
+                        logger.info(f"  isinstance(result, Path): {isinstance(result, Path)}")
+                        logger.info(f"  result value: {result}")
+
                         # Grade the submission if benchmark is available
                         if benchmark_instance and hasattr(benchmark_instance, 'grade') and isinstance(result, Path):
                             try:
@@ -233,7 +245,12 @@ class DSATRunner:
                                 # Keep the path as result if grading fails
                                 logger.info(f"Submission created at: {result}")
                         elif isinstance(result, Path):
+                            # Try direct grading using registry grade function
                             logger.info(f"Submission created at: {result}")
+                            score = await self._grade_from_registry(task.task_id, result, data_dir)
+                            if score is not None:
+                                logger.info(f"✓ Direct grading complete | Score: {score}")
+                                result = {"score": score, "submission_path": str(result)}
 
                     logger.info(f"Task '{task.task_id}' evaluation finished successfully.")
 
@@ -560,3 +577,157 @@ class DSATRunner:
         if isinstance(config_value, dict):
             snapshot["config"] = config_value
         return snapshot
+
+    async def _grade_from_registry(
+        self,
+        task_id: str,
+        submission_path: Path,
+        data_dir: Optional[Path]
+    ) -> Optional[float]:
+        """
+        Direct grading using registry grade function - simple and reliable.
+
+        Args:
+            task_id: Task/competition ID (e.g., "bike-sharing-demand")
+            submission_path: Path to submission CSV file
+            data_dir: Data directory containing prepared/ folder
+
+        Returns:
+            Score as float, or None if grading failed
+        """
+        try:
+            import pandas as pd
+            import yaml
+            from pathlib import Path
+
+            logger.info(f"[_grade_from_registry] Attempting direct grading for task: {task_id}")
+
+            # Try to find registry directory
+            registry_dirs = []
+
+            # 1. Try dslighting package registry
+            try:
+                import dslighting
+                package_registry = Path(dslighting.__file__).parent / "registry" / task_id
+                if package_registry.exists():
+                    registry_dirs.append(package_registry)
+            except:
+                pass
+
+            # 2. Try local project registry
+            local_registry = Path("dslighting/registry") / task_id
+            if local_registry.exists():
+                registry_dirs.append(local_registry)
+
+            # 3. Try data/competitions parent structure
+            if data_dir:
+                parent_registry = data_dir.parent.parent / "registry" / task_id
+                if parent_registry.exists():
+                    registry_dirs.append(parent_registry)
+
+            logger.info(f"[_grade_from_registry] Found {len(registry_dirs)} registry directories")
+
+            for registry_dir in registry_dirs:
+                # Load config.yaml
+                config_path = registry_dir / "config.yaml"
+                if not config_path.exists():
+                    continue
+
+                with open(config_path) as f:
+                    config = yaml.safe_load(f)
+
+                # Get answers path
+                answers_rel = config.get("dataset", {}).get("answers", "")
+                if not answers_rel:
+                    logger.warning(f"[_grade_from_registry] No answers path in config")
+                    continue
+
+                # Resolve answers path based on data_dir structure
+                # data_dir example: ".../datasets/bike-sharing-demand/prepared/public"
+                # answers_rel example: "bike-sharing-demand/prepared/private/test_answer.csv"
+                if data_dir:
+                    # Find task root: go up from data_dir until we find {task_id} directory
+                    # data_dir = ".../datasets/bike-sharing-demand/prepared/public"
+                    # We want to find: ".../datasets/"
+                    current = data_dir.resolve()
+                    task_root = None
+
+                    # Go up at most 4 levels looking for task_id
+                    for _ in range(4):
+                        if current.name == task_id:
+                            task_root = current.parent
+                            break
+                        current = current.parent
+
+                    if task_root:
+                        # Build path: task_root + answers_rel
+                        # ".../datasets/" + "bike-sharing-demand/prepared/private/test_answer.csv"
+                        answers_path = task_root / answers_rel
+                    else:
+                        # Fallback: Assumes data_dir is structured like ".../{task_id}/prepared/public"
+                        # and that data_dir.parent.parent is the task's root directory.
+                        task_dir_guess = data_dir.resolve().parent.parent
+
+                        answers_rel_path = Path(answers_rel)
+                        # If answers_rel starts with the task_id, remove it to make the path relative to the task_dir_guess.
+                        # e.g., "task_id/prepared/private/answer.csv" -> "prepared/private/answer.csv"
+                        if answers_rel_path.parts and answers_rel_path.parts[0] == task_id:
+                            answers_rel_path = Path(*answers_rel_path.parts[1:])
+
+                        answers_path = task_dir_guess / answers_rel_path
+                else:
+                    answers_path = Path(answers_rel)
+
+                if not answers_path.exists():
+                    logger.warning(f"[_grade_from_registry] Answers file not found: {answers_path}")
+                    logger.debug(f"[_grade_from_registry] Tried answers_rel: {answers_rel}")
+                    logger.debug(f"[_grade_from_registry] data_dir: {data_dir}")
+                    continue
+
+                logger.info(f"[_grade_from_registry] Found answers: {answers_path}")
+
+                # Load grade_fn from config
+                grader_config = config.get("grader", {})
+                grade_fn_str = grader_config.get("grade_fn", "")
+
+                if not grade_fn_str:
+                    logger.warning(f"[_grade_from_registry] No grade_fn in config")
+                    continue
+
+                # Try to load grade function from registry/grade.py
+                grade_py = registry_dir / "grade.py"
+                if not grade_py.exists():
+                    logger.warning(f"[_grade_from_registry] grade.py not found: {grade_py}")
+                    continue
+
+                # Import grade function
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("grade_module", str(grade_py))
+                grade_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(grade_module)
+
+                if not hasattr(grade_module, "grade"):
+                    logger.warning(f"[_grade_from_registry] No 'grade' function in {grade_py}")
+                    continue
+
+                grade_fn = grade_module.grade
+
+                # Load submission and answers
+                submission_df = pd.read_csv(submission_path)
+                answers_df = pd.read_csv(answers_path)
+
+                # Call grade function
+                logger.info(f"[_grade_from_registry] Calling grade function...")
+                score = grade_fn(submission_df, answers_df)
+
+                logger.info(f"✓ [_grade_from_registry] Grading successful! Score: {score}")
+                return float(score)
+
+            logger.warning(f"[_grade_from_registry] Could not find valid registry for task: {task_id}")
+            return None
+
+        except Exception as e:
+            logger.warning(f"[_grade_from_registry] Direct grading failed: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            return None

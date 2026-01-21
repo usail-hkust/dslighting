@@ -140,6 +140,9 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
+# Sync conflict files
+.sync-conflict-*
+
 # IDE
 .vscode/
 .idea/

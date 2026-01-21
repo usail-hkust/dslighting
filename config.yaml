@@ -1,3 +1,34 @@
+# ============================================================================
+# DSLighting Benchmark 配置
+# ============================================================================
+benchmarks:
+  # MLE-Bench Lite - 精选核心竞赛
+  mle-lite:
+    type: "mle-lite"
+    description: "MLE-Bench Lite - 10个精选核心竞赛"
+    competitions:
+      - bike-sharing-demand
+      - titanic
+      - house-prices
+      - new-york-city-taxi-fare-prediction
+      - tabular-playground-series-dec-2021
+      - histopathologic-cancer-detection
+      - aptos2019-blindness-detection
+      - spooky-author-identification
+      - us-patent-phrase-to-phrase-matching
+      - google-quest-challenge
+
+  # 自定义 Benchmark（轻量级）
+  my-custom:
+    type: "custom"
+    description: "自定义任务列表"
+    tasks:
+      - task_id: "bike-sharing-demand"
+      - task_id: "titanic"
+
+# ============================================================================
+# MLE-Bench 竞赛配置（向后兼容）
+# ============================================================================
 competitions:
 - aptos2019-blindness-detection
 - histopathologic-cancer-detection

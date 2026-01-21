@@ -3,20 +3,17 @@ name: OSIC Pulmonary Fibrosis Progression
 competition_type: code
 awards_medals: true
 prizes:
-  - position: 1
-    value: 30000
-  - position: 2
-    value: 15000
-  - position: 3
-    value: 10000
-description: mlebench/competitions/osic-pulmonary-fibrosis-progression/description.md
-
+- position: 1
+  value: 30000
+- position: 2
+  value: 15000
+- position: 3
+  value: 10000
+description: description.md
 dataset:
   answers: osic-pulmonary-fibrosis-progression/prepared/private/test.csv
   sample_submission: osic-pulmonary-fibrosis-progression/prepared/public/sample_submission.csv
-
 grader:
   name: modified-laplace-log-likelihood
-  grade_fn: mlebench.competitions.osic-pulmonary-fibrosis-progression.grade:grade
-
-preparer: mlebench.competitions.osic-pulmonary-fibrosis-progression.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

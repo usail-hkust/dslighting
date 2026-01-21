@@ -270,12 +270,21 @@ class SandboxService:
     """
     Provides unified access to isolated script and notebook code execution environments.
 
+    **Important**: All public methods are async. Use await everywhere.
+
+    This design ensures consistency across DSLighting - users don't need to remember
+    which methods are sync vs async. Just use await for all operations.
+
     Args:
         workspace: Workspace service for managing files
         timeout: Default timeout for script execution (seconds)
         auto_matplotlib: Automatically inject matplotlib backend (default: False).
                         Set to True for Web UI environments that need visualization.
                         Set to False for standalone package usage.
+
+    Example:
+        >>> sandbox = SandboxService(workspace=workspace_service)
+        >>> result = await sandbox.run_script(code)  # Always use await
     """
     def __init__(
         self,
@@ -285,12 +294,21 @@ class SandboxService:
     ):
         self.workspace = workspace
         self.timeout = timeout
-        self.auto_matplotlib = auto_matplotlib  # Store matplotlib injection preference
+        self.auto_matplotlib = auto_matplotlib
         self.execution_history: List[Dict[str, Any]] = []
 
-    def run_script(self, script_code: str, timeout: Optional[int] = None) -> ExecutionResult:
+        # Thread pool for running sync operations in background threads
+        # This allows sandbox executions to be async from user's perspective
+        # while actually executing synchronously in thread pool
+        import concurrent.futures
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+    async def run_script(self, script_code: str, timeout: Optional[int] = None) -> ExecutionResult:
         """
-        Runs a Python script within the sandbox workspace.
+        Async API: Runs a Python script within the sandbox workspace.
+
+        This is an async method that runs the synchronous subprocess execution
+        in a thread pool, providing a consistent async interface to users.
 
         Args:
             script_code: Python code to execute
@@ -298,6 +316,25 @@ class SandboxService:
 
         Returns:
             ExecutionResult with stdout, stderr, success status, etc.
+
+        Example:
+            >>> result = await sandbox.run_script("print('hello')")
+        """
+        loop = asyncio.get_event_loop()
+        # Run the sync implementation in a thread pool
+        return await loop.run_in_executor(
+            self._executor,
+            self._run_script_sync,
+            script_code,
+            timeout
+        )
+
+    def _run_script_sync(self, script_code: str, timeout: Optional[int] = None) -> ExecutionResult:
+        """
+        Internal sync implementation of run_script.
+
+        This method does the actual synchronous subprocess execution.
+        It's wrapped by the public async run_script() method.
         """
         # Optionally inject matplotlib non-interactive backend
         # This is only done if auto_matplotlib=True (used by Web UI for visualization)

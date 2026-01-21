@@ -18,12 +18,20 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class LoadedData:
+class TaskContext:
     """
-    Container for loaded data with metadata.
+    Agent's view of a task dataset (NOT a traditional data-only dataset).
 
-    This class provides a structured view of the data that matches what
-    the DSLighting Agent sees - file structure, schema, and metadata.
+    ⚠️ IMPORTANT: This is NOT a typical dataset containing only data!
+    This is the Agent's perspective of the ENTIRE task context.
+
+    Contains everything the Agent needs to know:
+    - Data location and structure
+    - Task ID and metadata
+    - Registry directory (for grading)
+    - Submission format requirements
+
+    Think of this as "Task Specification" rather than just data.
 
     Attributes:
         source: Original data source (path, DataFrame, etc.)
@@ -32,6 +40,12 @@ class LoadedData:
         task_id: Task/Competition ID (extracted from path)
         registry_dir: Benchmark registry directory (for MLE-Bench grading)
         metadata: Additional metadata
+
+    Example:
+        >>> context = dslighting.load_data("bike-sharing-demand")
+        >>> print(context.show())  # Shows: schema, structure, submission format
+        >>> agent = dslighting.Agent()
+        >>> result = agent.run(context)  # Agent sees the full task context
     """
     source: Any
     data_dir: Optional[Path] = None
@@ -45,13 +59,13 @@ class LoadedData:
             self.metadata = {}
 
     def __repr__(self) -> str:
-        """Return a concise representation of loaded data."""
+        """Return a concise representation of the task context."""
         if self.task_id:
-            return f"LoadedData(task_id='{self.task_id}', task_type='{self.get_task_type()}')"
+            return f"TaskContext(task_id='{self.task_id}', task_type='{self.get_task_type()}')"
         elif self.data_dir:
-            return f"LoadedData(data_dir='{self.data_dir.name}', task_type='{self.get_task_type()}')"
+            return f"TaskContext(data_dir='{self.data_dir.name}', task_type='{self.get_task_type()}')"
         else:
-            return f"LoadedData(task_type='{self.get_task_type()}')"
+            return f"TaskContext(task_type='{self.get_task_type()}')"
 
     def show(self) -> str:
         """
@@ -129,6 +143,32 @@ class LoadedData:
                 lines.append(f"  [... {len(instructions) - 10} more lines, use get_io_instructions() to see full]")
             lines.append("")
 
+        # Submission Format Requirements
+        if self.data_dir:
+            sample_submission = self.data_dir / "sampleSubmission.csv"
+            if sample_submission.exists():
+                lines.append("## Submission Format Requirements")
+                lines.append("  **CRITICAL:** Your submission must match the sample submission format exactly.")
+                lines.append("")
+
+                try:
+                    sample_df = pd.read_csv(sample_submission, nrows=5)
+                    lines.append(f"  Required Columns: {list(sample_df.columns)}")
+                    lines.append(f"  Total Columns: {len(sample_df.columns)}")
+                    lines.append("")
+
+                    lines.append("  First 5 rows:")
+                    lines.append(f"{sample_df.to_string(index=False)}")
+                    lines.append("")
+
+                    lines.append("  Data Types:")
+                    for col in sample_df.columns:
+                        dtype = str(sample_df[col].dtype)
+                        lines.append(f"    - {col}: {dtype}")
+                except Exception as e:
+                    lines.append(f"  [Error reading sample submission: {e}]")
+                lines.append("")
+
         lines.append("=" * 80)
         lines.append("Use .get_description() for full task description")
         lines.append("Use .get_io_instructions() for full I/O instructions")
@@ -138,7 +178,15 @@ class LoadedData:
         return "\n".join(lines)
 
     def _analyze_directory(self, directory: Path, title: str) -> str:
-        """Analyze directory and return schema information."""
+        """
+        Analyze directory and return detailed schema information.
+
+        Shows for each file:
+        - Column names and data types
+        - Missing value percentages
+        - Cardinality (unique value counts)
+        - Sample values
+        """
         lines = []
         lines.append(f"\n  ### {title}")
 
@@ -156,23 +204,34 @@ class LoadedData:
 
                 lines.append(f"\n  📄 {file_path.name}")
 
-                # Analyze CSV/TSV files
+                # Analyze CSV/TSV files with detailed statistics
                 if file_path.suffix.lower() in ['.csv', '.tsv']:
                     try:
-                        df = pd.read_csv(file_path, nrows=0)  # Read only header
+                        # Read sample data for analysis (first 1000 rows)
+                        df_sample = pd.read_csv(file_path, nrows=1000)
+                        total_rows = len(df_sample)
 
-                        # Show columns
-                        lines.append(f"     Columns ({len(df.columns)}): {', '.join(list(df.columns[:5]))}")
-                        if len(df.columns) > 5:
-                            lines.append(f"                ... and {len(df.columns) - 5} more")
+                        # Show column count
+                        lines.append(f"     Columns ({len(df_sample.columns)}): {', '.join(list(df_sample.columns[:8]))}")
+                        if len(df_sample.columns) > 8:
+                            lines.append(f"                ... and {len(df_sample.columns) - 8} more")
 
-                        # Show types for first few columns
-                        lines.append(f"     Types:")
-                        for col in list(df.columns)[:5]:
-                            dtype = str(df[col].dtype)
-                            lines.append(f"       - {col}: {dtype}")
-                        if len(df.columns) > 5:
-                            lines.append(f"       ... and {len(df.columns) - 5} more")
+                        # Show detailed column analysis
+                        lines.append(f"\n     {'Column':<20} {'Data Type':<15} {'Missing (%)':<15} {'Cardinality':<15} {'Sample Values'}")
+                        lines.append(f"     {'-'*20} {'-'*15} {'-'*15} {'-'*15} {'-'*40}")
+
+                        for col in df_sample.columns:
+                            dtype = str(df_sample[col].dtype)
+                            missing_pct = (df_sample[col].isna().sum() / total_rows * 100) if total_rows > 0 else 0
+                            cardinality = df_sample[col].nunique()
+
+                            # Get sample values (first 2 unique values)
+                            sample_vals = df_sample[col].dropna().unique()[:2]
+                            sample_str = ', '.join([str(v)[:20] for v in sample_vals])
+                            if cardinality > 2:
+                                sample_str += ', ...'
+
+                            lines.append(f"     {col[:20]:<20} {dtype:<15} {missing_pct:<15.1f} {cardinality:<15} {sample_str}")
 
                     except Exception as e:
                         lines.append(f"     [Error reading file: {e}]")
@@ -203,7 +262,9 @@ class LoadedData:
     def get_task_type(self) -> str:
         """Get task type."""
         if self.task_detection:
+            logger.debug(f"[get_task_type] task_detection exists: task_type={self.task_detection.task_type}")
             return self.task_detection.task_type
+        logger.debug(f"[get_task_type] No task_detection, returning 'datasci'")
         return "datasci"
 
 
@@ -239,7 +300,7 @@ class DataLoader:
         auto_detect: bool = None,
         registry_dir: Union[str, Path] = None,
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load data from a source.
 
@@ -253,7 +314,7 @@ class DataLoader:
             **kwargs: Additional parameters
 
         Returns:
-            LoadedData with detection information
+            TaskContext with detection information
         """
         self.logger.info(f"Loading data from source: {type(source).__name__}")
 
@@ -278,8 +339,23 @@ class DataLoader:
         else:
             registry_dir = Path(registry_dir)
 
-        # Create LoadedData
-        loaded_data = LoadedData(
+        # Load task_type from registry config (if available)
+        task_type_from_registry = self._load_task_type_from_registry(registry_dir, task_id)
+        if task_type_from_registry:
+            # Override detected task_type with registry config
+            from dslighting.core.task_detector import TaskDetection
+            task_detection = TaskDetection(
+                task_type=task_type_from_registry,
+                task_mode=task_detection.task_mode,
+                data_dir=task_detection.data_dir,
+                description=task_detection.description,
+                recommended_workflow=task_detection.recommended_workflow,
+                confidence=1.0,  # High confidence for explicit config
+            )
+            self.logger.info(f"Using task_type from registry config: {task_type_from_registry}")
+
+        # Create TaskContext
+        loaded_data = TaskContext(
             source=source,
             data_dir=data_dir,
             task_detection=task_detection,
@@ -302,7 +378,7 @@ class DataLoader:
         self,
         path: Union[str, Path],
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load data from a CSV file.
 
@@ -311,7 +387,7 @@ class DataLoader:
             **kwargs: Additional parameters passed to pd.read_csv
 
         Returns:
-            LoadedData with DataFrame and detection
+            TaskContext with DataFrame and detection
         """
         path = Path(path)
         self.logger.info(f"Loading CSV file: {path}")
@@ -327,7 +403,7 @@ class DataLoader:
         self,
         path: Union[str, Path],
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load data from a directory.
 
@@ -336,7 +412,7 @@ class DataLoader:
             **kwargs: Additional parameters
 
         Returns:
-            LoadedData with directory and detection
+            TaskContext with directory and detection
         """
         path = Path(path)
         self.logger.info(f"Loading directory: {path}")
@@ -350,7 +426,7 @@ class DataLoader:
         self,
         df: pd.DataFrame,
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load data from a pandas DataFrame.
 
@@ -359,7 +435,7 @@ class DataLoader:
             **kwargs: Additional parameters
 
         Returns:
-            LoadedData with DataFrame and detection
+            TaskContext with DataFrame and detection
         """
         self.logger.info(f"Loading DataFrame with shape {df.shape}")
         return self.load(df, **kwargs)
@@ -369,7 +445,7 @@ class DataLoader:
         competition_id: str,
         data_dir: Union[str, Path] = None,
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load data from a competition (MLE-Bench style).
 
@@ -379,7 +455,7 @@ class DataLoader:
             **kwargs: Additional parameters
 
         Returns:
-            LoadedData with competition data
+            TaskContext with competition data
         """
         self.logger.info(f"Loading competition: {competition_id}")
 
@@ -398,7 +474,7 @@ class DataLoader:
         self,
         question: str,
         **kwargs
-    ) -> LoadedData:
+    ) -> TaskContext:
         """
         Load a QA question.
 
@@ -407,7 +483,7 @@ class DataLoader:
             **kwargs: Additional parameters
 
         Returns:
-            LoadedData with question
+            TaskContext with question
         """
         self.logger.info("Loading QA question")
         return self.load(question, **kwargs)
@@ -426,6 +502,7 @@ class DataLoader:
             TaskDetection configured for MLE competition
         """
         self.logger.info("Using default MLE competition format (prepared/public & prepared/private)")
+        self.logger.info(f"[_get_default_mle_detection] Processing source: {type(source).__name__}")
 
         # Try to extract data directory
         data_dir = None
@@ -503,7 +580,7 @@ class DataLoader:
         # Create MLE-style detection
         from dslighting.utils.defaults import WORKFLOW_RECOMMENDATIONS
 
-        return TaskDetection(
+        task_detection = TaskDetection(
             task_type="kaggle",  # MLE uses kaggle task type internally
             task_mode="standard_ml",
             data_dir=data_dir,
@@ -513,6 +590,9 @@ class DataLoader:
             confidence=1.0,  # High confidence since this is explicit user intent
             metadata={"structure": "mle_competition", "auto_detected": False}
         )
+        self.logger.info(f"[_get_default_mle_detection] Created TaskDetection with task_type={task_detection.task_type}")
+
+        return task_detection
 
     def _extract_data_dir(
         self,
@@ -679,3 +759,45 @@ class DataLoader:
         self.logger.warning("     Example: load_data(path, registry_dir='path/to/benchmarks/mlebench/competitions')")
 
         return None
+
+    def _load_task_type_from_registry(
+        self,
+        registry_dir: Optional[Path],
+        task_id: Optional[str]
+    ) -> Optional[str]:
+        """
+        Load task_type from registry config.yaml (if available).
+
+        This allows tasks to explicitly specify their type instead of relying on auto-detection.
+
+        Args:
+            registry_dir: Registry directory path
+            task_id: Task/competition ID
+
+        Returns:
+            task_type string (e.g., "kaggle", "open_ended") or None if not found
+        """
+        if not registry_dir or not task_id:
+            return None
+
+        try:
+            # Check if config.yaml exists in registry
+            config_path = registry_dir / task_id / "config.yaml"
+            if not config_path.exists():
+                self.logger.debug(f"  No registry config found at: {config_path}")
+                return None
+
+            # Load config.yaml
+            import yaml
+            with open(config_path, "r") as f:
+                config = yaml.safe_load(f)
+
+            # Extract task_type (default to "kaggle" if not specified)
+            task_type = config.get("task_type", "kaggle")
+
+            self.logger.info(f"  ✓ Loaded task_type from registry config: {task_type}")
+            return task_type
+
+        except Exception as e:
+            self.logger.debug(f"  Failed to load task_type from registry: {e}")
+            return None

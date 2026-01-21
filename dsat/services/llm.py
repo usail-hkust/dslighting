@@ -70,14 +70,17 @@ class LLMService:
         self.total_completion_cost = 0.0
         self.call_history: List[Dict[str, Any]] = []
 
-        # Parse API key pool from string list format
-        import json
-        try:
-            self.api_keys = json.loads(config.api_key) if config.api_key and config.api_key.startswith('[') else [config.api_key]
-        except:
-            self.api_keys = [config.api_key]
+        # Get API keys using the new get_api_keys() method
+        self.api_keys = config.get_api_keys()
         self.current_key_index = 0
-        logger.info(f"Initialized LLM service with {len(self.api_keys)} API keys")
+
+        if not self.api_keys or all(not k for k in self.api_keys):
+            raise ValueError(
+                f"No API keys configured for model '{config.model}'. "
+                f"Please set API_KEY environment variable or configure api_keys in LLM_MODEL_CONFIGS."
+            )
+
+        logger.info(f"Initialized LLM service for '{config.model}' with {len(self.api_keys)} API keys")
 
     def _get_current_api_key(self) -> str:
         """Get current API key from the pool."""

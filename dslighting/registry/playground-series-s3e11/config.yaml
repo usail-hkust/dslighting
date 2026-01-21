@@ -2,14 +2,11 @@ id: playground-series-s3e11
 name: Playground Series S3E11
 competition_type: simple
 awards_medals: false
-description: mlebench/competitions/playground-series-s3e11/description.md
-
+description: description.md
 dataset:
   answers: playground-series-s3e11/prepared/private/test.csv
   sample_submission: playground-series-s3e11/prepared/public/sample_submission.csv
-
 grader:
   name: rmsle
-  grade_fn: mlebench.competitions.playground_series_s3e11.grade:grade
-
-preparer: mlebench.competitions.playground_series_s3e11.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

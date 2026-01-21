@@ -1,16 +1,13 @@
 id: dabench-144-question-mean-standard
-name: "DABench Task - Question 1: Calculate the mean and standard deviat"
+name: 'DABench Task - Question 1: Calculate the mean and standard deviat'
 competition_type: code
 awards_medals: false
 prizes: null
-description: mlebench/competitions/dabench-144-question-mean-standard/description.md
-
+description: description.md
 dataset:
   answers: dabench-144-question-mean-standard/prepared/private/answer.csv
   sample_submission: dabench-144-question-mean-standard/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
-  grade_fn: mlebench.competitions.dabench-144-question-mean-standard.grade:grade
-
-preparer: mlebench.competitions.dabench-144-question-mean-standard.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

@@ -1,16 +1,13 @@
 id: sciencebench-101-experimental-band-gap-prediction
-name: "ScienceBench - experimental_band_gap_prediction.py"
+name: ScienceBench - experimental_band_gap_prediction.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-101-experimental-band-gap-prediction/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-101-experimental-band-gap-prediction/prepared/private/answer.csv
   sample_submission: sciencebench-101-experimental-band-gap-prediction/prepared/public/sample_submission.csv
-
 grader:
   name: mae
-  grade_fn: benchmarks.sciencebench.competitions.sciencebench-101-experimental-band-gap-prediction.grade:grade
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-101-experimental-band-gap-prediction.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare

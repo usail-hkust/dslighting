@@ -20,7 +20,7 @@ from dsat.models.task import TaskDefinition, TaskType
 from dsat.runner import DSATRunner
 
 from dslighting.core.config_builder import ConfigBuilder
-from dslighting.core.data_loader import DataLoader, LoadedData
+from dslighting.core.data_loader import DataLoader, TaskContext
 
 logger = logging.getLogger(__name__)
 
@@ -179,11 +179,11 @@ class Agent:
                 self.logger.warning(f"Failed to initialize package detector: {e}")
                 self.include_package_context = False
 
-        self.logger.info(f"Agent initialized with workflow: '{self.config.workflow.name}'")
+        self.logger.debug(f"Agent initialized with workflow: '{self.config.workflow.name}'")
 
     def run(
         self,
-        data: Union[str, Path, dict, pd.DataFrame, LoadedData] = None,
+        data: Union[str, Path, dict, pd.DataFrame, TaskContext] = None,
         task_id: str = None,
         data_dir: str = None,
         output_path: str = None,
@@ -199,7 +199,7 @@ class Agent:
         result collection.
 
         Args:
-            data: Optional data source (path, DataFrame, dict, or LoadedData).
+            data: Optional data source (path, DataFrame, dict, or TaskContext).
                   If not provided, use task_id + data_dir pattern.
             task_id: Task/Competition identifier (e.g., "bike-sharing-demand").
                      Required when using MLE benchmark format.
@@ -331,15 +331,15 @@ class Agent:
                 raise ValueError("Either 'data' or 'task_id' must be provided")
 
             # ========== Load data if needed ==========
-            if not isinstance(data, LoadedData):
+            if not isinstance(data, TaskContext):
                 self.logger.debug("Loading data...")
                 loader = DataLoader()
                 loaded_data = loader.load(data)
                 self.logger.debug(f"Data loaded, task_id={loaded_data.task_id}")
             else:
-                self.logger.debug("Data is already LoadedData")
+                self.logger.debug("Data is already TaskContext")
                 loaded_data = data
-                self.logger.debug(f"LoadedData has task_id={loaded_data.task_id}")
+                self.logger.debug(f"TaskContext has task_id={loaded_data.task_id}")
 
             # Extract task_id from loaded_data if available
             if loaded_data.task_id:
@@ -382,8 +382,8 @@ class Agent:
                 self.logger.info(f"Initializing benchmark for task: {task_id}")
                 try:
                     self.logger.debug("Attempting to import mlebench...")
-                    from mlebench.grade import grade_csv
-                    from mlebench.registry import Registry
+                    from benchmarks.mlebench.grade import grade_csv
+                    from benchmarks.mlebench.registry import Registry
                     self.logger.debug("mlebench imported successfully")
 
                     # Resolve data_dir - prioritize loaded_data.data_dir
@@ -500,8 +500,8 @@ class Agent:
                                         self.logger.info(f"  ✓ Found answers file: {answers_path}")
 
                                         # Import the actual Competition class from mlebench
-                                        from mlebench.registry import Competition
-                                        from mlebench.grade_helpers import Grader
+                                        from benchmarks.mlebench.registry import Competition
+                                        from benchmarks.mlebench.grade_helpers import Grader
 
                                         # Load grader
                                         grader_config = config.get("grader", {})
@@ -586,7 +586,7 @@ class Agent:
                             runner = self.get_runner()
                             runner.benchmark = benchmark
                             self.logger.debug(f"✓ Benchmark set successfully for task: {task_id}")
-                            self.logger.info(f"✓ Benchmark initialized for grading: {task_id}")
+                            self.logger.debug(f"✓ Benchmark initialized for grading: {task_id}")
                         except Exception as e:
                             self.logger.debug(f"Benchmark initialization failed: {e}")
                             self.logger.warning(f"⚠️  Benchmark initialization failed: {e}")
@@ -713,13 +713,13 @@ class Agent:
 
     def _create_task_definition(
         self,
-        loaded_data: LoadedData,
+        loaded_data: TaskContext,
         task_id: str = None,
         description: str = None,
         output_path: str = None,
         **kwargs
     ) -> TaskDefinition:
-        """Create TaskDefinition from LoadedData."""
+        """Create TaskDefinition from TaskContext."""
         # Generate task ID if not provided
         if task_id is None:
             safe_name = str(uuid.uuid4())[:8]
@@ -869,7 +869,7 @@ class Agent:
     async def _execute_task(
         self,
         task: TaskDefinition,
-        loaded_data: LoadedData
+        loaded_data: TaskContext
     ) -> AgentResult:
         """Execute a single task using DSATRunner."""
         runner = self.get_runner()

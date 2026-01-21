@@ -1,16 +1,13 @@
 id: sciencebench-015-aai
-name: "ScienceBench - aai.py"
+name: ScienceBench - aai.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-015-aai/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-015-aai/prepared/private/answer.csv
   sample_submission: sciencebench-015-aai/prepared/public/sample_submission.csv
-
 grader:
   name: accuracy
-  grade_fn: benchmarks.sciencebench.competitions.sciencebench-015-aai.grade:grade
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-015-aai.prepare:prepare
+  grade_fn: grade:grade
+preparer: prepare:prepare
