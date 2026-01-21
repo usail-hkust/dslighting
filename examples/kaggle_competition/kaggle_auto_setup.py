@@ -607,8 +607,11 @@ def main():
     print()
 
     try:
-        # 加载数据
-        data = dslighting.load_data("data/competitions/{self.competition_id}")
+        # 加载数据（显式指定数据路径和注册表路径）
+        data = dslighting.load_data(
+            "data/competitions/{self.competition_id}",
+            registry_dir="registry/{self.competition_id}"
+        )
 
         # 显示数据信息
         print(data.show())
