@@ -489,20 +489,22 @@ import numpy as np
 from pathlib import Path
 
 
-def grade(submission_path: str, answer_path: str) -> dict:
+def grade(submission, answers) -> dict:
     """
     评估提交结果
 
     Args:
-        submission_path: 提交文件路径
-        answer_path: 答案文件路径
+        submission: 提交的 DataFrame 或文件路径
+        answers: 答案 DataFrame 或文件路径
 
     Returns:
         评估结果字典
     """
-    # 读取文件
-    submission = pd.read_csv(submission_path)
-    answers = pd.read_csv(answer_path)
+    # 读取文件（如果传入的是路径）
+    if isinstance(submission, str):
+        submission = pd.read_csv(submission)
+    if isinstance(answers, str):
+        answers = pd.read_csv(answers)
 
     # 合并数据
     # 根据你的数据调整列名
