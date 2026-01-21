@@ -628,7 +628,11 @@ def main():
         print("🎯 结果")
         print("="*80)
         print(f"分数: {{result.score}}")
-        print(f"提交文件: {{result.output_path}}")
+        print(f"提交文件: {{result.output}}")
+        if result.workspace_path:
+            print(f"工作空间: {{result.workspace_path}}")
+        if result.artifacts_path:
+            print(f"产物目录: {{result.artifacts_path}}")
 
     except Exception as e:
         print(f"❌ 错误: {{e}}")
