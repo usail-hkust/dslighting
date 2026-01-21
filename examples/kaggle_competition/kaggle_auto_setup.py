@@ -494,11 +494,11 @@ def grade(submission, answers) -> dict:
     评估提交结果
 
     Args:
-        submission: 提交的 DataFrame 或文件路径
-        answers: 答案 DataFrame 或文件路径
+        submission: 提交的 DataFrame 或路径字符串
+        answers: 答案 DataFrame 或路径字符串
 
     Returns:
-        评估结果字典
+        评估结果字典，包含 'score' 键
     """
     # 读取文件（如果传入的是路径）
     if isinstance(submission, str):
