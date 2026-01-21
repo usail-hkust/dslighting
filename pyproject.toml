@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "2.6.24"
+version = "2.6.25"
 description = "DSLighting 2.6.17 - Use English comments and logs for international standards"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
