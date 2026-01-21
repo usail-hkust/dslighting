@@ -486,56 +486,44 @@ class DSLightingSetup:
 
 import pandas as pd
 import numpy as np
-from pathlib import Path
 
 
-def grade(submission_path, answer_path) -> dict:
+def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
     """
     评估提交结果
 
     Args:
-        submission_path: 提交文件路径（DataFrame 或路径字符串）
-        answer_path: 答案文件路径（DataFrame 或路径字符串）
+        submission: 提交的预测结果 DataFrame
+        answers: 真实标签 DataFrame
 
     Returns:
-        评估结果字典，包含 'score' 键
+        {metric} 分数
     """
-    # 读取文件（如果传入的是 DataFrame，则直接使用）
-    submission = submission_path if not isinstance(submission_path, str) else pd.read_csv(submission_path)
-    answers = answer_path if not isinstance(answer_path, str) else pd.read_csv(answer_path)
-
     # 合并数据
-    # 根据你的数据调整列名
-    id_col = submission.columns[0]  # 假设第一列是 ID
+    id_col = submission.columns[0]  # 第一列是 ID
     merged = submission.merge(answers, on=id_col, suffixes=('_pred', '_true'))
+
+    # 获取预测列和真实列
+    pred_col = submission.columns[1]
+    true_col = answers.columns[1]
 
     # 计算指标
     metric = "{metric}"
 
     if metric == "accuracy":
         from sklearn.metrics import accuracy_score
-        pred_col = submission.columns[1]
-        true_col = answers.columns[1]
-        score = accuracy_score(merged[true_col], merged[pred_col])
+        return accuracy_score(merged[true_col], merged[pred_col])
     elif metric == "rmse":
         from sklearn.metrics import mean_squared_error
-        pred_col = submission.columns[1]
-        true_col = answers.columns[1]
-        score = np.sqrt(mean_squared_error(merged[true_col], merged[pred_col]))
+        return np.sqrt(mean_squared_error(merged[true_col], merged[pred_col]))
     elif metric == "mae":
         from sklearn.metrics import mean_absolute_error
-        pred_col = submission.columns[1]
-        true_col = answers.columns[1]
-        score = mean_absolute_error(merged[true_col], merged[pred_col])
+        return mean_absolute_error(merged[true_col], merged[pred_col])
+    elif metric == "roc_auc":
+        from sklearn.metrics import roc_auc_score
+        return roc_auc_score(merged[true_col], merged[pred_col])
     else:
         raise ValueError(f"Unknown metric: {{metric}}")
-
-    return {{
-        'score': score,
-        '{metric}': score,
-        'num_samples': len(merged),
-        'valid_submission': True
-    }}
 
 
 if __name__ == "__main__":
@@ -550,8 +538,10 @@ if __name__ == "__main__":
     else:
         answer_file = "data/competitions/{self.competition_id}/prepared/private/test_answer.csv"
 
-    result = grade(submission_file, answer_file)
-    print(f"得分: {{result['score']:.4f}}")
+    submission = pd.read_csv(submission_file)
+    answers = pd.read_csv(answer_file)
+    score = grade(submission, answers)
+    print(f"得分: {{score:.4f}}")
 '''
 
         grade_path = registry_dir / "grade.py"
