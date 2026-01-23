@@ -102,7 +102,7 @@ import dslighting
 
 # 1. 数据分析
 result = dslighting.analyze(
-    data="path/to/your/data.csv",
+    data="path/to/your/data.csv",  # 可以是相对路径或绝对路径
     description="分析数据的基本统计特征和分布",
     model="gpt-4o"  # 或您的模型名称
 )
@@ -121,6 +121,12 @@ result = dslighting.model(
     model="gpt-4o"  # 或您的模型名称
 )
 ```
+
+**数据路径说明**:
+- **相对路径**: `./data/titanic`, `data.csv`, `../dataset/train.csv`
+- **绝对路径**: `/Users/username/data/titanic`, `C:\data\titanic`
+- **数据目录**: 可以指向包含多个文件的目录
+- **内置数据集**: `dslighting.load_data("bike-sharing-demand")`
 
 ---
 
@@ -328,6 +334,41 @@ data/
 ├── train.csv               # 训练数据
 ├── test.csv                # 测试数据
 └── description.md          # 数据描述（可选）
+```
+
+**本示例的数据结构**:
+
+本 demo 使用 Kaggle 泰坦尼克号数据集，位于 `./data/titanic/`：
+
+```bash
+examples/open_ended_demo/
+├── data/
+│   └── titanic/
+│       ├── train.csv              # 训练数据 (891 行)
+│       ├── test.csv               # 测试数据 (418 行)
+│       └── gender_submission.csv  # 示例提交
+├── main.py                        # 示例代码
+└── README.md                      # 本文档
+```
+
+**使用示例数据**:
+
+```python
+import dslighting
+
+# 使用相对路径（推荐）
+result = dslighting.analyze(
+    data="./data/titanic",         # 指向数据目录
+    description="分析泰坦尼克号数据",
+    model="gpt-4o"
+)
+
+# 或者直接指定 train.csv
+result = dslighting.analyze(
+    data="./data/titanic/train.csv",
+    description="分析训练数据",
+    model="gpt-4o"
+)
 ```
 
 ---

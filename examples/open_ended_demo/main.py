@@ -44,7 +44,8 @@ def print_summary(result, title: str):
 
 
 def main():
-    data_path = "./data/raw"
+    # 使用相对路径指向数据目录
+    data_path = "./data/titanic"
 
     # result_processing = run_processing(data_path)
     # print_summary(result_processing, "Open-Ended Processing")
