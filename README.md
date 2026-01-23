@@ -5,7 +5,7 @@
 # DSLIGHTING：全流程数据科学智能助手
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![PyPI](https://img.shields.io/badge/PyPI-1.8.1-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
+[![PyPI](https://img.shields.io/badge/PyPI-2.7.8-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/dslighting?style=flat-square&logo=pypi)](https://pypi.org/project/dslighting/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
@@ -76,9 +76,11 @@ DSLIGHTING 是一个全流程数据科学智能助手系统，采用Agent式工�
 
 ---
 
-### 🆕 v1.8.1 新特性：内置数据集 & 全局配置
+### 🆕 快速体验：内置数据集 & 开放式 API
 
-**无需准备数据，直接运行！**
+#### 方式 1️⃣：使用内置数据集（零配置）
+
+**无需准备数据，一行代码运行！**
 
 ```python
 # run_builtin.py
@@ -87,40 +89,73 @@ load_dotenv()
 
 import dslighting
 
-def main():
-    # 使用内置数据集，无需配置数据路径
-    result = dslighting.run_agent(task_id="bike-sharing-demand")
+# 使用内置数据集，无需配置数据路径
+result = dslighting.run_agent(task_id="bike-sharing-demand")
 
-    print(f"✅ 任务完成！")
-    print(f"结果: {result}")
-
-if __name__ == "__main__":
-    main()
+print(f"✅ 任务完成！Score: {result.score}")
 ```
 
-**全局配置**（可选）：
+**内置数据集**：
+- `bike-sharing-demand` - 共享单车需求预测
+- ✅ 包含完整的训练集、测试集和答案文件
+- ✅ 开箱即用，无需下载
+- ✅ 适合快速体验和测试
+
+#### 方式 2️⃣：开放式 API（推荐新手）
+
+**数据分析、处理、建模三大功能**
+
 ```python
 import dslighting
 
-# 配置一次，全局生效
+# 分析 - 探索数据（2 次迭代，保留工作空间）
+result = dslighting.analyze(
+    data="./data/titanic",
+    description="分析乘客数据分布",
+    model="gpt-4o"
+)
+
+# 处理 - 清洗数据（3 次迭代，保留工作空间）
+result = dslighting.process(
+    data="./data/titanic",
+    description="清洗缺失值和异常值",
+    model="gpt-4o"
+)
+
+# 建模 - 训练模型（4 次迭代，保留工作空间）
+result = dslighting.model(
+    data="./data/titanic",
+    description="训练生存预测模型",
+    model="gpt-4o"
+)
+```
+
+**特点**：
+- 🎯 **简单直观**：三个 API 对应三种常见任务
+- 🔄 **自动迭代**：根据任务类型设置合理的默认迭代次数
+- 📁 **保留结果**：自动保留工作空间，方便查看生成的代码和文件
+
+📖 **完整教程**: [examples/open_ended_demo/README.md](examples/open_ended_demo/README.md)
+
+#### 方式 3️⃣：全局配置（可选）
+
+**配置一次，全局生效**
+
+```python
+import dslighting
+
+# 配置数据目录和注册表目录
 dslighting.setup(
     data_parent_dir="/path/to/data/competitions",
     registry_parent_dir="/path/to/registry"
 )
 
-# 之后只需 task_id
+# 之后只需提供 task_id
 agent = dslighting.Agent()
-result = agent.run(task_id="my-task")
+result = agent.run(task_id="my-custom-task")
 ```
 
-**内置数据集**：
-- `bike-sharing-demand` - 共享单车需求预测
-- 包含完整的训练集、测试集和答案文件
-- 开箱即用，无需下载
-
 📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/
-
----
 
 ---
 
@@ -170,44 +205,7 @@ pip install -r requirements_local.txt
 > - `requirements.txt`：锁定具体版本，适合生产环境
 > - `requirements_local.txt`：不锁定版本，依赖更灵活，适合开发环境
 
-### 3. (可选) 安装 Python API 包
-
-> 🎉 **新功能！** DSLighting 现在提供简化的 Python API，让使用像 scikit-learn 一样简单！
-
-**快速安装 Python API 包**：
-```bash
-pip install -e .
-```
-
-**一行代码运行数据科学任务**：
-
-```python
-# run_builtin.py
-from dotenv import load_dotenv
-load_dotenv()
-
-import dslighting
-
-def main():
-    # 无需配置，直接使用内置数据
-    result = dslighting.run_agent(task_id="bike-sharing-demand")
-
-    print(f"✅ 任务完成！")
-    print(f"结果: {result}")
-
-if __name__ == "__main__":
-    main()
-```
-
-📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/api/getting-started.html
-
-> ✨ **特点**：
-> - 🚀 **超简单**：1-3 行代码完成复杂任务
-> - 🤖 **智能检测**：自动识别任务类型和推荐工作流
-> - 🔧 **完全兼容**：与现有 DSAT API 100% 兼容
-> - 📊 **开箱即用**：合理的默认配置，环境变量驱动
-
-### 4. 配置API密钥
+### 3. 配置API密钥
 
 ```bash
 cp .env.example .env
@@ -233,7 +231,7 @@ DSLighting支持多种LLM提供商：
 
 > 💡 **配置示例**: 查看 `.env.example` 文件获取详细的多模型配置示例，包括API密钥轮换、温度设置等。
 
-### 5. 准备数据
+### 4. 准备数据
 
 DSLighting支持多种数据来源。目前支持以下数据准备方式：
 
@@ -277,7 +275,7 @@ data/competitions/
 
 > 📖 **详细数据准备指南**: 查看 [数据准备文档](docs/DATA_PREPARATION.md) 了解更多详情。
 
-### 6. 运行单个任务
+### 5. 运行任务
 
 ```bash
 python run_benchmark.py \
@@ -288,7 +286,7 @@ python run_benchmark.py \
   --llm-model gpt-4
 ```
 
-### 7. 使用Web UI（推荐）
+### 6. 使用Web UI（推荐）
 
 我们提供了基于 Next.js + FastAPI 的Web界面，让数据上传和任务执行更加便捷。
 
