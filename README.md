@@ -41,25 +41,6 @@
 
 ---
 
-## 📸 Web UI Preview
-
-### Main Dashboard
-![Main Dashboard](assets/web_ui_main_page.png)
-
-### Exploratory Data Analysis (EDA)
-![EDA](assets/web_ui_eda.png)
-
-### Custom Tasks
-![Custom Tasks](assets/web_ui_user_custome_task.png)
-
-### Model Training
-![Model Training](assets/web_ui_model_training.png)
-
-### Report Generation
-![Report Generation](assets/web_ui_report.png)
-
----
-
 ## 📖 Overview
 
 DSLIGHTING is a full-stack data science workflow system with agent-style workflows and a reusable data layout for task execution, evaluation, and iteration.
@@ -387,6 +368,23 @@ python run_benchmark.py \
 ### 6. Interactive Web UI (Recommended)
 
 We provide a Next.js + FastAPI web interface for easier data upload and task execution.
+
+#### 📸 Web UI Preview
+
+**Main Dashboard**
+![Main Dashboard](assets/web_ui_main_page.png)
+
+**Exploratory Data Analysis (EDA)**
+![EDA](assets/web_ui_eda.png)
+
+**Custom Tasks**
+![Custom Tasks](assets/web_ui_user_custome_task.png)
+
+**Model Training**
+![Model Training](assets/web_ui_model_training.png)
+
+**Report Generation**
+![Report Generation](assets/web_ui_report.png)
 
 #### 6.1 Backend Setup
 
