@@ -197,7 +197,62 @@ result = agent.run(task_id="my-custom-task")
 - 📊 **批量处理**：适合处理多个竞赛任务
 - ⚡ **高效执行**：减少重复配置，提高工作效率
 
-📖 **详细文档**: https://luckyfan-cs.github.io/dslighting-web/
+##### 方式 4️⃣：定义自定义 Agent（专家模式）
+
+**灵活构建专属 Agent，完全控制工作流程**
+
+通过定义 **Operator**（操作符）、**Workflow**（工作流）和 **Factory**（工厂），你可以构建完全自定义的 Agent 来处理复杂任务。
+
+**示例：构建自定义 Agent**
+
+```python
+from dslighting.operators.custom import SimpleOperator
+
+# 1. 定义操作符（可复用的能力）
+async def summarize(text: str) -> dict:
+    return {"summary": text[:200]}
+
+summarize_op = SimpleOperator(func=summarize, name="Summarize")
+
+# 2. 定义工作流（串联操作符）
+class MyWorkflow:
+    def __init__(self, operators):
+        self.ops = operators
+
+    async def solve(self, description, io_instructions, data_dir, output_path):
+        # 执行分析、生成代码等步骤
+        _ = await self.ops["summarize"](text=description)
+
+# 3. 创建工厂（构建工作流）
+class MyWorkflowFactory:
+    def __init__(self, model="openai/gpt-4o"):
+        self.model = model
+
+    def create_agent(self):
+        operators = {"summarize": summarize_op}
+        return MyWorkflow(operators)
+
+# 4. 使用自定义 Agent
+agent = MyWorkflowFactory(model="openai/deepseek-ai/DeepSeek-V3.1-Terminus").create_agent()
+```
+
+**核心概念**：
+- **Operator**：可复用的原子能力（分析、建模、可视化等）
+- **Workflow**：工作流，负责串联多个操作符完成任务
+- **Factory**：工厂模式，负责构建和配置 Agent
+
+**使用场景**：
+- 🎯 需要特定的任务执行逻辑
+- 🔬 研究新的 Agent 架构
+- 🧩 组合多个专用能力
+- 📈 优化特定领域的工作流
+
+**最佳实践**：
+- ✅ 保持输出灵活：报告、图表、模型文件都可以
+- ✅ 使用沙箱执行：确保代码安全
+- ✅ 偏好小而美的操作符：通过组合构建复杂功能
+
+📖 **完整教程**: [AdvancedDSAgent 示例](https://github.com/usail-hkust/dslighting/tree/main/examples/advanced_custom_agent)
 
 ---
 
