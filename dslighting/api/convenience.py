@@ -184,3 +184,88 @@ def run_agent(
     result = agent.run(data=data, task_id=task_id, **kwargs)
 
     return result
+
+
+def analyze(
+    data: Union[str, Path, TaskContext],
+    description: str,
+    model: str = "gpt-4o",
+    **kwargs
+):
+    """
+    Open-ended analysis helper for beginners.
+
+    This runs the open-ended flow (analysis subtype) and returns a summary preview.
+
+    Args:
+        data: Data path or TaskContext object
+        description: User intent (e.g., "想做可视化")
+        model: LLM model
+        **kwargs: Additional Agent args
+
+    Returns:
+        AgentResult object with summary preview
+    """
+    if "workflow" not in kwargs:
+        kwargs["workflow"] = "aide"
+    if "max_iterations" not in kwargs:
+        kwargs["max_iterations"] = 2
+    if "keep_workspace" not in kwargs:
+        kwargs["keep_workspace"] = True
+    agent = Agent(model=model, **kwargs)
+    return agent.run(
+        data=data,
+        description=description,
+        task_type="analysis",
+        **kwargs
+    )
+
+
+def process(
+    data: Union[str, Path, TaskContext],
+    description: str,
+    model: str = "gpt-4o",
+    **kwargs
+):
+    """
+    Open-ended data processing helper (open-ended subtype: processing).
+    """
+    intent_description = f"User intent: data processing\n\n{description}"
+    if "workflow" not in kwargs:
+        kwargs["workflow"] = "aide"
+    if "max_iterations" not in kwargs:
+        kwargs["max_iterations"] = 3
+    if "keep_workspace" not in kwargs:
+        kwargs["keep_workspace"] = True
+    agent = Agent(model=model, **kwargs)
+    return agent.run(
+        data=data,
+        description=intent_description,
+        task_type="processing",
+        **kwargs
+    )
+
+
+def model(
+    data: Union[str, Path, TaskContext],
+    description: str,
+    model: str = "gpt-4o",
+    **kwargs
+):
+    """
+    Open-ended modeling helper (open-ended subtype: modeling).
+    """
+    intent_description = f"User intent: modeling\n\n{description}"
+    if "workflow" not in kwargs:
+        kwargs["workflow"] = "aide"
+    if "max_iterations" not in kwargs:
+        kwargs["max_iterations"] = 4
+    if "keep_workspace" not in kwargs:
+        kwargs["keep_workspace"] = True
+    agent = Agent(model=model, **kwargs)
+    return agent.run(
+        data=data,
+        description=intent_description,
+        task_type="modeling",
+        **kwargs
+    )
