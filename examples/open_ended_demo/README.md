@@ -252,6 +252,53 @@ result = dslighting.process(
 )
 ```
 
+### 使用不同的 LLM 模型
+
+DSLighting 支持多种 LLM 提供商和模型。通过 `model` 参数指定：
+
+```python
+import dslighting
+
+# 使用 OpenAI GPT-4o
+result = dslighting.analyze(
+    data="data.csv",
+    description="分析数据",
+    model="gpt-4o"
+)
+
+# 使用 DeepSeek V3（适合轨迹流动任务）
+result = dslighting.analyze(
+    data="data.csv",
+    description="分析数据",
+    model="openai/deepseek-ai/DeepSeek-V3.1-Terminus"
+)
+
+# 使用 Anthropic Claude
+result = dslighting.process(
+    data="data.csv",
+    description="处理数据",
+    model="claude-3-5-sonnet-20241022"
+)
+
+# 使用本地模型或自定义 API endpoint
+# 在 .env 文件中配置：
+# API_KEY=your-api-key
+# API_BASE=https://your-api-endpoint.com/v1
+# LLM_MODEL=your-model-name
+
+result = dslighting.model(
+    data="data.csv",
+    description="训练模型"
+    # model 参数会自动从 .env 文件读取 LLM_MODEL
+)
+```
+
+**常用模型示例**:
+- **OpenAI**: `gpt-4o`, `gpt-4o-mini`, `gpt-3.5-turbo`
+- **DeepSeek**: `openai/deepseek-ai/DeepSeek-V3.1-Terminus` (适合轨迹流动任务)
+- **Anthropic**: `claude-3-5-sonnet-20241022`, `claude-3-haiku-20240307`
+- **其他兼容 OpenAI API 的模型**: 直接使用模型名称
+
 ### 查看完整日志
 
 ```python
