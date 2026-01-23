@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dslighting"
-version = "2.7.8"
-description = "DSLighting 2.7.8 - Enhanced open-ended APIs: increased default iterations (analyze=2, process=3, model=4) and auto-keep workspace for result inspection"
+version = "2.7.9"
+description = "DSLighting 2.7.9 - Enhanced PyPI README with comprehensive documentation: installation guide, multi-provider setup, usage examples, and custom Agent tutorial"
 readme = "PIP_DOC/README_PIP.md"
 requires-python = ">=3.10"
 license = {text = "AGPL-3.0"}
