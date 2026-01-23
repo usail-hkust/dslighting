@@ -538,19 +538,11 @@ See `FAQ.md` for more information.
 
 <div align="center">
 
-<p>
-  <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="assets/roster/stargazers.svg" alt="Stargazers"/></a>
-  &nbsp;&nbsp;
-  <a href="https://github.com/usail-hkust/dslighting/network/members"><img src="assets/roster/forkers.svg" alt="Forkers"/></a>
-</p>
+[![Stargazers repo roster for @usail-hkust/dslighting](https://reporoster.com/stars/usail-hkust/dslighting)](https://github.com/usail-hkust/dslighting/stargazers)
 
-<a href="https://www.star-history.com/#usail-hkust/dslighting&type=timeline&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=timeline&legend=top-left" />
-  </picture>
-</a>
+[![Forkers repo roster for @usail-hkust/dslighting](https://reporoster.com/forks/usail-hkust/dslighting)](https://github.com/usail-hkust/dslighting/network/members)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=Date)](https://star-history.com/#usail-hkust/dslighting&Date)
 
 </div>
 
