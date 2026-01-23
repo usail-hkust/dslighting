@@ -103,19 +103,22 @@ import dslighting
 # 1. 数据分析
 result = dslighting.analyze(
     data="path/to/your/data.csv",
-    description="分析数据的基本统计特征和分布"
+    description="分析数据的基本统计特征和分布",
+    model="gpt-4o"  # 或您的模型名称
 )
 
 # 2. 数据处理
 result = dslighting.process(
     data="path/to/your/data.csv",
-    description="清洗数据，处理缺失值和异常值"
+    description="清洗数据，处理缺失值和异常值",
+    model="gpt-4o"  # 或您的模型名称
 )
 
 # 3. 数据建模
 result = dslighting.model(
     data="path/to/your/data.csv",
-    description="训练机器学习模型并进行预测"
+    description="训练机器学习模型并进行预测",
+    model="gpt-4o"  # 或您的模型名称
 )
 ```
 
@@ -140,7 +143,8 @@ import dslighting
 
 result = dslighting.analyze(
     data="data/titanic.csv",
-    description="分析泰坦尼克号乘客数据的特征分布"
+    description="分析泰坦尼克号乘客数据的特征分布",
+    model="gpt-4o"  # 指定模型
 )
 
 # 查看结果
@@ -173,7 +177,8 @@ import dslighting
 
 result = dslighting.process(
     data="data/messy_data.csv",
-    description="清洗数据：填充缺失值、删除重复行、处理异常值"
+    description="清洗数据：填充缺失值、删除重复行、处理异常值",
+    model="gpt-4o"  # 指定模型
 )
 
 # 查看处理后的数据
@@ -205,7 +210,8 @@ import dslighting
 
 result = dslighting.model(
     data="data/training.csv",
-    description="训练分类模型预测乘客生存"
+    description="训练分类模型预测乘客生存",
+    model="gpt-4o"  # 指定模型
 )
 
 # 查看模型性能
@@ -229,6 +235,7 @@ print(result.summary)
 result = dslighting.analyze(
     data="data.csv",
     description="详细分析数据",
+    model="gpt-4o",  # 指定模型
     max_iterations=5  # 默认是 2，这里改为 5
 )
 ```
@@ -240,6 +247,7 @@ result = dslighting.analyze(
 result = dslighting.process(
     data="data.csv",
     description="处理数据",
+    model="gpt-4o",  # 指定模型
     workflow="autokaggle"  # 使用 AutoKaggle 工作流
 )
 ```
@@ -250,6 +258,7 @@ result = dslighting.process(
 result = dslighting.analyze(
     data="data.csv",
     description="分析数据",
+    model="gpt-4o",  # 指定模型
     verbose=True  # 显示详细日志
 )
 ```
@@ -302,6 +311,7 @@ pip install dslighting
 result = dslighting.analyze(
     data="large_data.csv",
     description="分析数据",
+    model="gpt-4o",  # 指定模型
     max_iterations=1  # 减少迭代次数
 )
 ```
@@ -325,21 +335,24 @@ import dslighting
 # 步骤 1: 分析数据
 analysis = dslighting.analyze(
     data="data/titanic.csv",
-    description="探索数据特征"
+    description="探索数据特征",
+    model="gpt-4o"  # 指定模型
 )
 print("分析结果:", analysis.summary)
 
 # 步骤 2: 处理数据
 processed = dslighting.process(
     data="data/titanic.csv",
-    description="清洗和预处理数据"
+    description="清洗和预处理数据",
+    model="gpt-4o"  # 指定模型
 )
 print("处理结果:", processed.summary)
 
 # 步骤 3: 建模
 model = dslighting.model(
     data="data/titanic.csv",
-    description="训练预测模型"
+    description="训练预测模型",
+    model="gpt-4o"  # 指定模型
 )
 print("模型结果:", model.summary)
 ```
@@ -359,7 +372,8 @@ context = load_data(
 # 建模
 result = model(
     data=context,  # 使用 TaskContext 对象
-    description="训练分类模型"
+    description="训练分类模型",
+    model="gpt-4o"  # 指定模型
 )
 ```
 
