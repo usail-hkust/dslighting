@@ -5,6 +5,8 @@
 # DSLIGHTING: Full-Stack Data Science Workflow Assistant
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/badge/PyPI-2.7.8-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dslighting?style=flat-square&logo=pypi)](https://pypi.org/project/dslighting/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -15,7 +17,9 @@
   &nbsp;&nbsp;
   <a href="#core-features"><img src="https://img.shields.io/badge/⚡-Features-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/usail-hkust/dslighting/issues"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  &nbsp;&nbsp;
+  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started.html"><img src="https://img.shields.io/badge/📖-User_Guide-purple?style=for-the-badge" alt="User Guide"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
   &nbsp;&nbsp;
@@ -67,6 +71,187 @@ DSLIGHTING is a full-stack data science workflow system with agent-style workflo
 - 📊 **Web Visualization Interface**: Interactive Dashboard based on Next.js + FastAPI
 - 📝 **Complete Logging**: Records artifacts and summaries for each run
 - 🧩 **Extensible Architecture**: Flexible task registry and data preparation flow
+- 📦 **Smart Package Context** (v1.4.0+): Auto-detects available packages to avoid incompatible code
+- 🎯 **Built-in Datasets** (v1.8.1+): Ready-to-run sample datasets with zero setup
+
+---
+
+## 🆕 Quick Experience
+
+### Step 1: Install DSLighting
+
+```bash
+# Create a virtual environment (recommended)
+python3 -m venv dslighting-env
+source dslighting-env/bin/activate  # Windows: dslighting-env\Scripts\activate
+
+# Install DSLighting
+pip install dslighting
+```
+
+### Step 2: Configure API Keys
+
+Create a `.env` file and set your keys:
+
+```bash
+# .env
+API_KEY=sk-your-api-key-here
+API_BASE=https://api.openai.com/v1
+LLM_MODEL=gpt-4o
+```
+
+**Supported providers**:
+- **OpenAI**: https://openai.com/ - API Base: `https://api.openai.com/v1`
+- **Zhipu AI** (Recommended in China): https://bigmodel.cn/ - API Base: `https://open.bigmodel.cn/api/paas/v4`
+- **SiliconFlow**: https://siliconflow.cn/ - API Base: `https://api.siliconflow.cn/v1`
+
+### Step 3: Choose How to Use
+
+---
+
+**🌱 Beginner Mode (Recommended)**
+
+#### Option 1: Built-in Dataset (Zero Setup)
+
+**No data preparation required, run in one line!**
+
+```python
+# run_builtin.py
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+# Use built-in dataset without configuring data paths
+result = dslighting.run_agent(task_id="bike-sharing-demand")
+
+print(f"✅ Done! Score: {result.score}")
+```
+
+**Built-in dataset**:
+- `bike-sharing-demand` - Bike demand prediction
+- ✅ Includes full train/test/answer files
+- ✅ Ready to run out of the box
+- ✅ Great for quick experience and testing
+
+#### Option 2: Open-Ended API (Recommended for Beginners)
+
+**Three major functions: analyze, process, model**
+
+```python
+import dslighting
+
+# Analyze - explore data (2 iterations, keep workspace)
+result = dslighting.analyze(
+    data="./data/titanic",
+    description="Analyze passenger distribution",
+    model="gpt-4o"
+)
+
+# Process - clean data (3 iterations, keep workspace)
+result = dslighting.process(
+    data="./data/titanic",
+    description="Handle missing values and outliers",
+    model="gpt-4o"
+)
+
+# Model - train models (4 iterations, keep workspace)
+result = dslighting.model(
+    data="./data/titanic",
+    description="Train a survival prediction model",
+    model="gpt-4o"
+)
+```
+
+**Highlights**:
+- 🎯 **Simple and intuitive**: three APIs for common tasks
+- 🔄 **Auto-iteration**: sensible defaults per task type
+- 📁 **Result preservation**: workspace and outputs saved automatically
+
+📖 **Full tutorial**: [examples/open_ended_demo/README.md](../examples/open_ended_demo/README.md)
+
+---
+
+**🚀 Advanced Mode (For Power Users)**
+
+#### Option 3: Global Configuration
+
+**Configure once, reuse everywhere**
+
+```python
+import dslighting
+
+# Configure data and registry directories
+dslighting.setup(
+    data_parent_dir="/path/to/data/competitions",
+    registry_parent_dir="/path/to/registry"
+)
+
+# Then only provide task_id
+agent = dslighting.Agent()
+result = agent.run(task_id="my-custom-task")
+```
+
+**Advanced mode benefits**:
+- 🔧 **Centralized management** for multiple tasks
+- 📊 **Batch processing** for many competitions
+- ⚡ **Higher efficiency** with fewer repeated configs
+
+#### Option 4: Define a Custom Agent (Expert Mode)
+
+**Build your own Agent with full workflow control**
+
+By defining **Operator**, **Workflow**, and **Factory**, you can build fully custom agents for complex tasks.
+
+**Example: Build a custom Agent**
+
+```python
+from dslighting.operators.custom import SimpleOperator
+
+# 1. Define an operator (reusable capability)
+async def summarize(text: str) -> dict:
+    return {"summary": text[:200]}
+
+summarize_op = SimpleOperator(func=summarize, name="Summarize")
+
+# 2. Define a workflow (chain operators)
+class MyWorkflow:
+    def __init__(self, operators):
+        self.ops = operators
+
+    async def solve(self, description, io_instructions, data_dir, output_path):
+        _ = await self.ops["summarize"](text=description)
+
+# 3. Create a factory (build the workflow)
+class MyWorkflowFactory:
+    def __init__(self, model="openai/gpt-4o"):
+        self.model = model
+
+    def create_agent(self):
+        operators = {"summarize": summarize_op}
+        return MyWorkflow(operators)
+
+# 4. Use the custom Agent
+agent = MyWorkflowFactory(model="openai/deepseek-ai/DeepSeek-V3.1-Terminus").create_agent()
+```
+
+**Core concepts**:
+- **Operator**: reusable atomic capabilities (analysis, modeling, visualization)
+- **Workflow**: chains operators to solve tasks
+- **Factory**: builds and configures agents
+
+**Use cases**:
+- 🎯 Special task logic
+- 🔬 Research on new agent architectures
+- 🧩 Compose multiple specialized capabilities
+- 📈 Optimize domain-specific workflows
+
+**Best practices**:
+- ✅ Keep outputs flexible: reports, charts, models
+- ✅ Use sandboxed execution for safety
+- ✅ Prefer small, composable operators
+
+📖 **Full tutorial**: [AdvancedDSAgent examples](https://github.com/usail-hkust/dslighting/tree/main/examples/advanced_custom_agent)
 
 ---
 
@@ -127,11 +312,6 @@ cp .env.example .env
 
 DSLighting supports multiple LLM providers:
 
-**International Providers**:
-- **OpenAI** (https://openai.com/) - GPT series models
-  - API Base: `https://api.openai.com/v1`
-  - Get keys: https://platform.openai.com/api-keys
-
 **Chinese Providers** (Recommended for users in China):
 - **Zhipu AI** (https://bigmodel.cn/) - GLM series models
   - API Base: `https://open.bigmodel.cn/api/paas/v4`
@@ -139,6 +319,11 @@ DSLighting supports multiple LLM providers:
 - **SiliconFlow** (https://siliconflow.cn/) - DeepSeek, Qwen, etc.
   - API Base: `https://api.siliconflow.cn/v1`
   - Get keys: https://siliconflow.cn/account/ak
+
+**International Providers**:
+- **OpenAI** (https://openai.com/) - GPT series models
+  - API Base: `https://api.openai.com/v1`
+  - Get keys: https://platform.openai.com/api-keys
 
 You can set `API_KEY`/`API_BASE` or provide per-model overrides via `LLM_MODEL_CONFIGS`.
 
@@ -185,6 +370,8 @@ data/competitions/
 ```
 
 > 💡 **Note**: More data types and pretrained models will be supported soon. Stay tuned!
+
+> 📖 **Data preparation guide**: See [DATA_PREPARATION.md](DATA_PREPARATION.md) for details.
 
 ### 5. Run a Single Task
 
@@ -279,6 +466,55 @@ data/competitions/
 - `sciencebench_competitions` (optional): default list for ScienceBench
 - `custom_model_pricing`: per-model token pricing overrides for LiteLLM
 - `run`: trajectory logging toggles
+
+### Custom Model Pricing
+
+**Default behavior**:
+- DSLighting uses LiteLLM's built-in default pricing
+- If `config.yaml` is missing, the system still works (no error)
+- Pricing config is optional and only needed to override defaults
+
+**Custom pricing**:
+
+If you need custom pricing for specific models, create a `config.yaml` in your project directory:
+
+**Locations**:
+```bash
+# For pip installation
+/path/to/your/project/config.yaml
+
+# Example in a test project
+/Users/liufan/Applications/Github/dslighting_test_project/config.yaml
+```
+
+> 📖 **Reference example**: See [config.yaml.example](../config.yaml.example) for a full example
+
+**Example**:
+```yaml
+custom_model_pricing:
+  openai/Qwen/Qwen3-Coder-480B-A35B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  openai/Qwen/Qwen3-Coder-30B-A3B-Instruct:
+    input_cost_per_token: 6.0e-07
+    output_cost_per_token: 1.8e-06
+  o4-mini-2025-04-16:
+    input_cost_per_token: 1.1e-06
+    output_cost_per_token: 4.4e-06
+  openai/deepseek-ai/DeepSeek-V3.1-Terminus:
+    input_cost_per_token: 5.55e-07
+    output_cost_per_token: 1.67e-06
+```
+
+**Parameters**:
+- `input_cost_per_token`: input token price (per request)
+- `output_cost_per_token`: output token price (per response)
+- Unit: USD/token (scientific notation is common)
+
+**Notes**:
+- 💡 Pricing config is optional; missing config does not error
+- 💡 Only override models you need; others use defaults
+- 💡 Pricing affects cost calculation and budget control
 
 ---
 
@@ -392,3 +628,27 @@ Thank you for visiting DSLIGHTING!
 ![](https://img.shields.io/github/issues/usail-hkust/dslighting?style=for-the-badge)
 ![](https://img.shields.io/github/forks/usail-hkust/dslighting?style=for-the-badge)
 ![](https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge)
+
+---
+
+## 📚 Citation
+
+If you use DSLIGHTING in your research, please cite:
+
+```bibtex
+@software{dslighting2025,
+  title = {DSLIGHTING: An End-to-End Data Science Intelligent Assistant System},
+  author = {Liu, F. and Liu, C. and others},
+  year = {2025},
+  publisher = {GitHub},
+  url = {https://github.com/usail-hkust/dslighting},
+  version = {1.0.0}
+}
+```
+
+Or in plain text:
+
+```
+Liu, F., Liu, C., et al. (2025). DSLIGHTING: An End-to-End Data Science Intelligent Assistant System.
+GitHub repository. https://github.com/usail-hkust/dslighting
+```
