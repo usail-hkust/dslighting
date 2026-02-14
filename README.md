@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="assets/dslighting.png" alt="DSLIGHTING Logo" width="180" style="border-radius: 15px;">
+<img src="https://raw.githubusercontent.com/usail-hkust/dslighting/main/assets/dslighting.png" alt="DSLIGHTING Logo" width="180" style="border-radius: 15px;">
 
-# DSLIGHTING: Full-Stack Data Science Workflow Assistant
+# DSLIGHTING: Data Science Framework
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyPI](https://img.shields.io/badge/PyPI-2.7.9-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
@@ -13,20 +13,20 @@
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](LICENSE)
 
 <p align="center">
-  <a href="#quick-start"><img src="https://img.shields.io/badge/🚀-Quick_Start-green?style=for-the-badge" alt="Quick Start"></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/%F0%9F%9A%80-Quick_Start-green?style=for-the-badge" alt="Quick Start"></a>
   &nbsp;&nbsp;
-  <a href="#core-features"><img src="https://img.shields.io/badge/⚡-Features-blue?style=for-the-badge" alt="Core Features"></a>
+  <a href="#core-features"><img src="https://img.shields.io/badge/%E2%9A%A1-Features-blue?style=for-the-badge" alt="Core Features"></a>
   &nbsp;&nbsp;
-  <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/📚-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/%F0%9D%93%9A-Docs-orange?style=for-the-badge" alt="Documentation"></a>
   &nbsp;&nbsp;
-  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started.html"><img src="https://img.shields.io/badge/📖-User_Guide-purple?style=for-the-badge" alt="User Guide"></a>
+  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started.html"><img src="https://img.shields.io/badge/%F0%9D%93%96-User_Guide-purple?style=for-the-badge" alt="User Guide"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
   &nbsp;&nbsp;
   <img src="https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge" alt="Profile views">
 </p>
 
-[🇨🇳 中文](README_CN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
+[中文](README_CN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
 
 </div>
 
@@ -41,604 +41,821 @@
 
 ---
 
-## 📖 Overview
+## 🚀 New in v2.8.0 - Major Update
 
-DSLIGHTING is a full-stack data science workflow system with agent-style workflows and a reusable data layout for task execution, evaluation, and iteration.
-
-### ✨ Key Features
-
-- 🤖 **Multiple Agent Workflows**: Integrated aide, automind, dsagent, and other intelligent agent styles
-- 🔄 **Meta-Optimization Framework**: Support for AFlow meta-optimization to automatically select optimal workflows
-- 📊 **Web Visualization Interface**: Interactive Dashboard based on Next.js + FastAPI
-- 📝 **Complete Logging**: Records artifacts and summaries for each run
-- 🧩 **Extensible Architecture**: Flexible task registry and data preparation flow
-- 📦 **Smart Package Context** (v1.4.0+): Auto-detects available packages to avoid incompatible code
-- 🎯 **Built-in Datasets** (v1.8.1+): Ready-to-run sample datasets with zero setup
+| Feature | Description |
+|---------|-------------|
+| **Benchmark Mode** | Now supports **DABench**, **MLE-Bench**, and **ScienceAgentBench** for agent evaluation |
+| **DGA Mode** | Enhanced **Data Science Agent (DGA)** with improved workflow orchestration |
+| **Web UI** | Coming Soon - under iteration/refactoring |
 
 ---
 
-## 🆕 Quick Experience
+> **DSLighting is an LLM-driven autonomous data science execution engine that turns task descriptions and datasets into iterative code generation, execution, evaluation, and refinement workflows.**
 
-### Step 1: Install DSLighting
+DSLighting 提供了一个完整的数据科学 Agent 框架，支持从简单 API 调用到深度自定义的所有场景。
+
+## 🎯 Two Usage Modes
+
+DSLighting 2.0 提供两种使用方式：
+
+### 1. **Simplified API** (推荐用于快速上手)
+
+适合快速原型开发和标准数据科学任务，类似 scikit-learn 的简单接口。
+
+### 2. **Architecture** (推荐用于深度定制)
+
+适合需要精细控制的复杂场景，提供完整的架构访问权限。
+
+---
+
+## 📦 Installation
 
 ```bash
-# Create a virtual environment (recommended)
-python3 -m venv dslighting-env
-source dslighting-env/bin/activate  # Windows: dslighting-env\Scripts\activate
+# Step 1: Clone repository
+git clone https://github.com/usail-hkust/dslighting.git
+cd dslighting
 
-# Install DSLighting
-pip install dslighting
+# Step 2: Create virtual environment
+python3.10 -m venv dslighting_env
+source dslighting_env/bin/activate  # Windows: dslighting_env\Scripts\activate
+
+# Step 3: Install dependencies
+pip install -r requirements.txt
+
+# Step 4: Install DSLighting package
+pip install -e .
+
+# Step 5: Configure API keys
+cp .env.example .env
+# Edit .env with your API keys
 ```
-
-### Step 2: Configure API Keys
-
-Create a `.env` file and set your keys:
-
-```bash
-# .env
-API_KEY=sk-your-api-key-here
-API_BASE=https://api.openai.com/v1
-LLM_MODEL=gpt-4o
-```
-
-**Supported providers**:
-- **OpenAI**: https://openai.com/ - API Base: `https://api.openai.com/v1`
-- **Zhipu AI** (Recommended in China): https://bigmodel.cn/ - API Base: `https://open.bigmodel.cn/api/paas/v4`
-- **SiliconFlow**: https://siliconflow.cn/ - API Base: `https://api.siliconflow.cn/v1`
-
-### Step 3: Choose How to Use
-
----
-
-**🌱 Beginner Mode (Recommended)**
-
-#### Option 1: Built-in Dataset (Zero Setup)
-
-**No data preparation required, run in one line!**
-
-```python
-# run_builtin.py
-from dotenv import load_dotenv
-load_dotenv()
-
-import dslighting
-
-# Use built-in dataset without configuring data paths
-result = dslighting.run_agent(task_id="bike-sharing-demand")
-
-print(f"✅ Done! Score: {result.score}")
-```
-
-**Built-in dataset**:
-- `bike-sharing-demand` - Bike demand prediction
-- ✅ Includes full train/test/answer files
-- ✅ Ready to run out of the box
-- ✅ Great for quick experience and testing
-
-#### Option 2: Open-Ended API (Recommended for Beginners)
-
-**Three major functions: analyze, process, model**
-
-```python
-import dslighting
-
-# Analyze - explore data (2 iterations, keep workspace)
-result = dslighting.analyze(
-    data="./data/titanic",
-    description="Analyze passenger distribution",
-    model="gpt-4o"
-)
-
-# Process - clean data (3 iterations, keep workspace)
-result = dslighting.process(
-    data="./data/titanic",
-    description="Handle missing values and outliers",
-    model="gpt-4o"
-)
-
-# Model - train models (4 iterations, keep workspace)
-result = dslighting.model(
-    data="./data/titanic",
-    description="Train a survival prediction model",
-    model="gpt-4o"
-)
-```
-
-**Highlights**:
-- 🎯 **Simple and intuitive**: three APIs for common tasks
-- 🔄 **Auto-iteration**: sensible defaults per task type
-- 📁 **Result preservation**: workspace and outputs saved automatically
-
-📖 **Full tutorial**: [examples/open_ended_demo/README.md](examples/open_ended_demo/README.md)
-
----
-
-**🚀 Advanced Mode (For Power Users)**
-
-#### Option 3: Global Configuration
-
-**Configure once, reuse everywhere**
-
-```python
-import dslighting
-
-# Configure data and registry directories
-dslighting.setup(
-    data_parent_dir="/path/to/data/competitions",
-    registry_parent_dir="/path/to/registry"
-)
-
-# Then only provide task_id
-agent = dslighting.Agent()
-result = agent.run(task_id="my-custom-task")
-```
-
-**Advanced mode benefits**:
-- 🔧 **Centralized management** for multiple tasks
-- 📊 **Batch processing** for many competitions
-- ⚡ **Higher efficiency** with fewer repeated configs
-
-#### Option 4: Define a Custom Agent (Expert Mode)
-
-**Build your own Agent with full workflow control**
-
-By defining **Operator**, **Workflow**, and **Factory**, you can build fully custom agents for complex tasks.
-
-**Example: Build a custom Agent**
-
-```python
-from dslighting.operators.custom import SimpleOperator
-
-# 1. Define an operator (reusable capability)
-async def summarize(text: str) -> dict:
-    return {"summary": text[:200]}
-
-summarize_op = SimpleOperator(func=summarize, name="Summarize")
-
-# 2. Define a workflow (chain operators)
-class MyWorkflow:
-    def __init__(self, operators):
-        self.ops = operators
-
-    async def solve(self, description, io_instructions, data_dir, output_path):
-        _ = await self.ops["summarize"](text=description)
-
-# 3. Create a factory (build the workflow)
-class MyWorkflowFactory:
-    def __init__(self, model="openai/gpt-4o"):
-        self.model = model
-
-    def create_agent(self):
-        operators = {"summarize": summarize_op}
-        return MyWorkflow(operators)
-
-# 4. Use the custom Agent
-agent = MyWorkflowFactory(model="openai/deepseek-ai/DeepSeek-V3.1-Terminus").create_agent()
-```
-
-**Core concepts**:
-- **Operator**: reusable atomic capabilities (analysis, modeling, visualization)
-- **Workflow**: chains operators to solve tasks
-- **Factory**: builds and configures agents
-
-**Use cases**:
-- 🎯 Special task logic
-- 🔬 Research on new agent architectures
-- 🧩 Compose multiple specialized capabilities
-- 📈 Optimize domain-specific workflows
-
-**Best practices**:
-- ✅ Keep outputs flexible: reports, charts, models
-- ✅ Use sandboxed execution for safety
-- ✅ Prefer small, composable operators
-
-📖 **Full tutorial**: [AdvancedDSAgent examples](https://github.com/usail-hkust/dslighting/tree/main/examples/advanced_custom_agent)
 
 ---
 
 ## 🚀 Quick Start
 
-### System Requirements
+### Mode 1: Simplified API (3 lines of code)
 
-- **Python**: 3.10 or higher
-  ```bash
-  # Check Python version
-  python --version
-  # or
-  python3 --version
-  ```
-- **Node.js**: 18.x or higher
-  ```bash
-  # Check Node.js version
-  node --version
-  ```
-- **npm**: 9.x or higher (comes with Node.js)
-  ```bash
-  # Check npm version
-  npm --version
-  ```
-- **Git**: For version control
+```python
+from dotenv import load_dotenv
+load_dotenv()
 
-### 1. Setup Environment
+import dslighting
 
-```bash
-git clone https://github.com/usail-hkust/dslighting.git
-cd dslighting
-python3.10 -m venv dslighting
-source dslighting/bin/activate  # Windows: dslighting\Scripts\activate
+# Built-in dataset - no data preparation needed!
+result = dslighting.run_agent(task_id="bike-sharing-demand")
+
+print(f"✅ Success: {result.success}")
+print(f"📊 Score: {result.score}")
+print(f"💰 Cost: ${result.cost}")
 ```
 
-### 2. Install Dependencies
+### Mode 2: Architecture (Full Control)
 
-**Standard installation** (recommended):
-```bash
-pip install -r requirements.txt
+```python
+from dslighting import BaseAgent, GenerateCodeAndPlanOperator, ExecuteAndTestOperator
+from dslighting.services import LLMService, SandboxService, WorkspaceService
+from dslighting.state import JournalState
+from dslighting.prompts import PromptBuilder
+
+# Create services
+services = {
+    "llm": LLMService(model="gpt-4o"),
+    "sandbox": SandboxService(),
+    "workspace": WorkspaceService(),
+    "state": JournalState(),
+}
+
+# Define operators
+operators = {
+    "generate": GenerateCodeAndPlanOperator(
+        llm_service=services["llm"],
+        prompt_builder=PromptBuilder()
+    ),
+    "execute": ExecuteAndTestOperator(
+        sandbox_service=services["sandbox"]
+    ),
+}
+
+# Create and run agent
+agent = BaseAgent(operators, services)
+result = agent.run(
+    description="Build a model to predict bike sharing demand",
+    data_dir="data/competitions/bike-sharing-demand",
+    output_path="submission.csv"
+)
 ```
-
-**Alternative option** (if standard installation fails):
-```bash
-pip install -r requirements_local.txt
-```
-
-> 💡 **Notes**:
-> - `requirements.txt`: Locked versions, suitable for production environments
-> - `requirements_local.txt`: Unlocked versions, more flexible dependencies, suitable for development
-
-### 3. Configure API Keys
-
-```bash
-cp .env.example .env
-# Edit .env file to set your API keys
-```
-
-DSLighting supports multiple LLM providers:
-
-**Chinese Providers** (Recommended for users in China):
-- **Zhipu AI** (https://bigmodel.cn/) - GLM series models
-  - API Base: `https://open.bigmodel.cn/api/paas/v4`
-  - Get keys: https://open.bigmodel.cn/usercenter/apikeys
-- **SiliconFlow** (https://siliconflow.cn/) - DeepSeek, Qwen, etc.
-  - API Base: `https://api.siliconflow.cn/v1`
-  - Get keys: https://siliconflow.cn/account/ak
-
-**International Providers**:
-- **OpenAI** (https://openai.com/) - GPT series models
-  - API Base: `https://api.openai.com/v1`
-  - Get keys: https://platform.openai.com/api-keys
-
-You can set `API_KEY`/`API_BASE` or provide per-model overrides via `LLM_MODEL_CONFIGS`.
-
-> 💡 **Configuration Examples**: Check `.env.example` file for detailed multi-model configuration examples, including API key rotation, temperature settings, etc.
-
-### 4. Prepare Data
-
-DSLighting supports multiple data sources. Choose any of the following methods:
-
-#### Method 1: Download via MLE-Bench (Recommended)
-
-[MLE-Bench](https://github.com/openai/mle-bench) is a machine learning evaluation benchmark provided by OpenAI.
-
-```bash
-# 1. Clone MLE-Bench repository
-git clone https://github.com/openai/mle-bench.git
-cd mle-bench
-
-# 2. Install dependencies
-pip install -e .
-
-# 3. Download all datasets
-python scripts/prepare.py --competition all
-
-# 4. Link data to DSLighting project
-# MLE-Bench data is downloaded to ~/mle-bench/data/
-# Create symlink or copy to dslighting project
-ln -s ~/mle-bench/data/competitions /path/to/dslighting/data/competitions
-```
-
-> 📖 **More Info**: Visit [MLE-Bench GitHub](https://github.com/openai/mle-bench) for complete dataset list.
-
-#### Method 2: Custom Dataset
-
-Organize your data according to DSLighting's data layout:
-
-```
-data/competitions/
-  <competition-id>/
-    config.yaml           # Competition config
-    prepared/
-      public/            # Public data (train, sample)
-      private/           # Private data (test labels)
-```
-
-> 💡 **Note**: More data types and pretrained models will be supported soon. Stay tuned!
-
-> 📖 **Data preparation guide**: See [DATA_PREPARATION.md](DATA_PREPARATION.md) for details.
-
-### 5. Run a Single Task
-
-```bash
-python run_benchmark.py \
-  --workflow aide \
-  --benchmark mle \
-  --data-dir data/competitions \
-  --task-id bike-sharing-demand \
-  --llm-model gpt-4
-```
-
-### 6. Interactive Web UI (Recommended)
-
-We provide a Next.js + FastAPI web interface for easier data upload and task execution.
-
-#### 📸 Web UI Preview
-
-**Main Dashboard**
-![Main Dashboard](assets/web_ui_main_page.png)
-
-**Exploratory Data Analysis (EDA)**
-![EDA](assets/web_ui_eda.png)
-
-**Custom Tasks**
-![Custom Tasks](assets/web_ui_user_custome_task.png)
-
-**Model Training**
-![Model Training](assets/web_ui_model_training.png)
-
-**Report Generation**
-![Report Generation](assets/web_ui_report.png)
-
-#### 6.1 Backend Setup
-
-The backend depends on the main dslighting environment, only requiring additional web framework dependencies:
-
-```bash
-source dslighting/bin/activate
-# Install backend dependencies
-pip install -r web_ui/backend/requirements.txt
-```
-
-#### 6.2 Start the Backend
-
-```bash
-# Enter backend directory
-cd web_ui/backend
-
-# Start backend (default port 8003)
-python main.py
-```
-
-Or use uvicorn directly:
-
-```bash
-cd web_ui/backend
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8003
-```
-
-> 📖 **Documentation**: See [Backend README](web_ui/backend/README.md) for API endpoints and configuration
-
-> 💡 **Tip**: The backend runs on port **8003** by default. If the port is occupied, modify the port in `main.py`.
-
-#### 6.3 Start the Frontend
-
-```bash
-cd web_ui/frontend
-npm install   # Install dependencies (first time only)
-npm run dev   # Start the development server
-```
-
-> 📖 **Documentation**: See [Frontend README](web_ui/frontend/README.md) for more frontend development details
-
-#### 6.4 Access the Dashboard
-
-Open your browser and navigate to: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🏗️ Core Features
-
-### Agent Workflows
-
-- **`aide`**: Iterative code generation and review loop
-- **`automind`**: Planning + reasoning with memory and decomposition
-- **`dsagent`**: Plan/execute loop with structured operator flow
-- **`data_interpreter`**: Fast loop for code execution and debugging
-- **`autokaggle`**: SOP-style Kaggle workflow
-- **`aflow`**: Meta-optimization over workflows
-- **`deepanalyze`**: Analysis-focused execution workflow
-
-### Data Layout
+## 🏗️ Core Architecture
 
 ```
-data/competitions/
-  <competition-id>/
-    config.yaml           # Competition config
-    prepared/
-      public/            # Public data
-      private/           # Private data
+┌─────────────────────────────────────────┐
+│   🧠 agents/     - Strategy Center      │
+│   - BaseAgent, SimpleAgent              │
+│   - IterativeAgent, presets             │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   💪 operators/  - Atomic Capabilities  │
+│   - LLM operators (Generate, Review)    │
+│   - Code operators (Execute, Test)      │
+│   - Orchestration (Pipeline, Parallel)  │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   ⚙️ services/   - Infrastructure       │
+│   - LLMService, SandboxService          │
+│   - WorkspaceService, DataAnalyzer      │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   📝 state/      - Memory Management    │
+│   - JournalState, Experience            │
+│   - MemoryManager, ContextManager       │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   🗣️ prompts/    - Prompt Engineering  │
+│   - PromptBuilder, templates            │
+│   - Common guidelines                   │
+└─────────────────────────────────────────┘
 ```
 
-### Configuration
+---
 
-`config.yaml` is read by the benchmark runners and the LLM service:
+## 📚 API Reference
 
-- `competitions`: default competition list for MLEBench
-- `sciencebench_competitions` (optional): default list for ScienceBench
-- `custom_model_pricing`: per-model token pricing overrides for LiteLLM
-- `run`: trajectory logging toggles
+### Simplified API
 
-### Custom Model Pricing
+#### `run_agent()` - One-liner execution
 
-**Default behavior**:
-- DSLighting uses LiteLLM's built-in default pricing
-- If `config.yaml` is missing, the system still works (no error)
-- Pricing config is optional and only needed to override defaults
+```python
+result = dslighting.run_agent(
+    task_id="bike-sharing-demand",  # Built-in or custom task
+    workflow="aide",                 # Optional: workflow name
+    model="gpt-4o"                   # Optional: model name
+)
+```
 
-**Custom pricing**:
+#### `Agent` - Main interface
 
-If you need custom pricing for specific models, create a `config.yaml` in your project directory:
+```python
+agent = dslighting.Agent(
+    workflow="aide",        # Workflow: aide, autokaggle, dsagent, etc.
+    model="gpt-4o",         # LLM model
+    temperature=0.7,        # LLM temperature
+    max_iterations=5,       # Max iterations
+    verbose=True            # Enable logging
+)
 
-**Locations**:
+result = agent.run(
+    data="path/to/data",    # Data path or LoadedData object
+    description="Predict target column"  # Optional description
+)
+```
+
+#### `DataLoader` - Load data
+
+```python
+loader = dslighting.DataLoader()
+
+# Auto-detect data type
+data = loader.load("path/to/data")
+
+# Load specific formats
+data = loader.load_csv("data.csv")
+data = loader.load_dataframe(df)
+data = loader.load_competition("titanic")
+
+# Load built-in dataset
+data = loader.load_built_in("bike-sharing-demand")
+```
+
+#### `setup()` - Global configuration
+
+```python
+dslighting.setup(
+    data_parent_dir="/path/to/data/competitions",
+    registry_parent_dir="/path/to/registry"
+)
+
+# Now tasks can run with just task_id
+agent = dslighting.Agent()
+result = agent.run(task_id="my-task")
+```
+
+### Architecture API
+
+#### 🧠 Agent Layer
+
+```python
+from dslighting import BaseAgent, IterativeAgent
+
+# Base agent for single-step tasks
+agent = BaseAgent(operators, services, agent_config)
+result = agent.run(description, data_dir, output_path)
+
+# Iterative agent for multi-step tasks
+agent = IterativeAgent(operators, services, agent_config)
+result = await agent.solve(description, io_instructions, data_dir, output_path)
+```
+
+**Preset Agents**:
+```python
+from dslighting import AIDE, AutoKaggle, DataInterpreter, DSAgent
+
+agent = AIDE(model="gpt-4o")  # Adaptive Iteration & Debugging
+agent = AutoKaggle(model="gpt-4o")  # Competition solver
+agent = DataInterpreter(model="gpt-4o-mini")  # Data exploration
+agent = DSAgent(model="gpt-4o")  # Structured workflow
+```
+
+#### 💪 Operator Layer
+
+```python
+from dslighting.operators import (
+    GenerateCodeAndPlanOperator,
+    ExecuteAndTestOperator,
+    ReviewOperator,
+    Pipeline,
+    Parallel
+)
+
+# Create operators
+operators = {
+    "generate": GenerateCodeAndPlanOperator(llm_service=llm),
+    "execute": ExecuteAndTestOperator(sandbox_service=sandbox),
+    "review": ReviewOperator(llm_service=llm),
+}
+
+# Orchestration
+pipeline = Pipeline([
+    ("generate", operators["generate"]),
+    ("execute", operators["execute"]),
+    ("review", operators["review"])
+])
+```
+
+#### ⚙️ Service Layer
+
+```python
+from dslighting.services import LLMService, SandboxService, WorkspaceService
+
+# LLM Service
+llm = LLMService(
+    model="gpt-4o",
+    api_key="sk-...",
+    api_base="https://api.openai.com/v1"
+)
+
+# Sandbox Service (supports e2b, ds-sandbox, local sandbox)
+sandbox = SandboxService()  # Sandboxed code execution
+
+# Workspace Service
+workspace = WorkspaceService()  # Workspace management
+
+services = {
+    "llm": llm,
+    "sandbox": sandbox,
+    "workspace": workspace,
+    "state": JournalState(),
+}
+```
+
+#### 📝 State Layer
+
+```python
+from dslighting.state import JournalState, Node, MetricValue
+
+# Journal state for search tree
+state = JournalState()
+
+# Create nodes
+node = Node(
+    parent=None,
+    depth=0,
+    content="Initial state",
+    metrics={"score": MetricValue(0.85)}
+)
+
+state.add_node(node)
+```
+
+#### 🗣️ Prompt Layer
+
+```python
+from dslighting.prompts import (
+    PromptBuilder,
+    create_modeling_prompt,
+    get_common_guidelines
+)
+
+# Fluent API
+prompt = (PromptBuilder()
+    .add_system_message("You are a data scientist")
+    .add_user_message("Solve this task")
+    .add_guidelines(get_common_guidelines())
+    .build())
+
+# Or use templates
+prompt = create_modeling_prompt(
+    task_description="Predict bike demand",
+    dataset_info={...}
+)
+```
+
+---
+
+## 🎨 Examples
+
+### Example 1: Built-in Dataset (Simplest)
+
+```python
+import dslighting
+
+result = dslighting.run_agent(task_id="bike-sharing-demand")
+print(f"Score: {result.score}")
+```
+
+### Example 2: Custom Dataset with Simplified API
+
+```python
+import dslighting
+
+# Setup data directories
+dslighting.setup(
+    data_parent_dir="data/competitions",
+    registry_parent_dir="dslighting/registry"
+)
+
+# Run agent
+agent = dslighting.Agent(workflow="aide")
+result = agent.run(task_id="my-competition")
+```
+
+### Example 3: Custom Agent with Operators
+
+```python
+from dslighting import IterativeAgent, GenerateCodeAndPlanOperator, ExecuteAndTestOperator
+from dslighting.services import LLMService, SandboxService, WorkspaceService
+from dslighting.state import JournalState
+
+# Create services
+services = {
+    "llm": LLMService(model="gpt-4o"),
+    "sandbox": SandboxService(),
+    "workspace": WorkspaceService(),
+    "state": JournalState(),
+}
+
+# Define operators
+operators = {
+    "generate": GenerateCodeAndPlanOperator(llm_service=services["llm"]),
+    "execute": ExecuteAndTestOperator(sandbox_service=services["sandbox"]),
+}
+
+# Create agent
+agent = IterativeAgent(operators, services, {"max_iterations": 5})
+
+# Run
+result = await agent.solve(
+    description="Build a model to predict customer churn",
+    io_instructions="Use train.csv for training, submit predictions on test.csv",
+    data_dir="data/churn-competition",
+    output_path="submission.csv"
+)
+```
+
+### Example 4: Custom Workflow Factory (v2.3.0+)
+
+```python
+from dslighting import BaseWorkflowFactory
+from dslighting.operators import GenerateCodeAndPlanOperator, ExecuteAndTestOperator
+from dslighting.state import JournalState
+
+class MyWorkflowFactory(BaseWorkflowFactory):
+    """Custom workflow factory"""
+
+    def create_agent(self, max_iterations=3, **kwargs):
+        """Only need to implement this method!"""
+        operators = {
+            "generate": GenerateCodeAndPlanOperator(llm_service=self.llm_service),
+            "execute": ExecuteAndTestOperator(sandbox_service=self.sandbox_service),
+        }
+
+        services = {
+            "llm": self.llm_service,
+            "sandbox": self.sandbox_service,
+            "workspace": self.workspace_service,
+            "state": JournalState(),
+        }
+
+        return MyWorkflow(operators, services, {"max_iterations": max_iterations})
+
+# Use
+factory = MyWorkflowFactory(model="gpt-4o")
+await factory.run_with_task_id("bike-sharing-demand")
+```
+
+### Example 5: Exploration and Discovery
+
+```python
+import dslighting
+
+# Show help
+dslighting.help()
+
+# List available workflows
+dslighting.list_workflows()
+
+# Explore all components
+dslighting.explore()
+
+# List available operators
+ops = dslighting.list_operators()
+print(f"Available operators: {ops}")
+
+# List available prompts
+prompts = dslighting.list_prompts()
+print(f"Available prompts: {prompts}")
+```
+
+---
+
+## 🎯 Workflow Selection
+
+DSLighting supports multiple workflows:
+
+| Workflow | Description | Best For | Default Model |
+|----------|-------------|----------|---------------|
+| `aide` | Adaptive Iteration & Debugging | Most data science tasks | gpt-4o |
+| `autokaggle` | Competition solver | Kaggle competitions, benchmarks | gpt-4o |
+| `data_interpreter` | Data analysis and exploration | Data exploration, EDA | gpt-4o-mini |
+| `deepanalyze` | Analysis-focused workflow | Deep analysis tasks | gpt-4o |
+| `dsagent` | Structured operator-based workflow | Tasks with logging | gpt-4o |
+| `automind` | Planning + reasoning with RAG | Tasks requiring knowledge base | gpt-4o |
+| `aflow` | Meta-optimization selector | Automated workflow selection | gpt-4o |
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file:
+
 ```bash
-# For pip installation
-/path/to/your/project/config.yaml
+# LLM Configuration (required)
+API_KEY="sk-..."
+API_BASE="https://api.openai.com/v1"
+LLM_MODEL="gpt-4o-mini"
 
-# Example in a test project
-/Users/liufan/Applications/Github/dslighting_test_project/config.yaml
+# DSLighting Configuration (optional)
+DSLIGHTING_DEFAULT_WORKFLOW="aide"
+DSLIGHTING_WORKSPACE_DIR="./runs/dslighting"
+
+# Multi-model Configuration (optional)
+LLM_MODEL_CONFIGS='{
+  "gpt-4o": {"api_key": "sk-...", "temperature": 0.5},
+  "deepseek-chat": {"api_base": "https://api.siliconflow.cn/v1"}
+}'
 ```
 
-> 📖 **Reference example**: See [config.yaml.example](config.yaml.example) for a full example
+### Model Pricing (Optional)
 
-**Example**:
+Create `config.yaml` in your project directory:
+
 ```yaml
 custom_model_pricing:
-  openai/Qwen/Qwen3-Coder-480B-A35B-Instruct:
-    input_cost_per_token: 6.0e-07
-    output_cost_per_token: 1.8e-06
-  openai/Qwen/Qwen3-Coder-30B-A3B-Instruct:
-    input_cost_per_token: 6.0e-07
-    output_cost_per_token: 1.8e-06
-  o4-mini-2025-04-16:
-    input_cost_per_token: 1.1e-06
-    output_cost_per_token: 4.4e-06
-  openai/deepseek-ai/DeepSeek-V3.1-Terminus:
-    input_cost_per_token: 5.55e-07
-    output_cost_per_token: 1.67e-06
+  gpt-4o:
+    input_cost_per_token: 2.5e-06
+    output_cost_per_token: 1.0e-05
+  deepseek-chat:
+    input_cost_per_token: 1.0e-07
+    output_cost_per_token: 1.0e-07
 ```
 
-**Parameters**:
-- `input_cost_per_token`: input token price (per request)
-- `output_cost_per_token`: output token price (per response)
-- Unit: USD/token (scientific notation is common)
-
-**Notes**:
-- 💡 Pricing config is optional; missing config does not error
-- 💡 Only override models you need; others use defaults
-- 💡 Pricing affects cost calculation and budget control
+> 💡 **Note**: Model pricing is optional. If not provided, DSLighting uses LiteLLM's default pricing.
 
 ---
 
-## 📂 Logs and Artifacts
+## 📊 Result Object
 
-By default, logs are written to:
-
+```python
+@dataclass
+class AgentResult:
+    success: bool              # Task success status
+    output: Any                # Task output
+    score: Optional[float]     # Evaluation score
+    cost: float                # LLM cost in USD
+    duration: float            # Execution time in seconds
+    artifacts_path: Path       # Path to artifacts
+    workspace_path: Path       # Path to workspace
+    error: Optional[str]       # Error message if failed
+    metadata: Dict             # Additional metadata
 ```
-runs/benchmark_results/<workflow>_on_<benchmark>/<model_name>/
+
+---
+
+## 🔧 Advanced Usage
+
+### Access Underlying DSAT Components
+
+```python
+import dslighting
+
+agent = dslighting.Agent()
+
+# Access DSATConfig
+config = agent.get_config()
+config.llm.temperature = 0.5
+
+# Access DSATRunner
+runner = agent.get_runner()
+eval_fn = runner.get_eval_function()
 ```
 
-You can override the base directory with `--log-path`.
+### Custom Output Path
+
+```python
+result = agent.run(
+    data,
+    output_path="my_submission.csv"
+)
+```
+
+### Task ID and Description
+
+```python
+result = agent.run(
+    data,
+    task_id="my-experiment-001",
+    description="Build a model to predict customer churn"
+)
+```
+
+### Batch Processing
+
+```python
+agent = dslighting.Agent()
+
+results = agent.run_batch([
+    "data/competitions/titanic",
+    "data/competitions/house-prices",
+    "data/competitions/fraud"
+])
+
+for i, result in enumerate(results):
+    print(f"Task {i+1}: score={result.score}, cost=${result.cost}")
+```
 
 ---
 
-## ❓ FAQ
+## 🧩 Built-in Datasets
 
-See `FAQ.md` for more information.
+DSLighting includes built-in datasets (v1.8.1+):
 
----
+- `bike-sharing-demand` - Bike sharing demand prediction
+  - Complete dataset with train/test/split
+  - Ready to use, no download needed
 
-## ⭐ Star History
-
-<div align="center">
-
-[![Stargazers repo roster for @usail-hkust/dslighting](https://reporoster.com/stars/usail-hkust/dslighting)](https://github.com/usail-hkust/dslighting/stargazers)
-
-[![Forkers repo roster for @usail-hkust/dslighting](https://reporoster.com/forks/usail-hkust/dslighting)](https://github.com/usail-hkust/dslighting/network/members)
-
-[![Star History Chart](https://api.star-history.com/svg?repos=usail-hkust/dslighting&type=Date)](https://star-history.com/#usail-hkust/dslighting&Date)
-
-</div>
+```python
+import dslighting
+result = dslighting.run_agent(task_id="bike-sharing-demand")
+```
 
 ---
 
-## 💬 WeChat Community
+## 📊 Benchmarks
 
-Join our WeChat group to connect with other users and developers!
+DSLighting supports multiple benchmarks for evaluating data science agent performance:
 
-<div align="center">
+| Benchmark | Description | Tasks |
+|-----------|-------------|-------|
+| **DABench** | Data Science Agent Benchmark - Comprehensive evaluation of LLM agents on data science tasks | 300+ tasks covering EDA, feature engineering, modeling, etc. |
+| **MLE-bench** | Machine Learning Engineering Benchmark - Evaluates agents on ML engineering tasks | Kaggle competitions, data preprocessing, model training |
+| **ScienceAgentBench** | Science Domain Agent Benchmark - Scientific research and analysis tasks | Scientific data analysis, experiment design, hypothesis testing |
 
-<img src="assets/wechat_group.jpg" alt="WeChat Group" width="300" style="border-radius: 10px; border: 2px solid #e0e0e0;">
+### Running Benchmarks
 
-**Scan the QR code above to join the DSLighting user community**
+DSLighting uses unified `DSBenchmark` API to run all benchmarks:
 
-</div>
+```python
+import os
+from dslighting.api import DSBenchmark, AgentSettingsConfig, RuntimeConfig
 
-In the group, you can:
-- 🤝 Connect with other users and share experiences
-- 💡 Suggest features and provide feedback
-- 🐛 Report bugs and get help
-- 📢 Stay updated with the latest development news
+# Configure agent
+agent_config = AgentSettingsConfig(
+    model="gpt-4o",
+    workflow="aide",
+    max_iterations=3,
+)
+
+# Configure runtime (optional)
+runtime_config = RuntimeConfig(
+    max_concurrency=128,
+    scheduler_policy="full_parallel",
+    dag_enabled=True,
+    dag_mode="fine",
+)
+
+# Run DABench
+benchmark = DSBenchmark(
+    benchmark_type="dabench",
+    data_dir="/path/to/dabench/data",
+    exp_name="my_dabench_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+    verbose=True,
+)
+
+# Run MLE-bench
+benchmark = DSBenchmark(
+    benchmark_type="mle_bench",
+    data_dir="/path/to/mle_bench/data",
+    exp_name="my_mle_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+)
+
+# Run ScienceAgentBench
+benchmark = DSBenchmark(
+    benchmark_type="scienceagent_bench",
+    data_dir="/path/to/scienceagent_bench/data",
+    exp_name="my_science_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+)
+```
+
+### Environment Variables
+
+```bash
+# Data directory (required)
+DSLIGHTING_DABENCH_DATA=/path/to/dabench
+DSLIGHTING_MLE_BENCH_DATA=/path/to/mle_bench
+DSLIGHTING_SCIENCEAGENT_BENCH_DATA=/path/to/scienceagent_bench
+
+# Model configuration
+LLM_MODEL=gpt-4o
+MAX_ITERATIONS=3
+
+# Sandbox configuration
+DSLIGHTING_SANDBOX_BACKEND=local  # local, e2b, ds_sandbox
+DSLIGHTING_SANDBOX_BACKEND_TYPE=docker  # for ds_sandbox
+DSLIGHTING_SANDBOX_API_KEY=xxx  # for e2b
+```
+
+### DAG Optimization Mode
+
+DSLighting supports fine-grained DAG (Directed Acyclic Graph) optimization for parallel task execution:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `fine` | Fine-grained DAG mode - optimizes at node level | Maximum parallelism, complex task dependencies |
+| `coarse` | Coarse-grained DAG mode - optimizes at task level | Simple task dependencies, lower overhead |
+
+```python
+from dslighting.api import RuntimeConfig
+
+# Enable DAG optimization
+runtime_config = RuntimeConfig(
+    # Task Scheduling
+    max_concurrency=128,
+    scheduler_policy="full_parallel",
+    queue_policy="fifo",
+
+    # DAG Runtime Configuration
+    dag_enabled=True,          # Enable DAG optimization
+    dag_mode="fine",           # fine or coarse
+    max_inflight_nodes=18,     # Maximum concurrent nodes
+    dag_node_timeout_seconds=21600.0,  # 6 hours for long-running ML tasks
+    dag_max_retries=3,         # Retry failed nodes
+
+    # Queue policies
+    ready_queue_policy="fifo",
+)
+```
+
+**DAG Benefits:**
+- **Parallel Execution**: Automatically identifies independent tasks that can run in parallel
+- **Dependency Resolution**: Handles task dependencies automatically
+- **Resource Optimization**: Maximizes GPU/CPU utilization
+- **Fault Tolerance**: Automatic retry on node failures
+
+**Performance Comparison:**
+```
+Wall Clock Time:
+  FINE-OPT: ~XXs (with DAG optimization)
+  NO-OPT:   ~XXs (without DAG)
+
+Speedup: 2-5x faster depending on task structure
+```
+
+---
+
+## 📚 Documentation
+
+- **Full Documentation**: https://luckyfan-cs.github.io/dslighting-web/
+- **GitHub Repository**: https://github.com/usail-hkust/dslighting
+- **Bug Reports**: https://github.com/usail-hkust/dslighting/issues
+
+### Key Documentation Files
+
+- `CLAUDE.md` - Project architecture and development guide
+- `PIP_DOC/README_PIP.md` - PyPI release documentation
+- `PIP_DOC/RELEASE_NOTES_*.md` - Version release notes
+- `PIP_DOC/TASK_LOADER_ARCHITECTURE.md` - Task loader architecture (v2.3.0+)
+- `PIP_DOC/BASE_WORKFLOW_FACTORY_GUIDE.md` - Custom workflow guide (v2.3.0+)
+
+---
+
+## 🔄 Migration from v1.x
+
+### Old Way (v1.x)
+
+```python
+from dsat.config import DSATConfig, LLMConfig, WorkflowConfig
+from dsat.runner import DSATRunner
+from dsat.benchmark.mle import MLEBenchmark
+
+config = DSATConfig(
+    llm=LLMConfig(model="gpt-4o-mini", api_key=os.getenv("API_KEY")),
+    workflow=WorkflowConfig(name="aide")
+)
+runner = DSATRunner(config)
+benchmark = MLEBenchmark(...)
+eval_fn = runner.get_eval_function()
+await benchmark.run_evaluation(eval_fn)
+```
+
+### New Way (v2.0+)
+
+```python
+import dslighting
+
+result = dslighting.run_agent("data/competitions/titanic")
+```
+
+**Key Benefits**:
+- 10x less code
+- Auto-detects task types
+- No async/await needed (for simplified API)
+- Sensible defaults
+
+---
+
+## 🎓 Training Mode (Advanced) [Coming Soon]
+
+DSLighting 2.0+ supports training with reinforcement learning:
+
+```python
+from dslighting.training import LitDSAgent, KaggleReward, DatasetConverter
+
+# Convert competition dataset to training format
+converter = DatasetConverter()
+train_dataset = converter.convert_to_training_format("bike-sharing-demand")
+
+# Create reward evaluator
+reward_fn = KaggleReward(metric="rmse")
+
+# Training setup (requires VERL and other training dependencies)
+# See dslighting/training/ for details
+```
+
+---
+
+## 🏆 License
+
+AGPL-3.0
 
 ---
 
 ## 🤝 Contributing
 
-<div align="center">
-
-We hope DSLIGHTING could become a gift for the community. 🎁
-
-<a href="https://github.com/usail-hkust/dslighting/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=usail-hkust/dslighting" />
-</a>
+We welcome contributions! Please see our contributing guidelines.
 
 **Core Contributors**:
-- [luckyfan-cs](https://github.com/luckyfan-cs) (project lead, frontend & backend development)
-- [canchengliu](https://github.com/canchengliu) (workflow contribution)
-
-See `CONTRIBUTING.md` for details.
-
-</div>
+- [luckyfan-cs](https://github.com/luckyfan-cs) - Project lead, frontend and backend
+- [canchengliu](https://github.com/canchengliu) - Workflow contributions
 
 ---
 
-## 🔗 Community
+## 📞 Support
 
-<div align="center">
-
-**[DSLIGHTING Community](https://github.com/luckyfan-cs)**
-
-[💬 WeChat Group](#-wechat-community) · [⭐ Star us](https://github.com/usail-hkust/dslighting/stargazers) · [🐛 Report a bug](https://github.com/usail-hkust/dslighting/issues) · [💬 Discussions](https://github.com/usail-hkust/dslighting/discussions)
-
-</div>
+- **Documentation**: https://luckyfan-cs.github.io/dslighting-web/
+- **GitHub Issues**: https://github.com/usail-hkust/dslighting/issues
+- **Discussions**: https://github.com/usail-hkust/dslighting/discussions
 
 ---
 
-## 📄 License
-
-This project is licensed under the AGPL-3.0 License.
-
----
-
-## 🙏 Thanks
-
-Thank you for visiting DSLIGHTING!
-
----
-
-## 📊 Project Statistics
-
-![](https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge)
-![](https://img.shields.io/github/issues/usail-hkust/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/forks/usail-hkust/dslighting?style=for-the-badge)
-![](https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge)
-
----
-
-## 📚 Citation
-
-If you use DSLIGHTING in your research, please cite:
-
-```bibtex
-@software{dslighting2025,
-  title = {DSLIGHTING: An End-to-End Data Science Intelligent Assistant System},
-  author = {Liu, F. and Liu, C. and others},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/usail-hkust/dslighting},
-  version = {1.0.0}
-}
-```
-
-Or in plain text:
-
-```
-Liu, F., Liu, C., et al. (2025). DSLIGHTING: An End-to-End Data Science Intelligent Assistant System.
-GitHub repository. https://github.com/usail-hkust/dslighting
-```
+**DSLIGHTING - Making Data Science Automation Easy** 🚀

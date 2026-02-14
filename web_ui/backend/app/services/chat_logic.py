@@ -1,5 +1,10 @@
 # web_ui/backend/app/services/chat_logic.py
 
+# =============================================================================
+# COMING SOON - This module is under iteration/refactoring
+# The dsat module has been migrated to dslighting. This file needs update.
+# =============================================================================
+
 import re
 import json
 import logging
@@ -25,22 +30,29 @@ async def _update_chat_summary(old_summary: str, user_msg: str, assistant_res: s
     prompt = create_chat_summarizer_prompt(old_summary, user_msg, assistant_res)
     try:
         res_model = await llm.call_with_json(prompt, output_model=ChatSummary)
-        
+
         # Format as the user expects (Markdown-like bullet points)
         summary = "**Current Task State:**\n"
         for item in res_model.current_task_state:
             summary += f"- {item}\n"
-            
+
         summary += "\n**User Specific Requirements:**\n"
         for item in res_model.user_specific_requirements:
             summary += f"- {item}\n"
-            
+
         return summary.strip()
     except Exception as e:
         logger.error(f"Failed to update chat summary: {e}")
         return old_summary # Fallback
 
-from dsat.services.sandbox import SandboxService
+# TODO: Update this import after web_ui backend iteration completes
+# from dsat.services.sandbox import SandboxService  # COMING SOON - migrating to dslighting
+
+# Placeholder - will be replaced with dslighting import
+class SandboxService:
+    """Placeholder for SandboxService - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("SandboxService is under iteration. COMING SOON.")
 
 logger = logging.getLogger(__name__)
 

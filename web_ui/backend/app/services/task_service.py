@@ -1,3 +1,7 @@
+# =============================================================================
+# COMING SOON - This module is under iteration/refactoring
+# The dsat module has been migrated to dslighting. This file needs update.
+# =============================================================================
 import os
 import shutil
 import traceback
@@ -8,14 +12,32 @@ import uuid
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Type
 from ..core.config import DATA_DIR, BENCHMARKS_DIR, BASE_DIR, LOGS_DIR
 from ..models.schemas import TaskMetadata
 from ..models.llm_formats import ComplianceCheck, CodeResponse
 from .llm_factory import get_llm
-from dsat.services.data_analyzer import DataAnalyzer
-from dsat.services.workspace import WorkspaceService
-from dsat.services.sandbox import SandboxService
+
+# TODO: Update these imports after web_ui backend iteration completes
+# from dsat.services.data_analyzer import DataAnalyzer  # COMING SOON
+# from dsat.services.workspace import WorkspaceService  # COMING SOON
+# from dsat.services.sandbox import SandboxService  # COMING SOON
+
+# Placeholder classes - will be replaced with dslighting imports
+class DataAnalyzer:
+    """Placeholder for DataAnalyzer - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("DataAnalyzer is under iteration. COMING SOON.")
+
+class WorkspaceService:
+    """Placeholder for WorkspaceService - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("WorkspaceService is under iteration. COMING SOON.")
+
+class SandboxService:
+    """Placeholder for SandboxService - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("SandboxService is under iteration. COMING SOON.")
 
 logger = logging.getLogger(__name__)
 

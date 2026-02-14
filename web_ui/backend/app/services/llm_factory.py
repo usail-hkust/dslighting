@@ -1,9 +1,15 @@
+# =============================================================================
+# COMING SOON - This module is under iteration/refactoring
+# The dsat module has been migrated to dslighting. This file needs update.
+# =============================================================================
 import os
 import json
 import logging
 from pathlib import Path
 from .llm_service_custom import CustomLLMService
-from dsat.config import LLMConfig
+
+# TODO: Update this import after web_ui backend iteration completes
+# from dsat.config import LLMConfig  # COMING SOON - migrating to dslighting
 from ..core.config import BASE_DIR
 
 logger = logging.getLogger(__name__)

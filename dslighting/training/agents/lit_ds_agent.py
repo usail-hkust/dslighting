@@ -2,14 +2,26 @@
 DSLighting Training Agent - 包装 DSAT Workflows
 
 将 DSAT workflows 包装为 Agent-Lightning 的 LitAgent
-"""
-import agentlightning as agl
-from typing import Any, Dict
 
+NOTE: This module references dsat.workflows which is being migrated to dslighting.
+      Currently using fallback import pattern.
+"""
+from typing import Any, Dict, Optional, Type
+
+try:
+    import agentlightning as agl
+except ImportError as exc:
+    raise ImportError(
+        "LitDSAgent requires optional dependency 'agentlightning'. "
+        "Install it to use dslighting.training agents."
+    ) from exc
+
+# Try to import from dsat (legacy) - will be migrated to dslighting.workflows
+# COMING SOON: from dslighting.workflows.factory import get_workflow
 try:
     from dsat.workflows.factory import get_workflow
 except ImportError:
-    get_workflow = None
+    get_workflow = None  # type: ignore
 
 from dslighting.training.rewards.base import RewardEvaluator
 

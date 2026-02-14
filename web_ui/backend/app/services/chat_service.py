@@ -1,5 +1,10 @@
 # web_ui/backend/app/services/chat_service.py
 
+# =============================================================================
+# COMING SOON - This module is under iteration/refactoring
+# The dsat module has been migrated to dslighting. This file needs update.
+# =============================================================================
+
 import os
 import re
 import json
@@ -32,9 +37,27 @@ from .chat_logic import (
 )
 from .agent_dispatcher import AgentDispatcher, get_enhanced_debug_context
 from .agent_registry import AgentType
-from dsat.services.workspace import WorkspaceService
-from dsat.services.sandbox import SandboxService
-from dsat.services.data_analyzer import DataAnalyzer
+
+# TODO: Update these imports after web_ui backend iteration completes
+# from dsat.services.workspace import WorkspaceService  # COMING SOON - migrating to dslighting
+# from dsat.services.sandbox import SandboxService  # COMING SOON - migrating to dslighting
+# from dsat.services.data_analyzer import DataAnalyzer  # COMING SOON - migrating to dslighting
+
+# Placeholder classes - will be replaced with dslighting imports
+class WorkspaceService:
+    """Placeholder for WorkspaceService - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("WorkspaceService is under iteration. COMING SOON.")
+
+class SandboxService:
+    """Placeholder for SandboxService - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("SandboxService is under iteration. COMING SOON.")
+
+class DataAnalyzer:
+    """Placeholder for DataAnalyzer - COMING SOON"""
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("DataAnalyzer is under iteration. COMING SOON.")
 
 logger = logging.getLogger(__name__)
 

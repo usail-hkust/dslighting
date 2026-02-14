@@ -1,7 +1,20 @@
 # web_ui/backend/app/prompts/agent_prompts.py
 
+# =============================================================================
+# COMING SOON - This module is under iteration/refactoring
+# The dsat module has been migrated to dslighting. This file needs update.
+# =============================================================================
+
 from typing import Dict, List, Optional, Any
-from dsat.prompts.common import _dict_to_str
+
+# TODO: Update this import after web_ui backend iteration completes
+# from dsat.prompts.common import _dict_to_str  # COMING SOON - migrating to dslighting
+
+# Placeholder function - will be replaced with dslighting import
+def _dict_to_str(d: Dict[str, Any]) -> str:
+    """Placeholder for _dict_to_str - COMING SOON"""
+    # Temporary implementation
+    return "\n".join([f"{k}: {v}" for k, v in d.items()])
 
 # Universal JSON Format Requirement (Simplified - No Schema Conflicts)
 JSON_FORMAT_REQUIREMENT = """

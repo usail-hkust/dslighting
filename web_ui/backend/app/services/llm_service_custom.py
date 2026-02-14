@@ -3,7 +3,15 @@
 """
 Custom LLM service for the Web UI backend.
 Includes enhanced colored logging and support for system personas in JSON calls.
+
+COMING SOON - This module is under iteration/refactoring
+The dsat module has been migrated to dslighting. This file needs update.
 """
+
+# TODO: Update these imports after web_ui backend iteration completes
+# from dsat.config import LLMConfig  # COMING SOON - migrating to dslighting
+# from dsat.common.exceptions import LLMError  # COMING SOON - migrating to dslighting
+
 import logging
 import asyncio
 import yaml
@@ -18,8 +26,20 @@ from typing import Type, Optional, Any, Dict, List
 import litellm
 from pydantic import BaseModel, ValidationError
 
-from dsat.config import LLMConfig
-from dsat.common.exceptions import LLMError
+# Placeholder - will be replaced with dslighting imports
+class LLMConfig:
+    """Placeholder for LLMConfig - COMING SOON"""
+    def __init__(self, model: str = "", api_key: str = "", api_base: str = "", provider: str = "", temperature: float = 0.2, max_retries: int = 3):
+        self.model = model
+        self.api_key = api_key
+        self.api_base = api_base
+        self.provider = provider
+        self.temperature = temperature
+        self.max_retries = max_retries
+
+class LLMError(Exception):
+    """Placeholder for LLMError - COMING SOON"""
+    pass
 
 logger = logging.getLogger(__name__)
 
