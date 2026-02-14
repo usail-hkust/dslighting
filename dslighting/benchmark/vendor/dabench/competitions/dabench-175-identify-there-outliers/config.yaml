@@ -1,0 +1,16 @@
+id: dabench-175-identify-there-outliers
+name: DABench Task - Identify if there are any outliers in the age of t
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-175-identify-there-outliers/description.md
+
+dataset:
+  answers: dabench-175-identify-there-outliers/prepared/private/answer.csv
+  sample_submission: dabench-175-identify-there-outliers/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-175-identify-there-outliers/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-175-identify-there-outliers/prepare.py:prepare

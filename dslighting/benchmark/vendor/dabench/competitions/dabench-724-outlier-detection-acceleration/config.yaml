@@ -1,0 +1,16 @@
+id: dabench-724-outlier-detection-acceleration
+name: DABench Task - 3. Perform outlier detection on the 'acceleration'
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-724-outlier-detection-acceleration/description.md
+
+dataset:
+  answers: dabench-724-outlier-detection-acceleration/prepared/private/answer.csv
+  sample_submission: dabench-724-outlier-detection-acceleration/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-724-outlier-detection-acceleration/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-724-outlier-detection-acceleration/prepare.py:prepare

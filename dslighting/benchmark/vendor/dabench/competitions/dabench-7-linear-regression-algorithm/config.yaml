@@ -1,0 +1,16 @@
+id: dabench-7-linear-regression-algorithm
+name: DABench Task - Apply the linear regression algorithm from the skl
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-7-linear-regression-algorithm/description.md
+
+dataset:
+  answers: dabench-7-linear-regression-algorithm/prepared/private/answer.csv
+  sample_submission: dabench-7-linear-regression-algorithm/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-7-linear-regression-algorithm/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-7-linear-regression-algorithm/prepare.py:prepare

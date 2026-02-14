@@ -1,0 +1,16 @@
+id: dabench-473-there-outliers-value
+name: DABench Task - Are there any outliers in the "Value" column? If y
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-473-there-outliers-value/description.md
+
+dataset:
+  answers: dabench-473-there-outliers-value/prepared/private/answer.csv
+  sample_submission: dabench-473-there-outliers-value/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-473-there-outliers-value/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-473-there-outliers-value/prepare.py:prepare

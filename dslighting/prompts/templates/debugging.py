@@ -2,19 +2,26 @@
 Debugging Prompt Templates
 
 Standard prompts for debugging and error fixing.
+
+Provides generic debugging prompts suitable for any task type.
+For workflow-specific debugging prompts, see dslighting.prompts.workflows.dsagent.
 """
 
 from typing import Optional
 from ..base import create_prompt_template
 
 
-def create_debug_prompt(
+def create_generic_debug_prompt(
     code: str,
     error: str,
     context: Optional[str] = None,
 ) -> str:
     """
-    Create a debugging prompt.
+    Create a generic debugging prompt for any task type.
+
+    This function provides a generic debugging template. For workflow-specific
+    debugging prompts (with task context, memory, etc.), use the functions
+    in dslighting.prompts.workflows instead.
 
     Args:
         code: The code that has an error
@@ -43,3 +50,13 @@ def create_debug_prompt(
     }
 
     return create_prompt_template(prompt_dict)
+
+
+# Alias for backward compatibility
+create_debug_prompt = create_generic_debug_prompt
+
+
+__all__ = [
+    "create_generic_debug_prompt",
+    "create_debug_prompt",  # Backward compatibility alias
+]

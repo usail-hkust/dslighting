@@ -1,0 +1,16 @@
+id: dabench-0-mean-fare-paid
+name: DABench Task - Calculate the mean fare paid by the passengers.
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-0-mean-fare-paid/description.md
+
+dataset:
+  answers: dabench-0-mean-fare-paid/prepared/private/answer.csv
+  sample_submission: dabench-0-mean-fare-paid/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-0-mean-fare-paid/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-0-mean-fare-paid/prepare.py:prepare

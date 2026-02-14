@@ -1,125 +1,103 @@
 """
-函数式 Workflow Agent - 使用 @rollout 装饰器
+Functional Workflow Agents - Using @rollout decorator
+
+Provides functional agent implementations for different workflows.
 """
 import agentlightning as agl
-from typing import Dict
+from typing import Any, Callable, Dict, Optional
+
 from dslighting.training.rewards.base import RewardEvaluator
 
 
-@agl.rollout
-def train_aide_agent(
-    task: Dict[str, Any],
-    llm: agl.LLM,
-    rollout: agl.Rollout,
-    reward_evaluator: RewardEvaluator,
-) -> float:
+def _create_workflow_agent(
+    workflow_name: str,
+    emit_prefix: str,
+) -> Callable[..., float]:
     """
-    使用 AIDE workflow 训练的函数式 Agent
+    Factory function to create workflow agent functions.
+
+    Generates a parameterized rollout function for a specific workflow.
 
     Parameters
     ----------
-    task : Dict[str, Any]
-        任务字典
-    llm : agl.LLM
-        注入的 LLM 资源
-    rollout : agl.Rollout
-        Rollout 上下文
-    reward_evaluator : RewardEvaluator
-        奖励评估器
+    workflow_name : str
+        Name of the workflow (e.g., "aide", "autokaggle", "data_interpreter").
+    emit_prefix : str
+        Prefix for log messages (e.g., "AIDE", "AutoKaggle").
 
     Returns
     -------
-    float
-        最终奖励
+    Callable
+        A rollout-decorated function for training with the specified workflow.
     """
-    from dslighting import Agent
+    # Get display name for messages
+    display_name = workflow_name.replace("_", " ").title()
 
-    agl.emit_message(f"[AIDE] Starting training rollout for {task['task_id']}")
+    @agl.rollout
+    def _agent_func(
+        task: Dict[str, Any],
+        llm: agl.LLM,
+        rollout: agl.Rollout,
+        reward_evaluator: RewardEvaluator,
+    ) -> float:
+        """
+        Functional agent for {display_name} workflow training.
 
-    # 使用 DSLighting Agent API
-    agent = Agent(
-        workflow="aide",
-        model=llm.model,
-        api_base=llm.endpoint,
-        api_key=llm.api_key,
-    )
+        Parameters
+        ----------
+        task : Dict[str, Any]
+            Task dictionary containing task_id and data information.
+        llm : agl.LLM
+            Injected LLM resource.
+        rollout : agl.Rollout
+            Rollout context.
+        reward_evaluator : RewardEvaluator
+            Reward evaluator for computing training rewards.
 
-    # 运行 agent
-    result = agent.run(task_id=task["task_id"])
+        Returns
+        -------
+        float
+            Final reward value.
+        """
+        from dslighting import Agent
 
-    # 计算奖励
-    reward = reward_evaluator.evaluate(result, task)
+        agl.emit_message(f"[{emit_prefix}] Starting training rollout for {task['task_id']}")
 
-    # 发送 trace
-    agl.emit_object({
-        "workflow": "aide",
-        "score": result.score,
-        "reward": reward,
-    })
+        # Create DSLighting Agent API instance
+        agent = Agent(
+            workflow=workflow_name,
+            model=llm.model,
+            api_base=llm.endpoint,
+            api_key=llm.api_key,
+        )
 
-    return reward
+        # Run agent on task
+        result = agent.run(task_id=task["task_id"])
 
+        # Compute reward
+        reward = reward_evaluator.evaluate(result, task)
 
-@agl.rollout
-def train_autokaggle_agent(
-    task: Dict[str, Any],
-    llm: agl.LLM,
-    rollout: agl.Rollout,
-    reward_evaluator: RewardEvaluator,
-) -> float:
-    """使用 AutoKaggle workflow 训练的函数式 Agent"""
-    from dslighting import Agent
+        # Emit trace data
+        agl.emit_object({
+            "workflow": workflow_name,
+            "score": result.score,
+            "reward": reward,
+        })
 
-    agl.emit_message(f"[AutoKaggle] Starting training rollout for {task['task_id']}")
+        return reward
 
-    agent = Agent(
-        workflow="autokaggle",
-        model=llm.model,
-        api_base=llm.endpoint,
-        api_key=llm.api_key,
-    )
+    # Set function name for better debugging
+    func_name = f"train_{workflow_name}_agent"
+    _agent_func.__name__ = func_name
 
-    result = agent.run(task_id=task["task_id"])
-    reward = reward_evaluator.evaluate(result, task)
-
-    agl.emit_object({
-        "workflow": "autokaggle",
-        "score": result.score,
-        "reward": reward,
-    })
-
-    return reward
+    return _agent_func
 
 
-@agl.rollout
-def train_data_interpreter_agent(
-    task: Dict[str, Any],
-    llm: agl.LLM,
-    rollout: agl.Rollout,
-    reward_evaluator: RewardEvaluator,
-) -> float:
-    """使用 Data Interpreter workflow 训练的函数式 Agent"""
-    from dslighting import Agent
-
-    agl.emit_message(f"[DataInterpreter] Starting training rollout for {task['task_id']}")
-
-    agent = Agent(
-        workflow="data_interpreter",
-        model=llm.model,
-        api_base=llm.endpoint,
-        api_key=llm.api_key,
-    )
-
-    result = agent.run(task_id=task["task_id"])
-    reward = reward_evaluator.evaluate(result, task)
-
-    agl.emit_object({
-        "workflow": "data_interpreter",
-        "score": result.score,
-        "reward": reward,
-    })
-
-    return reward
+# Create functional agents for each workflow
+# These agents have nearly identical code, generated via factory function
+train_aide_agent = _create_workflow_agent("aide", "AIDE")
+train_autokaggle_agent = _create_workflow_agent("autokaggle", "AutoKaggle")
+train_data_interpreter_agent = _create_workflow_agent("data_interpreter", "DataInterpreter")
 
 
 __all__ = [

@@ -1,76 +1,59 @@
 """
-DSLighing Core Types - 重新导出 DSAT Models
+DSLighing Core Types - Re-exported DSLighting Models
 
-数据类型定义 - 重新导出 DSAT models 和 config。
-
-包括:
-- 任务类型 (TaskDefinition, TaskType, TaskMode)
-- 优化候选者 (WorkflowCandidate)
-- 数据格式 (Plan, ReviewResult, Task, etc.)
-- 配置类型 (LLMConfig, TaskConfig, etc.)
+Type definitions including:
+- Task types (TaskDefinition, TaskType, TaskMode)
+- Optimization candidates (WorkflowCandidate)
+- Data formats (Plan, ReviewResult, Task, etc.)
+- Configuration types (LLMConfig, TaskConfig, etc.)
 """
 
-try:
-    # ========== 任务类型 ==========
-    from dsat.models import (
-        TaskDefinition,
-        TaskType,
-        TaskMode,
-    )
+from typing import TYPE_CHECKING
 
-    # ========== 优化候选者 ==========
-    from dsat.models import WorkflowCandidate
+# ========== Task Types ==========
+from dslighting.core.types.task import (
+    TaskDefinition,
+    TaskType,
+    TaskMode,
+)
 
-    # ========== 数据格式 ==========
-    from dsat.models import (
-        ReviewResult,
-        Plan,
-        Task,
-        TaskContract,
-        StepPlan,
-        FileArtifact,
-        ComplexityScore,
-        DecomposedPlan,
-    )
+# ========== Optimization Candidates ==========
+from dslighting.core.types.candidates import WorkflowCandidate
 
-    # ========== 配置类型（从 dsat.config）==========
-    from dsat.config import (
+# ========== Data Formats ==========
+from dslighting.core.types.formats import (
+    ReviewResult,
+    ReviewResponse,
+    Plan,
+    Task,
+    TaskContract,
+    StepPlan,
+    FileArtifact,
+    ComplexityScore,
+    DecomposedPlan,
+)
+
+# ========== Configuration Types (TYPE_CHECKING only for type hints) ==========
+if TYPE_CHECKING:
+    from dslighting.config import (
         LLMConfig,
         SandboxConfig,
         TaskConfig,
         RunConfig,
+        DagRuntimeConfig,
         AgentSearchConfig,
     )
 
-except ImportError:
-    # 如果 DSAT 不可用
-    TaskDefinition = None
-    TaskType = None
-    TaskMode = None
-    WorkflowCandidate = None
-    ReviewResult = None
-    Plan = None
-    Task = None
-    TaskContract = None
-    StepPlan = None
-    FileArtifact = None
-    ComplexityScore = None
-    DecomposedPlan = None
-    LLMConfig = None
-    SandboxConfig = None
-    TaskConfig = None
-    RunConfig = None
-    AgentSearchConfig = None
-
 __all__ = [
-    # 任务类型
+    # Task types
     "TaskDefinition",
     "TaskType",
     "TaskMode",
-    # 优化候选者
+    # Optimization candidates
     "WorkflowCandidate",
-    # 数据格式
+    # Data formats
     "ReviewResult",
+    "ReviewResponse",
     "Plan",
     "Task",
     "TaskContract",
@@ -78,10 +61,11 @@ __all__ = [
     "FileArtifact",
     "ComplexityScore",
     "DecomposedPlan",
-    # 配置类型
+    # Configuration types
     "LLMConfig",
     "SandboxConfig",
     "TaskConfig",
     "RunConfig",
+    "DagRuntimeConfig",
     "AgentSearchConfig",
 ]

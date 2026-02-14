@@ -1,0 +1,16 @@
+id: dabench-419-there-significant-difference
+name: DABench Task - 1. Is there a significant difference in the mean o
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-419-there-significant-difference/description.md
+
+dataset:
+  answers: dabench-419-there-significant-difference/prepared/private/answer.csv
+  sample_submission: dabench-419-there-significant-difference/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-419-there-significant-difference/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-419-there-significant-difference/prepare.py:prepare

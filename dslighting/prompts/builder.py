@@ -1,10 +1,19 @@
 """
-PromptBuilder - Fluent API for Building Prompts
+Prompt Builders
 
-Provides a convenient way to construct prompts incrementally.
+Unified prompt builder utilities (fluent + structured).
+
+Provides:
+- PromptBuilder: Fluent API for building prompts with method chaining
+- StructuredPromptBuilder: Builds prompts from structured dictionaries
+- PromptTemplate: Base class for defining prompt templates
+- Helper functions for prompt manipulation
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
+
+from dslighting.prompts.base import dict_to_str
 
 
 class PromptBuilder:
@@ -175,3 +184,206 @@ class PromptBuilder:
         self.parts.clear()
         self.sections.clear()
         return self
+
+# Structured prompt utilities (merged from structured_builder.py)
+
+
+class StructuredPromptBuilder:
+    """
+    Structured Prompt Builder
+
+    Recommended format:
+    ```python
+    prompt_dict = {
+        "Role": "You are an expert...",
+        "Task Goal": "...",
+        "Input Data": {...},
+        "Instructions": {
+            "Goal": "...",
+            "Guideline": "...",
+        }
+    }
+    ```
+
+    Example:
+        builder = StructuredPromptBuilder()
+        prompt = builder.build(prompt_dict)
+    """
+
+    def __init__(self, max_length: Optional[int] = None):
+        """
+        Initialize the builder
+
+        Args:
+            max_length: Maximum prompt length (in characters)
+        """
+        self.max_length = max_length
+
+    def build(self, prompt_dict: Dict[str, Any]) -> str:
+        """
+        Build the final prompt string
+
+        Args:
+            prompt_dict: Structured prompt dictionary
+
+        Returns:
+            Formatted prompt string
+        """
+        prompt = self._dict_to_str(prompt_dict, indent=0)
+
+        # Truncate to max length
+        if self.max_length and len(prompt) > self.max_length:
+            prompt = prompt[:self.max_length] + "\n...[truncated]"
+
+        return prompt
+
+    def _dict_to_str(self, d: Dict, indent: int = 0) -> str:
+        """
+        Convert dictionary to formatted string.
+
+        Note: This method delegates to the canonical dict_to_str function
+        from base.py for consistency.
+        """
+        return dict_to_str(d, indent)
+
+
+class PromptTemplate:
+    """
+    Prompt Template Base Class
+
+    Recommended to inherit this class to define your prompt templates
+
+    Example:
+        class MyOperatorPrompt(PromptTemplate):
+            def get_input_schema(self):
+                return MyInputModel
+
+            def get_output_schema(self):
+                return MyOutputModel
+
+            def build(self, **kwargs):
+                return {
+                    "Role": "You are...",
+                    "Task": kwargs["task"],
+                    ...
+                }
+    """
+
+    def get_input_schema(self) -> Optional[BaseModel]:
+        """
+        Return the input Pydantic model
+
+        Returns:
+            Pydantic BaseModel class
+        """
+        return None
+
+    def get_output_schema(self) -> Optional[BaseModel]:
+        """
+        Return the output Pydantic model
+
+        Returns:
+            Pydantic BaseModel class
+        """
+        return None
+
+    def build(self, **kwargs) -> Dict[str, Any]:
+        """
+        Build prompt dictionary
+
+        Args:
+            **kwargs: Input parameters
+
+        Returns:
+            Prompt dictionary
+        """
+        raise NotImplementedError("Subclasses must implement build()")
+
+
+# ============ Helper Functions ============
+
+def truncate_output(text: str, max_length: int) -> str:
+    """
+    Truncate output to specified length
+
+    Args:
+        text: Original text
+        max_length: Maximum length
+
+    Returns:
+        Truncated text
+    """
+    if len(text) <= max_length:
+        return text
+    return text[:max_length] + "\n...[truncated]"
+
+
+def format_code_block(code: str, language: str = "python") -> str:
+    """
+    Format code block
+
+    Args:
+        code: Code
+        language: Language
+
+    Returns:
+        Formatted code block
+    """
+    return f"```{language}\n{code}\n```"
+
+
+def create_structured_prompt(
+    role: str,
+    task_goal: str,
+    instructions: Dict[str, Any],
+    context: Optional[Dict[str, Any]] = None,
+    guidelines: Optional[List[str]] = None,
+    requirements: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """
+    Helper function to quickly create structured prompt
+
+    Args:
+        role: Role
+        task_goal: Task goal
+        instructions: Instructions dictionary
+        context: Context information (optional)
+        guidelines: Guidelines list (optional)
+        requirements: Requirements list (optional)
+
+    Returns:
+        Prompt dictionary
+    """
+    prompt_dict = {
+        "Role": role,
+        "Task Goal": task_goal,
+    }
+
+    # Add context
+    if context:
+        prompt_dict.update(context)
+
+    # Build instructions
+    instructions_dict = dict(instructions)
+
+    # Add guidelines
+    if guidelines:
+        instructions_dict["Guidelines"] = guidelines
+
+    # Add requirements
+    if requirements:
+        instructions_dict["Requirements"] = requirements
+
+    prompt_dict["Instructions"] = instructions_dict
+
+    return prompt_dict
+
+
+__all__ = [
+    "PromptBuilder",
+    "StructuredPromptBuilder",
+    "PromptTemplate",
+    "create_structured_prompt",
+    "truncate_output",
+    "format_code_block",
+]

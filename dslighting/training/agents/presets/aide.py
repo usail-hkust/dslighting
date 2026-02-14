@@ -1,27 +1,14 @@
 """
 AIDE Training Agent
+
+A preset training agent wrapper for the AIDE workflow.
 """
-from dslighting.training.agents.lit_ds_agent import LitDSAgent
-from typing import Dict, Any
+from dslighting.training.agents.presets.preset_factory import (
+    AIDETrainingAgent as AIDETrainingAgentImpl,
+    create_preset_agent,
+)
 
+# For backward compatibility, keep the class but use factory implementation
+AIDETrainingAgent = AIDETrainingAgentImpl
 
-class AIDETrainingAgent(LitDSAgent):
-    """
-    AIDE Workflow 训练 Agent
-    """
-
-    def __init__(
-        self,
-        workflow_config: Dict[str, Any] = None,
-        reward_evaluator = None,
-        max_steps: int = 50,
-    ):
-        super().__init__(
-            workflow_name="aide",
-            workflow_config=workflow_config or {},
-            reward_evaluator=reward_evaluator,
-            max_steps=max_steps,
-        )
-
-
-__all__ = ["AIDETrainingAgent"]
+__all__ = ["AIDETrainingAgent", "create_preset_agent"]

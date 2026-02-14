@@ -1,0 +1,16 @@
+id: dabench-418-there-outliers-trading
+name: DABench Task - 3. Are there any outliers in the trading volume of
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-418-there-outliers-trading/description.md
+
+dataset:
+  answers: dabench-418-there-outliers-trading/prepared/private/answer.csv
+  sample_submission: dabench-418-there-outliers-trading/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-418-there-outliers-trading/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-418-there-outliers-trading/prepare.py:prepare

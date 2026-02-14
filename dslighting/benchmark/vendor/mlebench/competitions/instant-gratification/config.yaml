@@ -1,0 +1,15 @@
+id: instant-gratification
+name: Instant Gratification
+competition_type: simple
+awards_medals: false
+description: vendor/mlebench/competitions/instant-gratification/description.md
+
+dataset:
+  answers: instant-gratification/prepared/private/test.csv
+  sample_submission: instant-gratification/prepared/public/sample_submission.csv
+
+grader:
+  name: auc-roc
+  grade_fn: file:vendor/mlebench/competitions/instant-gratification/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/instant-gratification/prepare.py:prepare

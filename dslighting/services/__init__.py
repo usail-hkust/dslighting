@@ -1,36 +1,25 @@
 """
-DSLighting 2.0 - Services Layer
+DSLighting services.
 
-This layer provides infrastructure services that support agents and operators.
-All services are re-exported from DSAT.
-
-Services:
-- LLMService: LLM invocation service
-- SandboxService: Sandboxed code execution service
-- WorkspaceService: Workspace management service
-- DataAnalyzer: Data analysis service
-- VDBService: Vector database service for knowledge retrieval
+This module provides infrastructure services including:
+- LLM service (via LiteLLM)
+- Sandboxed code execution
+- Workspace management
+- Data analysis and reporting
+- Vector database for case-based reasoning
 """
 
-# Re-export DSAT services
-from dsat.services.llm import LLMService
-from dsat.services.sandbox import SandboxService
-from dsat.services.workspace import WorkspaceService
-
-# Try to import optional services
-try:
-    from dsat.services.analyzer import DataAnalyzer
-except ImportError:
-    DataAnalyzer = None
-
-try:
-    from dsat.services.vdb import VDBService
-except ImportError:
-    VDBService = None
+from dslighting.services.data_analyzer import DataAnalyzer
+from dslighting.services.llm import LLMService
+from dslighting.services.sandbox import SandboxService, NotebookExecutor, ProcessIsolatedNotebookExecutor
+from dslighting.services.vdb import VDBService
+from dslighting.services.workspace import WorkspaceService
 
 __all__ = [
     "LLMService",
     "SandboxService",
+    "NotebookExecutor",
+    "ProcessIsolatedNotebookExecutor",
     "WorkspaceService",
     "DataAnalyzer",
     "VDBService",

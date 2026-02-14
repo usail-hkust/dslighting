@@ -10,20 +10,21 @@ Components:
 - MemoryManager: Memory storage and retrieval (placeholder implementation)
 """
 
-# Re-export DSAT state components
-from dsat.services.states.journal import (
-    JournalState,
-    Node,
-    MetricValue,
-)
+# Canonical state components
+from dslighting.state.base import State
+from dslighting.state.search.journal import JournalState, Node, MetricValue
+from dslighting.state.autokaggle import AutoKaggleState, PhaseMemory, AttemptMemory
+from dslighting.state.dsagent import DSAgentState
+from dslighting.state.operator_library import OperatorLibrary
 
 try:
-    from dsat.services.states.experience import Experience
+    from dslighting.state.search.experience import Experience
 except ImportError:
+    # Experience depends on optional deps (e.g., numpy)
     Experience = None
 
 try:
-    from dsat.utils.context import ContextManager
+    from dslighting.state.context import ContextManager
 except ImportError:
     ContextManager = None
 
@@ -31,9 +32,15 @@ except ImportError:
 from dslighting.state.memory import MemoryManager
 
 __all__ = [
+    "State",
     "JournalState",
     "Node",
     "MetricValue",
+    "AutoKaggleState",
+    "PhaseMemory",
+    "AttemptMemory",
+    "DSAgentState",
+    "OperatorLibrary",
     "Experience",
     "MemoryManager",
     "ContextManager",

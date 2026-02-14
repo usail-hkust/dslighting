@@ -2,66 +2,55 @@
 Agent - High-Level Agent Interface
 
 User-friendly agent class that wraps preset agents using factory pattern.
+
+Note:
+    Agent.run() returns AgentResult for single-task execution.
+    For multi-task benchmarks, use DSBenchmark.run() which returns
+    a Benchmark object with comprehensive results for all tasks.
+
+Example:
+    >>> from dslighting import Agent, DSBenchmark
+    >>>
+    >>> # Single task - returns AgentResult
+    >>> agent = Agent(workflow="aide", model="gpt-4o")
+    >>> result = agent.run(task_id="bike-sharing-demand")
+    >>> print(result.score)  # Access task score
+    >>>
+    >>> # Multiple tasks - returns Benchmark object
+    >>> benchmark = DSBenchmark("dabench").run(model="gpt-4o")
+    >>> print(benchmark.summary["score"])  # Average score across tasks
 """
 
-from pathlib import Path
-from typing import Optional, Union
 import asyncio
-from dataclasses import dataclass, field
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-# Import factory classes
-from dsat.workflows.factory import (
-    AIDEWorkflowFactory,
-    AutoKaggleWorkflowFactory,
-    DataInterpreterWorkflowFactory,
-    DeepAnalyzeWorkflowFactory,
-    DSAgentWorkflowFactory,
-    AutoMindWorkflowFactory,
-    AFlowWorkflowFactory,
-)
+# Import core interfaces
+from dslighting.config import DSLightingConfig, LLMConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.core.interfaces import AgentResult
+from dslighting.core.tasks import MLETaskLoader
+from dslighting.core.types import TaskDefinition
+from dslighting.runner import DSLightingRunner
+from dslighting.error import ConfigurationError, TaskError
+
+if TYPE_CHECKING:
+    from dslighting.core.data import TaskContext
+
+logger = logging.getLogger(__name__)
 
 
-@dataclass
-class AgentResult:
-    """
-    Result of running an Agent on a data science task.
-
-    Attributes:
-        success: Whether the task completed successfully
-        output: Task output (predictions, answer, file path, etc.)
-        score: Evaluation score (if available)
-        cost: Total LLM cost in USD
-        duration: Execution time in seconds
-        artifacts_path: Path to generated artifacts
-        workspace_path: Path to workspace directory
-        error: Error message if failed
-        metadata: Additional metadata
-    """
-    success: bool
-    output: any
-    cost: float = 0.0
-    duration: float = 0.0
-    score: Optional[float] = None
-    artifacts_path: Optional[Path] = None
-    workspace_path: Optional[Path] = None
-    error: Optional[str] = None
-    metadata: dict = field(default_factory=dict)
-
-    def __repr__(self) -> str:
-        if self.success:
-            return (
-                f"AgentResult(success={self.success}, "
-                f"output={self.output}, "
-                f"score={self.score}, "
-                f"cost=${self.cost:.4f}, "
-                f"duration={self.duration:.1f}s)"
-            )
-        else:
-            return (
-                f"AgentResult(success={self.success}, "
-                f"error={self.error}, "
-                f"cost=${self.cost:.4f})"
-            )
+WORKFLOW_ALIASES = {
+    "aide": "aide",
+    "autokaggle": "autokaggle",
+    "kaggle": "autokaggle",
+    "data_interpreter": "data_interpreter",
+    "interpreter": "data_interpreter",
+    "deepanalyze": "deepanalyze",
+    "dsagent": "dsagent",
+    "automind": "automind",
+    "aflow": "aflow",
+}
 
 
 class Agent:
@@ -104,100 +93,38 @@ class Agent:
             keep_workspace: Whether to keep workspace after execution
             **kwargs: Additional arguments passed to create_agent()
         """
-        self.workflow_name = workflow
+        workflow_key = workflow.lower()
+        if workflow_key not in WORKFLOW_ALIASES:
+            raise ConfigurationError(
+                f"Unknown workflow: {workflow}. "
+                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow",
+                error_code="CFG-002",
+            )
+
+        self.workflow_name = WORKFLOW_ALIASES[workflow_key]
+        self.model = model
+        self.api_key = api_key
+        self.api_base = api_base
+        self.provider = provider
+        self.temperature = temperature
         self.timeout = timeout
         self.keep_workspace = keep_workspace
         self._agent_kwargs = kwargs
-
-        # Create factory based on workflow
-        workflow_lower = workflow.lower()
-
-        if workflow_lower == "aide":
-            self._factory = AIDEWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower in ["autokaggle", "kaggle"]:
-            self._factory = AutoKaggleWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower in ["data_interpreter", "interpreter"]:
-            self._factory = DataInterpreterWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower == "deepanalyze":
-            self._factory = DeepAnalyzeWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower == "dsagent":
-            self._factory = DSAgentWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower == "automind":
-            self._factory = AutoMindWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        elif workflow_lower == "aflow":
-            self._factory = AFlowWorkflowFactory(
-                model=model,
-                api_key=api_key,
-                api_base=api_base,
-                provider=provider,
-                temperature=temperature,
-                timeout=timeout,
-                keep_workspace=keep_workspace
-            )
-        else:
-            raise ValueError(
-                f"Unknown workflow: {workflow}. "
-                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow"
-            )
+        self._last_runner: Optional[DSLightingRunner] = None
 
     def run(
         self,
         task_id: Optional[str] = None,
-        data: Union[str, Path, 'TaskContext'] = None,
+        data: Optional[Union[str, Path, 'TaskContext']] = None,
         task: Optional[str] = None,
         output: Optional[Union[str, Path]] = None,
         **kwargs
-    ):
+    ) -> AgentResult:
         """
-        Run the agent on a task.
+        Run the agent on a task synchronously.
+
+        This method wraps the async execution for convenience. For async contexts,
+        use async_run() instead.
 
         Args:
             task_id: Task ID to load from registry (recommended)
@@ -216,23 +143,233 @@ class Agent:
             # Method 2: Use data path
             result = agent.run(data="path/to/data", task="Predict demand")
         """
-        # If task_id is provided, use run_with_task_id
-        if task_id is not None:
-            return asyncio.run(self._factory.run_with_task_id(
+        return asyncio.run(
+            self._run_with_task_id(
                 task_id=task_id,
-                **self._agent_kwargs,
-                **kwargs
-            ))
+                data_dir=self._resolve_data_dir_sync(data, kwargs.pop("data_dir", None), task_id),
+                task_description=kwargs.pop("description", None) or task,
+                output=output,
+                **kwargs,
+            )
+        )
 
-        # Otherwise, fall back to manual execution
-        # (This requires loading data and creating agent manually)
-        raise NotImplementedError(
-            "Direct data/path execution is not yet implemented. "
-            "Please use task_id parameter instead:\n\n"
-            "  agent.run(task_id='bike-sharing-demand')\n\n"
-            "Or use dslighting.run_agent() for simpler usage."
+    async def async_run(
+        self,
+        task_id: Optional[str] = None,
+        data: Optional[Union[str, Path, 'TaskContext']] = None,
+        task: Optional[str] = None,
+        output: Optional[Union[str, Path]] = None,
+        **kwargs
+    ) -> AgentResult:
+        """
+        Run the agent on a task asynchronously.
+
+        Use this method when you need to run multiple agents concurrently
+        or when integrating with async frameworks.
+
+        Args:
+            task_id: Task ID to load from registry (recommended)
+            data: Data to process (can be a path or TaskContext object)
+            task: Task description
+            output: Output path
+            **kwargs: Additional arguments
+
+        Returns:
+            AgentResult object containing execution results
+        """
+        description = kwargs.pop("description", None) or task
+        data_dir_arg = kwargs.pop("data_dir", None)
+
+        resolved_task_id = task_id or self._extract_task_id(data)
+        if not resolved_task_id:
+            raise TaskError(
+                "Cannot determine task_id. Pass `task_id=` explicitly, or provide "
+                "a TaskContext/path that includes the competition directory.",
+                error_code="TSK-005",
+            )
+
+        resolved_data_dir = self._extract_data_dir(data, data_dir_arg, resolved_task_id)
+
+        return await self._run_with_task_id(
+            task_id=resolved_task_id,
+            data_dir=resolved_data_dir,
+            task_description=description,
+            output=output,
+            **kwargs,
+        )
+
+    def _resolve_data_dir_sync(
+        self,
+        data: Any,
+        data_dir_arg: Optional[Union[str, Path]],
+        task_id: str,
+    ) -> Optional[Path]:
+        """Synchronous wrapper for data directory resolution."""
+        resolved_task_id = task_id or self._extract_task_id(data)
+        if not resolved_task_id:
+            return None
+        return self._extract_data_dir(data, data_dir_arg, resolved_task_id)
+
+    def _extract_task_id(self, data: Any) -> Optional[str]:
+        if data is None:
+            return None
+
+        task_id = getattr(data, "task_id", None)
+        if task_id:
+            return str(task_id)
+
+        if isinstance(data, (str, Path)):
+            path = Path(data)
+            if path.is_file():
+                return path.parent.name
+            return path.name
+
+        return None
+
+    def _extract_data_dir(
+        self,
+        data: Any,
+        data_dir_arg: Optional[Union[str, Path]],
+        task_id: str,
+    ) -> Optional[Path]:
+        if data_dir_arg is not None:
+            return Path(data_dir_arg)
+
+        context_data_dir = getattr(data, "data_dir", None)
+        if context_data_dir is not None:
+            return Path(context_data_dir)
+
+        if isinstance(data, (str, Path)):
+            candidate = Path(data)
+            if candidate.is_file():
+                return candidate.parent
+            if candidate.exists():
+                return candidate
+
+        return None
+
+    def _build_config(self, task_id: str, run_kwargs: Dict[str, Any]) -> DSLightingConfig:
+        # Build LLM config with provided values (api_key takes precedence over env vars)
+        llm_kwargs = {"model": self.model}
+        if self.api_key is not None:
+            llm_kwargs["api_key"] = self.api_key
+        if self.api_base is not None:
+            llm_kwargs["api_base"] = self.api_base
+        if self.provider is not None:
+            llm_kwargs["provider"] = self.provider
+        if self.temperature is not None:
+            llm_kwargs["temperature"] = self.temperature
+
+        llm = LLMConfig(**llm_kwargs)
+
+        config = DSLightingConfig(
+            run=RunConfig(
+                name=f"agent_{self.workflow_name}_{task_id}",
+                keep_all_workspaces=self.keep_workspace,
+                keep_workspace_on_failure=self.keep_workspace,
+            ),
+            workflow=WorkflowConfig(name=self.workflow_name, params={}),
+            llm=llm,
+            sandbox=SandboxConfig(timeout=self.timeout),
+        )
+
+        # Merge initialization-time kwargs first, then run-time kwargs.
+        merged = {**self._agent_kwargs, **run_kwargs}
+
+        search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
+        if self.workflow_name != "autokaggle":
+            search_keys.add("enforce_no_plotting")
+        for key in search_keys:
+            if key in merged:
+                setattr(config.agent.search, key, merged.pop(key))
+
+        autokaggle_keys = {"max_attempts_per_phase", "success_threshold"}
+        if self.workflow_name == "autokaggle":
+            autokaggle_keys.add("enforce_no_plotting")
+        for key in autokaggle_keys:
+            if key in merged:
+                setattr(config.agent.autokaggle, key, merged.pop(key))
+
+        if merged:
+            config.run.parameters.update(merged)
+
+        return config
+
+    async def _run_with_task_id(
+        self,
+        task_id: str,
+        data_dir: Optional[Path] = None,
+        registry_dir: Optional[Union[str, Path]] = None,
+        task_description: Optional[str] = None,
+        output: Optional[Union[str, Path]] = None,
+        **kwargs,
+    ) -> AgentResult:
+        config = self._build_config(task_id=task_id, run_kwargs=kwargs)
+        runner = DSLightingRunner(config)
+        self._last_runner = runner
+
+        loader = MLETaskLoader()
+        description, _, public_data_dir, output_path = loader.load_task(
+            task_id=task_id,
+            data_dir=data_dir,
+            registry_dir=registry_dir,
+        )
+        task_type = getattr(loader, "last_task_type", "kaggle")
+        resolved_registry_dir = getattr(loader, "last_registry_root", None)
+
+        if task_description:
+            description = task_description
+
+        if output is not None:
+            output_path = Path(output)
+
+        task = TaskDefinition(
+            task_id=task_id,
+            task_type=task_type,
+            payload={
+                "description": description,
+                "public_data_dir": str(public_data_dir),
+                "output_submission_path": str(output_path),
+                "registry_dir": str(resolved_registry_dir) if resolved_registry_dir else None,
+            },
+        )
+
+        eval_fn = runner.get_eval_function()
+        raw_output, total_cost, usage = await eval_fn(task)
+
+        score = None
+        error = None
+        output_value: Any = raw_output
+        success = True
+
+        if isinstance(raw_output, dict):
+            score = raw_output.get("score")
+            error = raw_output.get("error")
+            output_value = raw_output.get("submission_path") or raw_output.get("output") or raw_output
+            success = error is None
+        elif isinstance(raw_output, str) and raw_output.startswith("[ERROR]"):
+            success = False
+            error = raw_output
+        elif isinstance(raw_output, Path):
+            output_value = str(raw_output)
+
+        if score is not None:
+            try:
+                score = float(score)
+            except Exception:
+                pass
+
+        return AgentResult(
+            success=success,
+            output=output_value,
+            score=score,
+            cost=float(total_cost) if total_cost is not None else 0.0,
+            error=error,
+            metadata={"usage": usage, "workflow": self.workflow_name, "task_id": task_id},
         )
 
     def cleanup(self):
         """Clean up workspace"""
-        self._factory.cleanup()
+        # DSLightingRunner/workflow cleanup is handled inside the evaluation pipeline.
+        # Keep this method for API compatibility.
+        self._last_runner = None

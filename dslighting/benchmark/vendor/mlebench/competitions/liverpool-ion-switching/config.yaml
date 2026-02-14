@@ -1,0 +1,15 @@
+id: liverpool-ion-switching
+name: Liverpool Ion Switching
+competition_type: simple
+awards_medals: false
+description: vendor/mlebench/competitions/liverpool-ion-switching/description.md
+
+dataset:
+  answers: liverpool-ion-switching/prepared/private/test.csv
+  sample_submission: liverpool-ion-switching/prepared/public/sample_submission.csv
+
+grader:
+  name: macro-f1
+  grade_fn: file:vendor/mlebench/competitions/liverpool-ion-switching/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/liverpool-ion-switching/prepare.py:prepare

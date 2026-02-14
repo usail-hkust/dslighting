@@ -1,0 +1,7 @@
+scoreNullable,teamId,hasTeamName,submissionDate,score,hasScore
+0.98,123456,True,2021-01-01 00:00:00,0.98,True
+0.95,234567,True,2021-01-02 00:00:00,0.95,True
+0.90,345678,True,2021-01-03 00:00:00,0.90,True
+0.85,456789,True,2021-01-04 00:00:00,0.85,True
+0.80,567890,True,2021-01-05 00:00:00,0.80,True
+

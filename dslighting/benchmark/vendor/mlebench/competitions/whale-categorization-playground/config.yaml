@@ -1,0 +1,16 @@
+id: whale-categorization-playground
+name: Humpback Whale Identification Challenge
+competition_type: simple
+awards_medals: false
+prizes: null
+description: vendor/mlebench/competitions/whale-categorization-playground/description.md
+
+dataset:
+  answers: whale-categorization-playground/prepared/private/test.csv
+  sample_submission: whale-categorization-playground/prepared/public/sample_submission.csv
+
+grader:
+  name: MAP@5
+  grade_fn: file:vendor/mlebench/competitions/whale-categorization-playground/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/whale-categorization-playground/prepare.py:prepare

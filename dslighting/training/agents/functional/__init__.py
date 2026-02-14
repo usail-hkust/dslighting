@@ -1,7 +1,7 @@
 """
 DSLighting Training Agents - Functional
 
-函数式 Agent（使用 @rollout 装饰器）
+Functional agents using @rollout decorator.
 """
 from dslighting.training.agents.functional.workflow_agent import (
     train_aide_agent,

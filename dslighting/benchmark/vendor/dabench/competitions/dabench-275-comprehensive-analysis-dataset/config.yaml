@@ -1,0 +1,16 @@
+id: dabench-275-comprehensive-analysis-dataset
+name: "DABench Task - Perform a comprehensive analysis of the dataset by"
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-275-comprehensive-analysis-dataset/description.md
+
+dataset:
+  answers: dabench-275-comprehensive-analysis-dataset/prepared/private/answer.csv
+  sample_submission: dabench-275-comprehensive-analysis-dataset/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-275-comprehensive-analysis-dataset/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-275-comprehensive-analysis-dataset/prepare.py:prepare

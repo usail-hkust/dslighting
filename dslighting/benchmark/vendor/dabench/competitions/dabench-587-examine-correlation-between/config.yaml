@@ -1,0 +1,16 @@
+id: dabench-587-examine-correlation-between
+name: DABench Task - Examine the correlation between the average number
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-587-examine-correlation-between/description.md
+
+dataset:
+  answers: dabench-587-examine-correlation-between/prepared/private/answer.csv
+  sample_submission: dabench-587-examine-correlation-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-587-examine-correlation-between/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-587-examine-correlation-between/prepare.py:prepare

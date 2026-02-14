@@ -1,2 +1,0 @@
-Expected submission: pred_results/experimental_band_gap_prediction_pred.csv
-MAE threshold: 0.6 eV

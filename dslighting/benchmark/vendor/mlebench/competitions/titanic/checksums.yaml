@@ -1,0 +1,8 @@
+# Placeholder checksums.
+#
+# Checksums are only required when downloading datasets via Kaggle API.
+# Local evaluation uses existing prepared datasets under the configured data_dir.
+zip: ""
+public: {}
+private: {}
+

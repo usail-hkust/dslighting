@@ -1,0 +1,16 @@
+id: dabench-360-determine-correlation-coefficient
+name: DABench Task - Determine the correlation coefficient between temp
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-360-determine-correlation-coefficient/description.md
+
+dataset:
+  answers: dabench-360-determine-correlation-coefficient/prepared/private/answer.csv
+  sample_submission: dabench-360-determine-correlation-coefficient/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-360-determine-correlation-coefficient/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-360-determine-correlation-coefficient/prepare.py:prepare

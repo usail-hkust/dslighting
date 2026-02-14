@@ -1,0 +1,16 @@
+id: ethanol-concentration
+name: Ethanol Concentration Time Series Classification
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/mlebench/competitions/ethanol-concentration/description.md
+
+dataset:
+  answers: ethanol-concentration/prepared/private/test_labels.csv
+  sample_submission: ethanol-concentration/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:vendor/mlebench/competitions/ethanol-concentration/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/ethanol-concentration/prepare.py:prepare

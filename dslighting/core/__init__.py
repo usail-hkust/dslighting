@@ -1,31 +1,25 @@
 """
-Core modules for DSLighting simplified API.
+DSLighting Core Modules
+
+Internal module; prefer importing from the package root (`dslighting`) for the single public entrypoint.
 """
 
-from dslighting.core.agent import Agent, AgentResult
-from dslighting.core.data_loader import DataLoader, TaskContext
+# Core interfaces
+from .interfaces import AgentResult, AgentInterface
 
-# New unified API (recommended)
-from dslighting.core.dataset import Dataset, load_dataset, DatasetInfo
-
-# DSAT 继承 - 导出 types 和 config
-try:
-    from dslighting.core.types import *
-    from dslighting.core.config import *
-except ImportError:
-    pass
+# Re-export selected internal APIs
+from .data import DataLoader, TaskContext
+from .detection import TaskDetector
+from .config import ConfigBuilder
 
 __all__ = [
-    # New unified API (recommended)
-    "Dataset",
-    "load_dataset",
-    "DatasetInfo",
-
-    # Legacy API (kept for backward compatibility)
     "DataLoader",
     "TaskContext",
-
-    # Agent
-    "Agent",
     "AgentResult",
+    "AgentInterface",
+    "TaskDetector",
+    "ConfigBuilder",
 ]
+
+# Note: DSLightingRunner/Runner should be imported from dslighting.runner directly
+# to avoid circular dependencies between core and runtime modules

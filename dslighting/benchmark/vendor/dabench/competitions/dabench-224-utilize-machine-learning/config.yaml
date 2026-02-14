@@ -1,0 +1,16 @@
+id: dabench-224-utilize-machine-learning
+name: DABench Task - Utilize machine learning techniques to classify th
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-224-utilize-machine-learning/description.md
+
+dataset:
+  answers: dabench-224-utilize-machine-learning/prepared/private/answer.csv
+  sample_submission: dabench-224-utilize-machine-learning/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-224-utilize-machine-learning/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-224-utilize-machine-learning/prepare.py:prepare

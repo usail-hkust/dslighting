@@ -1,0 +1,15 @@
+id: bike-sharing-demand
+name: Bike Sharing Demand
+competition_type: simple
+awards_medals: false
+description: vendor/mlebench/competitions/bike-sharing-demand/description.md
+
+dataset:
+  answers: bike-sharing-demand/prepared/private/test_answer.csv
+  sample_submission: bike-sharing-demand/prepared/public/sampleSubmission.csv
+
+grader:
+  name: rmsle
+  grade_fn: file:vendor/mlebench/competitions/bike-sharing-demand/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/bike-sharing-demand/prepare.py:prepare

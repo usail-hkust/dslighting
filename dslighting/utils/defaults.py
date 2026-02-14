@@ -5,7 +5,14 @@ This module defines sensible defaults that can be overridden by:
 1. User parameters (highest priority)
 2. Environment variables
 3. These defaults (lowest priority)
+
+NOTE: This is the PRIMARY source for default configuration values.
+While some constants are duplicated in constants.py for backward compatibility,
+this module should be considered the single source of truth for configuration defaults.
+Any changes to default values should be made here first.
 """
+
+from __future__ import annotations
 
 from typing import Dict, List, Any
 
@@ -89,7 +96,7 @@ WORKFLOW_RECOMMENDATIONS: Dict[str, Dict[str, Any]] = {
 Complete default configuration structure.
 
 This can be merged with user parameters and environment variables
-to create the final DSATConfig.
+to create the final DSLightingConfig.
 """
 
 DEFAULT_CONFIG: Dict[str, Any] = {
@@ -97,6 +104,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "model": DEFAULT_LLM_MODEL,
         "temperature": DEFAULT_TEMPERATURE,
         "max_retries": DEFAULT_MAX_RETRIES,
+        "max_concurrent_per_key": 20,
         "api_base": DEFAULT_API_BASE,
         "api_key": None,  # Will be loaded from env
     },
@@ -105,7 +113,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "params": {}
     },
     "run": {
-        "name": "dsat_run",  # Use "dsat_run" to let DSATRunner auto-generate: dsat_run_{task_id}_{uid}
+        "name": "dslighting_run",  # Use "dslighting_run" to let DSLightingRunner auto-generate: dslighting_run_{task_id}_{uid}
         "total_steps": DEFAULT_MAX_ITERATIONS,
         "keep_all_workspaces": DEFAULT_KEEP_ALL_WORKSPACES,
         "keep_workspace_on_failure": DEFAULT_KEEP_WORKSPACE_ON_FAILURE,

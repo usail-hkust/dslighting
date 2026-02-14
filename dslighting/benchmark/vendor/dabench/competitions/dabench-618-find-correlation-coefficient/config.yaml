@@ -1,0 +1,16 @@
+id: dabench-618-find-correlation-coefficient
+name: DABench Task - 3. Find the correlation coefficient between the nu
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-618-find-correlation-coefficient/description.md
+
+dataset:
+  answers: dabench-618-find-correlation-coefficient/prepared/private/answer.csv
+  sample_submission: dabench-618-find-correlation-coefficient/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-618-find-correlation-coefficient/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-618-find-correlation-coefficient/prepare.py:prepare

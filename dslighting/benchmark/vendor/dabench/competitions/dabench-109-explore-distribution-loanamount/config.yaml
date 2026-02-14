@@ -1,0 +1,16 @@
+id: dabench-109-explore-distribution-loanamount
+name: DABench Task - Explore the distribution of the LoanAmount column 
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-109-explore-distribution-loanamount/description.md
+
+dataset:
+  answers: dabench-109-explore-distribution-loanamount/prepared/private/answer.csv
+  sample_submission: dabench-109-explore-distribution-loanamount/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-109-explore-distribution-loanamount/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-109-explore-distribution-loanamount/prepare.py:prepare

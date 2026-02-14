@@ -1,0 +1,16 @@
+id: dabench-468-there-outliers-distribution
+name: DABench Task - 2. Are there any outliers in the age distribution 
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-468-there-outliers-distribution/description.md
+
+dataset:
+  answers: dabench-468-there-outliers-distribution/prepared/private/answer.csv
+  sample_submission: dabench-468-there-outliers-distribution/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-468-there-outliers-distribution/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-468-there-outliers-distribution/prepare.py:prepare

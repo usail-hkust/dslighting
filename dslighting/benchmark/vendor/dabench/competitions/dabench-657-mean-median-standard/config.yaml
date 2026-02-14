@@ -1,0 +1,16 @@
+id: dabench-657-mean-median-standard
+name: DABench Task - Calculate the mean, median, and standard deviation
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-657-mean-median-standard/description.md
+
+dataset:
+  answers: dabench-657-mean-median-standard/prepared/private/answer.csv
+  sample_submission: dabench-657-mean-median-standard/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-657-mean-median-standard/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-657-mean-median-standard/prepare.py:prepare

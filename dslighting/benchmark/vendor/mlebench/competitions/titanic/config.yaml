@@ -1,0 +1,16 @@
+id: titanic
+name: Titanic - Machine Learning from Disaster
+competition_type: simple
+awards_medals: true
+description: vendor/mlebench/competitions/titanic/description.md
+
+dataset:
+  answers: titanic/prepared/private/test_answer.csv
+  sample_submission: titanic/prepared/public/sampleSubmission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:vendor/mlebench/competitions/titanic/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/titanic/prepare.py:prepare
+

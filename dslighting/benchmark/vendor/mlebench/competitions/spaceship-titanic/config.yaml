@@ -1,0 +1,16 @@
+id: spaceship-titanic
+name: Spaceship Titanic
+competition_type: simple
+awards_medals: false
+prizes: null
+description: vendor/mlebench/competitions/spaceship-titanic/description.md
+
+dataset:
+  answers: spaceship-titanic/prepared/private/test.csv
+  sample_submission: spaceship-titanic/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:vendor/mlebench/competitions/spaceship-titanic/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/spaceship-titanic/prepare.py:prepare

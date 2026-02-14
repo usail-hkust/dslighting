@@ -1,7 +1,11 @@
 """
 Data Science Prompt Templates
 
-Standard prompts for data science tasks.
+Standard prompts for common data science tasks including:
+- create_modeling_prompt: For ML model building tasks
+- create_eda_prompt: For exploratory data analysis tasks
+
+These prompts follow the standardized format using base.get_common_guidelines().
 """
 
 from typing import List, Optional
@@ -91,3 +95,9 @@ def create_eda_prompt(
     }
 
     return create_prompt_template(prompt_dict)
+
+
+__all__ = [
+    "create_modeling_prompt",
+    "create_eda_prompt",
+]

@@ -1,0 +1,16 @@
+id: dabench-372-find-mean-median
+name: DABench Task - 1. Find the mean and median of the "Trips over the
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-372-find-mean-median/description.md
+
+dataset:
+  answers: dabench-372-find-mean-median/prepared/private/answer.csv
+  sample_submission: dabench-372-find-mean-median/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-372-find-mean-median/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-372-find-mean-median/prepare.py:prepare

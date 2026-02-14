@@ -310,6 +310,12 @@ def detect_and_save_packages(config_path: Optional[Path] = None) -> Dict[str, st
     return packages
 
 
+__all__ = [
+    "PackageDetector",
+    "detect_and_save_packages",
+]
+
+
 if __name__ == "__main__":
     # Test the detector
     logging.basicConfig(level=logging.INFO)

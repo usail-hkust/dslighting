@@ -1,0 +1,22 @@
+id: text-normalization-challenge-russian-language
+name: Text Normalization Challenge - Russian Language
+competition_type: simple
+awards_medals: true
+prizes:
+  - position: 1
+    value: 12000
+  - position: 2
+    value: 8000
+  - position: 3
+    value: 5000
+description: vendor/mlebench/competitions/text-normalization-challenge-russian-language/description.md
+
+dataset:
+  answers: text-normalization-challenge-russian-language/prepared/private/answers.csv
+  sample_submission: text-normalization-challenge-russian-language/prepared/private/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:vendor/mlebench/competitions/text-normalization-challenge-russian-language/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/text-normalization-challenge-russian-language/prepare.py:prepare

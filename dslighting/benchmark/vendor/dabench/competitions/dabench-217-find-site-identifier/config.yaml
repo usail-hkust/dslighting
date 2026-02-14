@@ -1,0 +1,16 @@
+id: dabench-217-find-site-identifier
+name: DABench Task - Find the site identifier(s) with the highest posit
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-217-find-site-identifier/description.md
+
+dataset:
+  answers: dabench-217-find-site-identifier/prepared/private/answer.csv
+  sample_submission: dabench-217-find-site-identifier/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-217-find-site-identifier/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-217-find-site-identifier/prepare.py:prepare

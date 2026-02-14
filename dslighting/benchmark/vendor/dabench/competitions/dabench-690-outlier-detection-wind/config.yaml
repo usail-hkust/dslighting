@@ -1,0 +1,16 @@
+id: dabench-690-outlier-detection-wind
+name: DABench Task - 2. Perform outlier detection on the wind speed col
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-690-outlier-detection-wind/description.md
+
+dataset:
+  answers: dabench-690-outlier-detection-wind/prepared/private/answer.csv
+  sample_submission: dabench-690-outlier-detection-wind/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-690-outlier-detection-wind/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-690-outlier-detection-wind/prepare.py:prepare

@@ -1,0 +1,16 @@
+id: dabench-716-data-preprocessing-dropping
+name: DABench Task - 1. Perform data preprocessing by dropping the rows
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-716-data-preprocessing-dropping/description.md
+
+dataset:
+  answers: dabench-716-data-preprocessing-dropping/prepared/private/answer.csv
+  sample_submission: dabench-716-data-preprocessing-dropping/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-716-data-preprocessing-dropping/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-716-data-preprocessing-dropping/prepare.py:prepare

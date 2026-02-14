@@ -1,0 +1,16 @@
+id: dabench-574-data-preprocessing-stock
+name: DABench Task - Perform data preprocessing on the stock prices of 
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-574-data-preprocessing-stock/description.md
+
+dataset:
+  answers: dabench-574-data-preprocessing-stock/prepared/private/answer.csv
+  sample_submission: dabench-574-data-preprocessing-stock/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-574-data-preprocessing-stock/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-574-data-preprocessing-stock/prepare.py:prepare

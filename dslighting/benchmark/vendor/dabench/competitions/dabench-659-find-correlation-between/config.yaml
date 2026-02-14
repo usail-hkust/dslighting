@@ -1,0 +1,16 @@
+id: dabench-659-find-correlation-between
+name: DABench Task - Find the correlation between the 'High' and 'Low' 
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-659-find-correlation-between/description.md
+
+dataset:
+  answers: dabench-659-find-correlation-between/prepared/private/answer.csv
+  sample_submission: dabench-659-find-correlation-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-659-find-correlation-between/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-659-find-correlation-between/prepare.py:prepare

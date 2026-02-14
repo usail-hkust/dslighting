@@ -1,0 +1,15 @@
+competition_type: generic
+dataset:
+  answers: test-repair-task-01/prepared/private/answer.csv
+  sample_submission: test-repair-task-01/prepared/public/sample.csv
+description: vendor/mlebench/competitions/test-repair-task-01/description.md
+grader:
+  grade_fn: file:vendor/mlebench/competitions/test-repair-task-01/grade.py:simple_accuracy_grader
+id: test-repair-task-01
+metric: RMSE
+name: Bike Sharing Demand Prediction
+preparer: file:vendor/mlebench/competitions/test-repair-task-01/prepare.py:prepare
+private_dir: test-repair-task-01/prepared/private
+public_dir: test-repair-task-01/prepared/public
+raw_dir: test-repair-task-01/raw
+task_type: regression

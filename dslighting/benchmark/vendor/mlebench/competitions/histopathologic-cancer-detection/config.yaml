@@ -1,0 +1,16 @@
+id: histopathologic-cancer-detection
+name: Histopathologic Cancer Detection
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/mlebench/competitions/histopathologic-cancer-detection/description.md
+
+dataset:
+  answers: histopathologic-cancer-detection/prepared/private/answers.csv
+  sample_submission: histopathologic-cancer-detection/prepared/public/sample_submission.csv
+
+grader:
+  name: auc-roc
+  grade_fn: file:vendor/mlebench/competitions/histopathologic-cancer-detection/grade.py:grade
+
+preparer: file:vendor/mlebench/competitions/histopathologic-cancer-detection/prepare.py:prepare

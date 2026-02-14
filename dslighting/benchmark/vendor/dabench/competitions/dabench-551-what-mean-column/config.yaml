@@ -1,0 +1,16 @@
+id: dabench-551-what-mean-column
+name: DABench Task - What is the mean of the DBH_CM column?
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-551-what-mean-column/description.md
+
+dataset:
+  answers: dabench-551-what-mean-column/prepared/private/answer.csv
+  sample_submission: dabench-551-what-mean-column/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-551-what-mean-column/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-551-what-mean-column/prepare.py:prepare

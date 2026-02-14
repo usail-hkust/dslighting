@@ -1,8 +1,49 @@
-# DSLighting 2.0 - Simplified API
+<div align="center">
 
-> **Data Science Agent Framework with Five-Layer Architecture**
->
-> DSLighting 2.0 提供了一个完整的数据科学 Agent 框架，支持从简单 API 调用到深度自定义的所有场景。
+<img src="https://raw.githubusercontent.com/usail-hkust/dslighting/main/assets/dslighting.png" alt="DSLIGHTING Logo" width="180" style="border-radius: 15px;">
+
+# DSLIGHTING: Data Science Framework
+
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/badge/PyPI-2.7.9-blue?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/dslighting/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dslighting?style=flat-square&logo=pypi)](https://pypi.org/project/dslighting/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](LICENSE)
+
+<p align="center">
+  <a href="#quick-start"><img src="https://img.shields.io/badge/%F0%9F%9A%80-Quick_Start-green?style=for-the-badge" alt="Quick Start"></a>
+  &nbsp;&nbsp;
+  <a href="#core-features"><img src="https://img.shields.io/badge/%E2%9A%A1-Features-blue?style=for-the-badge" alt="Core Features"></a>
+  &nbsp;&nbsp;
+  <a href="https://luckyfan-cs.github.io/dslighting-web/"><img src="https://img.shields.io/badge/%F0%9D%93%9A-Docs-orange?style=for-the-badge" alt="Documentation"></a>
+  &nbsp;&nbsp;
+  <a href="https://luckyfan-cs.github.io/dslighting-web/guide/getting-started.html"><img src="https://img.shields.io/badge/%F0%9D%93%96-User_Guide-purple?style=for-the-badge" alt="User Guide"></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/usail-hkust/dslighting/stargazers"><img src="https://img.shields.io/github/stars/usail-hkust/dslighting?style=for-the-badge" alt="Stars"></a>
+  &nbsp;&nbsp;
+  <img src="https://komarev.com/ghpvc/?username=usail-hkust&repo=dslighting&style=for-the-badge" alt="Profile views">
+</p>
+
+[中文](README_CN.md) · [日本語](docs/README_JA.md) · [Français](docs/README_FR.md)
+
+</div>
+
+<div align="center">
+
+🎯 **Intelligent Agent Workflows** &nbsp;•&nbsp; 📊 **Interactive Data Visualization**<br>
+🤖 **Automated Code Generation** &nbsp;•&nbsp; 📈 **End-to-End Task Evaluation**
+
+[⭐ Star us](https://github.com/usail-hkust/dslighting/stargazers) &nbsp;•&nbsp; [💬 Discussions](https://github.com/usail-hkust/dslighting/discussions)
+
+</div>
+
+---
+
+> **DSLighting is an LLM-driven autonomous data science execution engine that turns task descriptions and datasets into iterative code generation, execution, evaluation, and refinement workflows.**
+
+DSLighting 提供了一个完整的数据科学 Agent 框架，支持从简单 API 调用到深度自定义的所有场景。
 
 ## 🎯 Two Usage Modes
 
@@ -12,7 +53,7 @@ DSLighting 2.0 提供两种使用方式：
 
 适合快速原型开发和标准数据科学任务，类似 scikit-learn 的简单接口。
 
-### 2. **Five-Layer Architecture** (推荐用于深度定制)
+### 2. **Architecture** (推荐用于深度定制)
 
 适合需要精细控制的复杂场景，提供完整的架构访问权限。
 
@@ -60,7 +101,7 @@ print(f"📊 Score: {result.score}")
 print(f"💰 Cost: ${result.cost}")
 ```
 
-### Mode 2: Five-Layer Architecture (Full Control)
+### Mode 2: Architecture (Full Control)
 
 ```python
 from dslighting import BaseAgent, GenerateCodeAndPlanOperator, ExecuteAndTestOperator
@@ -98,7 +139,7 @@ result = agent.run(
 
 ---
 
-## 🏗️ Five-Layer Architecture
+## 🏗️ Core Architecture
 
 ```
 ┌─────────────────────────────────────────┐
@@ -196,7 +237,7 @@ agent = dslighting.Agent()
 result = agent.run(task_id="my-task")
 ```
 
-### Five-Layer Architecture API
+### Architecture API
 
 #### 🧠 Agent Layer
 
@@ -260,7 +301,7 @@ llm = LLMService(
     api_base="https://api.openai.com/v1"
 )
 
-# Sandbox Service
+# Sandbox Service (supports e2b, ds-sandbox, local sandbox)
 sandbox = SandboxService()  # Sandboxed code execution
 
 # Workspace Service
@@ -578,6 +619,140 @@ result = dslighting.run_agent(task_id="bike-sharing-demand")
 
 ---
 
+## 📊 Benchmarks
+
+DSLighting supports multiple benchmarks for evaluating data science agent performance:
+
+| Benchmark | Description | Tasks |
+|-----------|-------------|-------|
+| **DABench** | Data Science Agent Benchmark - Comprehensive evaluation of LLM agents on data science tasks | 300+ tasks covering EDA, feature engineering, modeling, etc. |
+| **MLE-bench** | Machine Learning Engineering Benchmark - Evaluates agents on ML engineering tasks | Kaggle competitions, data preprocessing, model training |
+| **ScienceAgentBench** | Science Domain Agent Benchmark - Scientific research and analysis tasks | Scientific data analysis, experiment design, hypothesis testing |
+
+### Running Benchmarks
+
+DSLighting uses unified `DSBenchmark` API to run all benchmarks:
+
+```python
+import os
+from dslighting.api import DSBenchmark, AgentSettingsConfig, RuntimeConfig
+
+# Configure agent
+agent_config = AgentSettingsConfig(
+    model="gpt-4o",
+    workflow="aide",
+    max_iterations=3,
+)
+
+# Configure runtime (optional)
+runtime_config = RuntimeConfig(
+    max_concurrency=128,
+    scheduler_policy="full_parallel",
+    dag_enabled=True,
+    dag_mode="fine",
+)
+
+# Run DABench
+benchmark = DSBenchmark(
+    benchmark_type="dabench",
+    data_dir="/path/to/dabench/data",
+    exp_name="my_dabench_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+    verbose=True,
+)
+
+# Run MLE-bench
+benchmark = DSBenchmark(
+    benchmark_type="mle_bench",
+    data_dir="/path/to/mle_bench/data",
+    exp_name="my_mle_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+)
+
+# Run ScienceAgentBench
+benchmark = DSBenchmark(
+    benchmark_type="scienceagent_bench",
+    data_dir="/path/to/scienceagent_bench/data",
+    exp_name="my_science_run",
+).run(
+    agent_config=agent_config,
+    runtime_config=runtime_config,
+    log_path="./logs",
+)
+```
+
+### Environment Variables
+
+```bash
+# Data directory (required)
+DSLIGHTING_DABENCH_DATA=/path/to/dabench
+DSLIGHTING_MLE_BENCH_DATA=/path/to/mle_bench
+DSLIGHTING_SCIENCEAGENT_BENCH_DATA=/path/to/scienceagent_bench
+
+# Model configuration
+LLM_MODEL=gpt-4o
+MAX_ITERATIONS=3
+
+# Sandbox configuration
+DSLIGHTING_SANDBOX_BACKEND=local  # local, e2b, ds_sandbox
+DSLIGHTING_SANDBOX_BACKEND_TYPE=docker  # for ds_sandbox
+DSLIGHTING_SANDBOX_API_KEY=xxx  # for e2b
+```
+
+### DAG Optimization Mode
+
+DSLighting supports fine-grained DAG (Directed Acyclic Graph) optimization for parallel task execution:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `fine` | Fine-grained DAG mode - optimizes at node level | Maximum parallelism, complex task dependencies |
+| `coarse` | Coarse-grained DAG mode - optimizes at task level | Simple task dependencies, lower overhead |
+
+```python
+from dslighting.api import RuntimeConfig
+
+# Enable DAG optimization
+runtime_config = RuntimeConfig(
+    # Task Scheduling
+    max_concurrency=128,
+    scheduler_policy="full_parallel",
+    queue_policy="fifo",
+
+    # DAG Runtime Configuration
+    dag_enabled=True,          # Enable DAG optimization
+    dag_mode="fine",           # fine or coarse
+    max_inflight_nodes=18,     # Maximum concurrent nodes
+    dag_node_timeout_seconds=21600.0,  # 6 hours for long-running ML tasks
+    dag_max_retries=3,         # Retry failed nodes
+
+    # Queue policies
+    ready_queue_policy="fifo",
+)
+```
+
+**DAG Benefits:**
+- **Parallel Execution**: Automatically identifies independent tasks that can run in parallel
+- **Dependency Resolution**: Handles task dependencies automatically
+- **Resource Optimization**: Maximizes GPU/CPU utilization
+- **Fault Tolerance**: Automatic retry on node failures
+
+**Performance Comparison:**
+```
+Wall Clock Time:
+  FINE-OPT: ~XXs (with DAG optimization)
+  NO-OPT:   ~XXs (without DAG)
+
+Speedup: 2-5x faster depending on task structure
+```
+
+---
+
 ## 📚 Documentation
 
 - **Full Documentation**: https://luckyfan-cs.github.io/dslighting-web/
@@ -629,7 +804,7 @@ result = dslighting.run_agent("data/competitions/titanic")
 
 ---
 
-## 🎓 Training Mode (Advanced)
+## 🎓 Training Mode (Advanced) [Coming Soon]
 
 DSLighting 2.0+ supports training with reinforcement learning:
 
@@ -673,4 +848,4 @@ We welcome contributions! Please see our contributing guidelines.
 
 ---
 
-**DSLighting 2.4.0 - Making Data Science Automation Easy** 🚀
+**DSLIGHTING - Making Data Science Automation Easy** 🚀

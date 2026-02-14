@@ -1,0 +1,16 @@
+id: dabench-177-investigate-distribution-ages
+name: DABench Task - Investigate the distribution of ages for each pass
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-177-investigate-distribution-ages/description.md
+
+dataset:
+  answers: dabench-177-investigate-distribution-ages/prepared/private/answer.csv
+  sample_submission: dabench-177-investigate-distribution-ages/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-177-investigate-distribution-ages/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-177-investigate-distribution-ages/prepare.py:prepare

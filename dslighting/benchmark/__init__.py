@@ -1,59 +1,60 @@
 """
 DSLighting Benchmark System
 
-提供轻量级的批量评估能力，支持：
-1. 基础 BaseBenchmark（纯 DSLighting）
-2. MLELiteBenchmark（继承 MLE-Bench + DSLighting）
-3. CustomBenchmark（完全自定义）
-4. BenchmarkFactory（从配置创建）
+Provides lightweight batch evaluation capabilities, supporting:
+1. BaseBenchmark (pure DSLighting)
+2. MLELiteBenchmark (inherits MLE-Bench + DSLighting)
+3. CustomBenchmark (fully customizable)
+4. BenchmarkFactory (create from config)
 
 Example:
     >>> from dslighting.benchmark import MLELiteBenchmark, BenchmarkFactory
     >>>
-    >>> # 方式 1: 直接创建
+    >>> # Method 1: Create directly
     >>> benchmark = MLELiteBenchmark()
     >>> results = await benchmark.run_evaluation(eval_fn)
     >>>
-    >>> # 方式 2: 从配置创建
+    >>> # Method 2: Create from config
     >>> factory = BenchmarkFactory.from_config_file("config.yaml")
     >>> benchmark = factory.create("mle-lite")
     >>> results = await benchmark.run_evaluation(eval_fn)
 """
 
-# 导出 DSLighting Benchmark 类
-from dslighting.benchmark.base import BaseBenchmark
-from dslighting.benchmark.factory import BenchmarkFactory
-from dslighting.benchmark.mle_lite import MLELiteBenchmark
-from dslighting.benchmark.custom import CustomBenchmark
+# Export DSLighting Benchmark classes
+from dslighting.benchmark.core.base import BaseBenchmark
+from dslighting.benchmark.core.factory import BenchmarkFactory
+from dslighting.benchmark.core.scheduler_core import RuntimeSchedulerOptions
+from dslighting.benchmark.benchmarks.mle_lite_benchmark import MLELiteBenchmark
+from dslighting.benchmark.benchmarks.custom_benchmark import CustomBenchmark
+from dslighting.benchmark.evaluators import BaseBenchmarkEvaluator, KaggleEvaluator
 
-# 也重新导出 DSAT Benchmark（向后兼容）
 try:
-    from dsat.benchmark.benchmark import BaseBenchmark as DSATBaseBenchmark
-    from dsat.benchmark.mle import MLEBenchmark
-    from dsat.benchmark.sciencebench import ScienceBenchBenchmark
-
-    # 为了避免冲突，使用不同的名字
-    DSATBaseBenchmark = DSATBaseBenchmark
-    DSATMLEBenchmark = MLEBenchmark
-    DSATScienceBenchBenchmark = ScienceBenchBenchmark
+    from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
+    from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
+    from dslighting.benchmark.benchmarks.sciencebench_benchmark import ScienceBenchBenchmark
+    from dslighting.benchmark.benchmarks.datasci_benchmark import DataSciBenchmark
 
     __all__ = [
-        # DSLighting Benchmark（新）
         "BaseBenchmark",
         "BenchmarkFactory",
+        "RuntimeSchedulerOptions",
         "MLELiteBenchmark",
         "CustomBenchmark",
-        # DSAT Benchmark（向后兼容）
-        "DSATBaseBenchmark",
-        "DSATMLEBenchmark",
-        "DSATScienceBenchBenchmark",
+        "BaseBenchmarkEvaluator",
+        "KaggleEvaluator",
+        "DABenchmark",
+        "MLEBenchmark",
+        "ScienceBenchBenchmark",
+        "DataSciBenchmark",
     ]
 
 except ImportError:
-    # DSAT 不可用
     __all__ = [
         "BaseBenchmark",
         "BenchmarkFactory",
+        "RuntimeSchedulerOptions",
         "MLELiteBenchmark",
         "CustomBenchmark",
+        "BaseBenchmarkEvaluator",
+        "KaggleEvaluator",
     ]

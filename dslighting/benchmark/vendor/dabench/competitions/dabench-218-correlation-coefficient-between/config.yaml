@@ -1,0 +1,16 @@
+id: dabench-218-correlation-coefficient-between
+name: DABench Task - Calculate the correlation coefficient between the 
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-218-correlation-coefficient-between/description.md
+
+dataset:
+  answers: dabench-218-correlation-coefficient-between/prepared/private/answer.csv
+  sample_submission: dabench-218-correlation-coefficient-between/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-218-correlation-coefficient-between/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-218-correlation-coefficient-between/prepare.py:prepare

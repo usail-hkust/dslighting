@@ -1,0 +1,16 @@
+id: dabench-644-close-column-follows
+name: DABench Task - Check if the "Close" column follows a normal distr
+competition_type: code
+awards_medals: false
+prizes: null
+description: vendor/dabench/competitions/dabench-644-close-column-follows/description.md
+
+dataset:
+  answers: dabench-644-close-column-follows/prepared/private/answer.csv
+  sample_submission: dabench-644-close-column-follows/prepared/public/sample_submission.csv
+
+grader:
+  name: exact_match
+  grade_fn: file:vendor/dabench/competitions/dabench-644-close-column-follows/grade.py:grade
+
+preparer: file:vendor/dabench/competitions/dabench-644-close-column-follows/prepare.py:prepare
