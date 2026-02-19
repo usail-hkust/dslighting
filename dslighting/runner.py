@@ -48,8 +48,7 @@ from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
 from dslighting.state.search.journal import JournalState
 from dslighting.error import (
     BenchmarkError,
-    CompetitionContextMissingError,
-    TaskRegistryNotFoundError,
+    ConfigurationError,
     WorkflowError,
     WorkspaceError,
 )
@@ -412,7 +411,7 @@ class RegistryGrader:
             Path to the task registry directory.
 
         Raises:
-            TaskRegistryNotFoundError: If registry cannot be located.
+            BenchmarkError: If registry cannot be located.
         """
         import yaml
 
@@ -425,7 +424,7 @@ class RegistryGrader:
             candidate = user_root / task_id / "config.yaml"
             if candidate.exists():
                 return candidate.parent
-            raise TaskRegistryNotFoundError(
+            raise BenchmarkError(
                 f"Registry for task '{task_id}' not found in '{user_root}'. "
                 "Expected '<registry_root>/<task_id>/config.yaml'."
             )
@@ -495,7 +494,7 @@ class RegistryGrader:
             if (task_dir / "config.yaml").exists():
                 return task_dir
 
-        raise TaskRegistryNotFoundError(
+        raise BenchmarkError(
             f"Registry contract not found for task '{task_id}'. "
             "Pass `registry_dir` explicitly for custom tasks."
         )
@@ -516,7 +515,7 @@ class RegistryGrader:
             Parsed configuration dictionary.
 
         Raises:
-            CompetitionContextMissingError: If config is invalid or missing required fields.
+            ConfigurationError: If config is invalid or missing required fields.
         """
         import yaml
 
@@ -528,14 +527,14 @@ class RegistryGrader:
         # Validate config ID matches task_id
         config_id = str(config.get("id", "")).strip()
         if config_id != task_id:
-            raise CompetitionContextMissingError(
+            raise ConfigurationError(
                 f"Registry id mismatch in {config_path}: expected '{task_id}', got '{config_id}'."
             )
 
         # Ensure required dataset.answers field exists
         answers_rel = (config.get("dataset") or {}).get("answers")
         if not answers_rel:
-            raise CompetitionContextMissingError(
+            raise ConfigurationError(
                 f"Registry config missing required field `dataset.answers`: {config_path}"
             )
 
@@ -563,7 +562,7 @@ class RegistryGrader:
             Grading score as float.
 
         Raises:
-            CompetitionContextMissingError: If grade.py is missing or invalid.
+            ConfigurationError: If grade.py is missing or invalid.
             BenchmarkError: If grading execution fails.
         """
         import importlib.util
@@ -580,7 +579,7 @@ class RegistryGrader:
         # Locate and validate grade.py
         grade_py = task_registry_dir / "grade.py"
         if not grade_py.exists():
-            raise CompetitionContextMissingError(
+            raise ConfigurationError(
                 f"`grade.py` not found for task '{task_id}' at {grade_py}."
             )
 
@@ -599,7 +598,7 @@ class RegistryGrader:
         # Get and execute the grade function
         grade_fn = getattr(grade_module, "grade", None)
         if grade_fn is None:
-            raise CompetitionContextMissingError(f"No `grade` function found in {grade_py}.")
+            raise ConfigurationError(f"No `grade` function found in {grade_py}.")
 
         # Perform grading
         submission_df = pd.read_csv(submission_path)

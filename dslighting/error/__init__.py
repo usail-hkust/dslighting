@@ -18,11 +18,8 @@ Usage:
         suggestion="Check supported models at https://docs.dslighting.io/providers"
     )
 
-    # Legacy: Use ErrorFormatter (deprecated but still supported)
-    from dslighting.error import ErrorFormatter
-
-    formatter = ErrorFormatter()
-    formatted = formatter.format(exception)
+    from dslighting.error import format_error
+    formatted = format_error(exception)
 """
 
 # Core exception hierarchy with built-in formatting
@@ -34,23 +31,11 @@ from dslighting.error.exceptions import (
     LLMServiceError,
     TaskError,
     WorkspaceError,
-    # Legacy aliases
-    DSLightingFrameworkError,
-    InvalidConfigError,
-    WorkflowExecutionError,
-    BenchmarkTaskLoadError,
-    LLMError,
-    SandboxError,
     DynamicImportError,
-    # Task-related legacy aliases
-    TaskConfigInvalidError,
-    TaskRegistryNotFoundError,
-    CompetitionContextMissingError,
 )
 
 # Error formatting and registry
 from dslighting.error.formatter import (
-    ErrorFormatter,
     FormattedError,
     ErrorRegistry,
     ErrorDefinition,
@@ -77,20 +62,8 @@ __all__ = [
     "LLMServiceError",
     "TaskError",
     "WorkspaceError",
-    # Legacy aliases
-    "DSLightingFrameworkError",
-    "InvalidConfigError",
-    "WorkflowExecutionError",
-    "BenchmarkTaskLoadError",
-    "LLMError",
-    "SandboxError",
     "DynamicImportError",
-    # Task-related legacy aliases
-    "TaskConfigInvalidError",
-    "TaskRegistryNotFoundError",
-    "CompetitionContextMissingError",
     # Error formatting
-    "ErrorFormatter",
     "FormattedError",
     "ErrorRegistry",
     "ErrorDefinition",

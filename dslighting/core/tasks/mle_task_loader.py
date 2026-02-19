@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import yaml
 
-from dslighting.error import TaskConfigInvalidError, TaskRegistryNotFoundError
+from dslighting.error import BenchmarkError, ConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class MLETaskLoader:
                 return user_path.parent, user_path
             if (user_path / task_id / "config.yaml").exists():
                 return user_path, user_path / task_id
-            raise TaskRegistryNotFoundError(
+            raise BenchmarkError(
                 f"Registry contract not found for task '{task_id}' under '{user_path}'. "
                 "Expected '<registry_root>/<task_id>/config.yaml'."
             )
@@ -66,7 +66,7 @@ class MLETaskLoader:
             if (task_dir / "config.yaml").exists():
                 return root, task_dir
 
-        raise TaskRegistryNotFoundError(
+        raise BenchmarkError(
             f"Registry contract not found for task '{task_id}'. "
             "Pass `registry_dir=` explicitly for custom tasks."
         )
@@ -80,7 +80,7 @@ class MLETaskLoader:
         required_top_level = ("id", "grader", "dataset")
         missing_top_level = [key for key in required_top_level if key not in config]
         if missing_top_level:
-            raise TaskConfigInvalidError(
+            raise ConfigurationError(
                 f"Task '{task_id}' config missing required fields: {missing_top_level} ({config_path})."
             )
 
@@ -88,13 +88,13 @@ class MLETaskLoader:
         required_dataset = ("answers", "sample_submission")
         missing_dataset = [key for key in required_dataset if key not in dataset]
         if missing_dataset:
-            raise TaskConfigInvalidError(
+            raise ConfigurationError(
                 f"Task '{task_id}' config missing dataset fields: {missing_dataset} ({config_path})."
             )
 
         config_id = str(config.get("id", "")).strip()
         if config_id != task_id:
-            raise TaskConfigInvalidError(
+            raise ConfigurationError(
                 f"Task id mismatch: expected '{task_id}', found '{config_id}' in {config_path}."
             )
         return config

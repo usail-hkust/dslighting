@@ -3,7 +3,6 @@ Utility functions for DSLighting API.
 """
 
 import logging
-import warnings
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -83,41 +82,3 @@ def validate_paths(
 
     return True, None
 
-
-def get_default_paths(benchmark_type: str) -> dict:
-    """
-    Get default paths for benchmark type.
-
-    .. deprecated::
-        Use constants from dslighting.benchmark module instead.
-        This function will be removed in a future version.
-
-    Args:
-        benchmark_type: "dabench" or "mlebench"
-
-    Returns:
-        Dict with "data_dir" and "vendor_dir" keys
-    """
-    warnings.warn(
-        "get_default_paths() is deprecated and will be removed in a future version. "
-        "Use constants from dslighting.benchmark module instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    from pathlib import Path
-    import dslighting
-
-    package_root = Path(dslighting.__file__).parent.parent
-
-    defaults = {
-        "dabench": {
-            "data_dir": None,  # Should be provided by user or environment variable
-            "vendor_dir": str(package_root / "benchmark" / "vendor" / "dabench" / "competitions"),
-        },
-        "mlebench": {
-            "data_dir": None,  # Should be provided by user or environment variable
-            "vendor_dir": str(package_root / "benchmark" / "vendor" / "mlebench" / "competitions"),
-        },
-    }
-
-    return defaults.get(benchmark_type, {})

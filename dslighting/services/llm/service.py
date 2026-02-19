@@ -390,7 +390,7 @@ class LLMService:
             The raw LiteLLM response object upon success.
 
         Raises:
-            LLMError: If all retry attempts fail due to API errors or empty responses.
+            LLMServiceError: If all retry attempts fail due to API errors or empty responses.
         """
         import litellm.exceptions as litellm_exceptions
         from dslighting.utils.debug_logger import get_debug_logger

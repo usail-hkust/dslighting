@@ -12,11 +12,10 @@ Note:
 """
 
 from .data_science import create_modeling_prompt, create_eda_prompt
-from .debugging import create_generic_debug_prompt, create_debug_prompt
+from .debugging import create_generic_debug_prompt
 
 __all__ = [
     "create_modeling_prompt",
     "create_eda_prompt",
-    "create_debug_prompt",
     "create_generic_debug_prompt",
 ]

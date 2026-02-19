@@ -6,7 +6,6 @@ This module provides comprehensive error formatting capabilities with:
 - Formatted error output with suggestions and documentation links
 - Integration with DSLighting exception system
 - Internationalization support (extensible)
-- Backward compatibility with ErrorFormatter
 
 Usage:
     # Recommended: Use DSLightingError.format() directly
@@ -19,17 +18,13 @@ Usage:
     )
     print(error.format())
 
-    # Legacy: Use ErrorFormatter (deprecated but still supported)
-    from dslighting.error import ErrorFormatter
-
-    formatter = ErrorFormatter()
-    formatted = formatter.format(exception)
+    from dslighting.error import format_error
+    formatted = format_error(exception)
     print(formatted.message)
 """
 
-import warnings
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional
 
 from dslighting.error.exceptions import (
     DSLightingError,
@@ -273,319 +268,73 @@ def create_default_registry() -> ErrorRegistry:
     return registry
 
 
-# =============================================================================
-# Main Error Formatter Class
-# =============================================================================
+BASE_DOC_URL = "https://docs.dslighting.io/errors"
 
-class ErrorFormatter:
-    """Formats exceptions into detailed, actionable error messages.
 
-    .. deprecated::
-        The ErrorFormatter class is deprecated and will be removed in version 3.0.0.
-        New code should use the :meth:`DSLightingError.format()` method directly
-        for simpler and more consistent error formatting.
+def _format_template(template: str, details: Dict[str, Any], **context: Any) -> str:
+    """Format a message template with context variables."""
+    all_vars = {**details, **context}
+    try:
+        return template.format(**all_vars)
+    except KeyError as e:
+        missing_keys = ", ".join(str(arg) for arg in e.args)
+        return f"{template} (Note: could not format {missing_keys})"
 
-        Legacy code should migrate to:
-        - Use ``error.format()`` instead of ``ErrorFormatter().format(error)``
-        - Use ``FormattedError`` attributes directly from the exception
 
-    The ErrorFormatter provides:
-    - Lookup of error definitions by error code
-    - Message formatting with context variables
-    - Automatic suggestion generation
-    - Documentation link generation
-    - Integration with DSLighting exception system
-    - Internationalization support
+def _format_error_internal(
+    error: Exception,
+    *,
+    registry: Optional[ErrorRegistry] = None,
+    base_doc_url: str = BASE_DOC_URL,
+    enable_i18n: bool = False,
+    lang: Optional[str] = None,
+    default_message: Optional[str] = None,
+    **context: Any,
+) -> FormattedError:
+    """Core formatter used by public convenience functions."""
+    active_registry = registry or create_default_registry()
+    error_code = active_registry.get_error_code(error)
+    error_def = active_registry.get(error_code)
 
-    Migration Example:
-        >>> # OLD (deprecated)
-        >>> formatter = ErrorFormatter()
-        >>> formatted = formatter.format(error)
-        >>> print(formatted.message)
-
-        >>> # NEW (recommended)
-        >>> print(error.format())
-
-    This class is maintained for backward compatibility and will be removed
-    in version 3.0.0.
-    """
-
-    BASE_DOC_URL = "https://docs.dslighting.io/errors"
-    DEFAULT_ERROR_CODE = "DSL-000"
-
-    def __init__(
-        self,
-        registry: Optional[ErrorRegistry] = None,
-        base_doc_url: Optional[str] = None,
-        enable_i18n: bool = False,
-        lang: Optional[str] = None,
-    ) -> None:
-        """Initialize error formatter.
-
-        Args:
-            registry: Custom error registry. Uses default if None.
-            base_doc_url: Base URL for documentation links.
-            enable_i18n: Enable internationalization support.
-            lang: Language for error messages ('en' or 'zh'). If None, uses current global setting.
-        """
-        self.registry = registry or create_default_registry()
-        self.base_doc_url = base_doc_url or self.BASE_DOC_URL
-        self.enable_i18n = enable_i18n
-        self._lang = lang
-        self._custom_suggestions: Dict[str, str] = {}
-
-        # Issue deprecation warning
-        warnings.warn(
-            "ErrorFormatter is partially deprecated. Use DSLightingError.format() for new code. "
-            "ErrorFormatter will be fully deprecated in version 3.0.0.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-
-    @property
-    def lang(self) -> str:
-        """Get current language setting."""
-        return self._lang if self._lang is not None else get_error_language()
-
-    @lang.setter
-    def lang(self, value: str) -> None:
-        """Set the language for error messages."""
-        if value in SUPPORTED_ERROR_LANGUAGES:
-            self._lang = value
-        else:
-            self._lang = DEFAULT_ERROR_LANGUAGE
-
-    def set_lang(self, lang: str) -> bool:
-        """Set the language for error messages.
-
-        Args:
-            lang: Language code ('en' or 'zh').
-
-        Returns:
-            True if language was set successfully, False if invalid.
-        """
-        if lang in SUPPORTED_ERROR_LANGUAGES:
-            self._lang = lang
-            return True
-        return False
-
-    def register_error(self, error_code: str, definition: ErrorDefinition) -> None:
-        """Register a new error definition.
-
-        Args:
-            error_code: Unique error code.
-            definition: ErrorDefinition instance.
-        """
-        self.registry.register(error_code, definition)
-
-    def add_custom_suggestion(self, error_code: str, suggestion: str) -> None:
-        """Add a custom suggestion for a specific error code.
-
-        This overrides the default suggestion from the registry.
-
-        Args:
-            error_code: Error code to customize.
-            suggestion: Custom suggestion text.
-        """
-        self._custom_suggestions[error_code] = suggestion
-
-    def get_error_code(self, error: Exception) -> str:
-        """Extract error code from an exception.
-
-        Args:
-            error: The exception to extract error code from.
-
-        Returns:
-            Error code string.
-        """
-        return self.registry.get_error_code(error)
-
-    def get_error_def(self, error_code: str) -> Optional[ErrorDefinition]:
-        """Get error definition by code.
-
-        Args:
-            error_code: The error code to look up.
-
-        Returns:
-            ErrorDefinition if found, default definition otherwise.
-        """
-        definition = self.registry.get(error_code)
-        if definition is None:
-            # Return a default definition for unknown error codes
-            return ErrorDefinition(
-                template=f"Unknown error code '{error_code}': {{message}}",
-                suggestion="Check error documentation or report this issue.",
-                category="UNKNOWN",
-                severity="ERROR",
-            )
-        return definition
-
-    def _format_template(
-        self, template: str, details: Dict[str, Any], **context: Any
-    ) -> str:
-        """Format a message template with context variables.
-
-        Args:
-            template: The message template with placeholders.
-            details: Additional details from the exception.
-            **context: Additional context variables.
-
-        Returns:
-            Formatted message string.
-        """
-        # Merge details and context
-        all_vars = {**details, **context}
-
-        try:
-            return template.format(**all_vars)
-        except KeyError as e:
-            # If formatting fails, return original template with note
-            missing_keys = ", ".join(str(arg) for arg in e.args)
-            return f"{template} (Note: could not format {missing_keys})"
-
-    def format(
-        self,
-        error: Exception,
-        **context: Any,
-    ) -> FormattedError:
-        """Format an exception into a detailed error message.
-
-        Args:
-            error: The exception to format.
-            **context: Additional context variables for message formatting.
-
-        Returns:
-            FormattedError instance with all relevant information.
-        """
-        error_code = self.get_error_code(error)
-        error_def = self.get_error_def(error_code)
-
-        # Get details from the exception
-        details = {}
-        if isinstance(error, DSLightingError):
-            details = getattr(error, "details", {}) or {}
-            suggestion = getattr(error, "suggestion", None)
-            if suggestion:
-                # Use suggestion from exception if provided
-                pass
-            else:
-                suggestion = self._custom_suggestions.get(
-                    error_code,
-                    error_def.suggestion if error_def else "",
-                )
-        else:
-            suggestion = self._custom_suggestions.get(
-                error_code,
-                error_def.suggestion if error_def else "",
-            )
-
-        # Get the template - use i18n translation if enabled
-        template = error_def.template
-        if self.enable_i18n:
-            lang = self.lang
-            translated_template = get_error_message(error_code, lang, **context)
-            if translated_template:
-                template = translated_template
-            translated_suggestion = get_error_suggestion(error_code, lang)
-            if translated_suggestion and not self._custom_suggestions.get(error_code):
-                suggestion = translated_suggestion
-
-        # Format message
-        message = self._format_template(template, details, **context)
-
-        # Generate documentation URL
-        if error_def and error_def.doc_url:
-            doc_url = error_def.doc_url
-        else:
-            doc_url = f"{self.base_doc_url}/{error_code}"
-
+    if error_def is None:
+        fallback_message = default_message or f"Unknown error code '{error_code}': {error}"
         return FormattedError(
             code=error_code,
-            message=message,
-            suggestion=suggestion,
-            doc_url=doc_url,
-            details=details,
-            severity=error_def.severity if error_def else "ERROR",
-            category=error_def.category if error_def else "GENERAL",
+            message=fallback_message,
+            suggestion="Check error documentation or report this issue.",
+            doc_url=f"{base_doc_url}/{error_code}",
+            details={"original_error": str(error)},
+            severity="ERROR",
+            category="UNKNOWN",
         )
 
-    def format_with_cause(
-        self,
-        error: Exception,
-        include_traceback: bool = False,
-        **context: Any,
-    ) -> str:
-        """Format an error with its cause chain.
+    details = {}
+    suggestion = error_def.suggestion
+    if isinstance(error, DSLightingError):
+        details = getattr(error, "details", {}) or {}
+        suggestion = getattr(error, "suggestion", None) or suggestion
 
-        Args:
-            error: The exception to format.
-            include_traceback: Include traceback in output.
-            **context: Additional context variables.
+    template = error_def.template
+    if enable_i18n:
+        effective_lang = lang if lang in SUPPORTED_ERROR_LANGUAGES else get_error_language()
+        translated_template = get_error_message(error_code, effective_lang, **context)
+        if translated_template:
+            template = translated_template
+        translated_suggestion = get_error_suggestion(error_code, effective_lang)
+        if translated_suggestion and not getattr(error, "suggestion", None):
+            suggestion = translated_suggestion
 
-        Returns:
-            Formatted string representation.
-        """
-        formatted = self.format(error, **context)
-        lines = [str(formatted)]
-
-        if include_traceback:
-            import traceback
-            lines.append(f"\nTraceback:\n{traceback.format_exc()}")
-
-        # Handle chained exceptions
-        if isinstance(error, DSLightingError) and error.cause:
-            lines.append(f"\nCaused by: {error.cause}")
-
-        return "\n".join(lines)
-
-    def try_format(
-        self, error: Exception, default_message: str = "Unknown error", **context: Any
-    ) -> FormattedError:
-        """Try to format an error, falling back to default if lookup fails.
-
-        This is useful when you want to handle both known and unknown errors.
-
-        Args:
-            error: The exception to format.
-            default_message: Default message if formatting fails.
-            **context: Additional context variables.
-
-        Returns:
-            FormattedError instance.
-        """
-        try:
-            return self.format(error, **context)
-        except Exception:
-            # Fallback for any unexpected formatting errors
-            return FormattedError(
-                code="DSL-000",
-                message=default_message,
-                suggestion="An unexpected error occurred during error formatting.",
-                doc_url=f"{self.base_doc_url}/DSL-000",
-                details={"original_error": str(error)},
-                severity="ERROR",
-                category="GENERAL",
-            )
-
-    def get_registry_stats(self) -> Dict[str, Any]:
-        """Get statistics about error registry.
-
-        Returns:
-            Dictionary with registry statistics.
-        """
-        codes = self.registry.list_codes()
-        categories = {}
-        for code in codes:
-            definition = self.registry.get(code)
-            if definition:
-                cat = definition.category
-                categories[cat] = categories.get(cat, 0) + 1
-
-        return {
-            "total_errors": len(codes),
-            "categories": categories,
-            "i18n_enabled": self.enable_i18n,
-        }
+    message = _format_template(template, details, **context)
+    doc_url = error_def.doc_url or f"{base_doc_url}/{error_code}"
+    return FormattedError(
+        code=error_code,
+        message=message,
+        suggestion=suggestion,
+        doc_url=doc_url,
+        details=details,
+        severity=error_def.severity,
+        category=error_def.category,
+    )
 
 
 # =============================================================================
@@ -609,8 +358,12 @@ def format_error(
     Returns:
         FormattedError instance.
     """
-    formatter = ErrorFormatter(enable_i18n=enable_i18n, lang=lang)
-    return formatter.format(error, **context)
+    return _format_error_internal(
+        error,
+        enable_i18n=enable_i18n,
+        lang=lang,
+        **context,
+    )
 
 
 def safe_format(
@@ -634,13 +387,17 @@ def safe_format(
     Returns:
         Formatted error string.
     """
-    formatter = ErrorFormatter(enable_i18n=enable_i18n, lang=lang)
-    formatted = formatter.try_format(error, default_message, **context)
+    formatted = _format_error_internal(
+        error,
+        enable_i18n=enable_i18n,
+        lang=lang,
+        default_message=default_message,
+        **context,
+    )
     return str(formatted)
 
 
 __all__ = [
-    "ErrorFormatter",
     "FormattedError",
     "ErrorRegistry",
     "ErrorDefinition",

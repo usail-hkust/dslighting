@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# Import ErrorFormatter for consistent error messages
-from dslighting.error import ErrorFormatter, FormattedError
+# Import error formatter function for consistent error messages
+from dslighting.error import format_error
 
 # Setup logging
 logging.basicConfig(
@@ -19,10 +19,6 @@ logging.basicConfig(
     format='%(message)s'
 )
 logger = logging.getLogger(__name__)
-
-# Initialize error formatter
-_error_formatter = ErrorFormatter()
-
 
 def _find_config_path(config_arg: Optional[str]) -> Path:
     """Find config.yaml path from argument or search locations."""
@@ -719,15 +715,14 @@ def main():
         cmd_help(None)
         return 0
 
-    # Execute command with ErrorFormatter integration
+    # Execute command with formatted error integration
     try:
         return args.func(args)
     except KeyboardInterrupt:
         print(f"\n\nInterrupted")
         return 130
     except Exception as e:
-        # Use ErrorFormatter for consistent error messages
-        formatted_error = _error_formatter.format(e)
+        formatted_error = format_error(e)
 
         # Display user-friendly error message
         print(f"\nError: {formatted_error.message}")

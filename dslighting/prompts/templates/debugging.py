@@ -52,11 +52,6 @@ def create_generic_debug_prompt(
     return create_prompt_template(prompt_dict)
 
 
-# Alias for backward compatibility
-create_debug_prompt = create_generic_debug_prompt
-
-
 __all__ = [
     "create_generic_debug_prompt",
-    "create_debug_prompt",  # Backward compatibility alias
 ]

@@ -7,7 +7,6 @@ guarantees.
 
 from dslighting.api.task_loader import TaskLoader
 from dslighting.api.utils import (
-    get_default_paths,
     print_benchmark_banner,
     print_benchmark_info,
     validate_paths,
@@ -18,5 +17,4 @@ __all__ = [
     "print_benchmark_banner",
     "print_benchmark_info",
     "validate_paths",
-    "get_default_paths",
 ]

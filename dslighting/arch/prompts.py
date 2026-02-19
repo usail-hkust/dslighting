@@ -4,7 +4,6 @@ from dslighting.prompts import (
     PromptBuilder,
     PromptTemplate,
     StructuredPromptBuilder,
-    create_debug_prompt,
     create_eda_prompt,
     create_generic_debug_prompt,
     create_modeling_prompt,
@@ -24,6 +23,5 @@ __all__ = [
     "dict_to_str",
     "create_modeling_prompt",
     "create_eda_prompt",
-    "create_debug_prompt",
     "create_generic_debug_prompt",
 ]

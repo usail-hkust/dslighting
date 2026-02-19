@@ -30,7 +30,6 @@ Example Usage:
 
 from typing import Any, Dict, Optional
 from datetime import datetime
-import warnings
 
 
 class DSLightingError(Exception):
@@ -277,124 +276,10 @@ class WorkspaceError(DSLightingError):
     error_code: str = "WSP"
 
 
-# =============================================================================
-# Backward Compatibility Aliases
-# These provide compatibility with existing code that may reference old names
-# =============================================================================
-
-class DSLightingFrameworkError(DSLightingError):
-    """Legacy alias for DSLightingError.
-
-    .. deprecated::
-        Use :class:`DSLightingError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "DSL-000"
-
-
-class InvalidConfigError(ConfigurationError):
-    """Legacy alias for ConfigurationError.
-
-    .. deprecated::
-        Use :class:`ConfigurationError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "CFG"
-
-
-class WorkflowExecutionError(WorkflowError):
-    """Legacy alias for WorkflowError.
-
-    .. deprecated::
-        Use :class:`WorkflowError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "WRK"
-
-
-class BenchmarkTaskLoadError(BenchmarkError):
-    """Legacy alias for BenchmarkError.
-
-    .. deprecated::
-        Use :class:`BenchmarkError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "BMK"
-
-
-class LLMError(LLMServiceError):
-    """Legacy alias for LLMServiceError.
-
-    .. deprecated::
-        Use :class:`LLMServiceError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "LLM"
-
-
-class SandboxError(WorkspaceError):
-    """Legacy alias for WorkspaceError (sandbox-related errors).
-
-    .. deprecated::
-        Use :class:`WorkspaceError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "WSP"
-
-
 class DynamicImportError(DSLightingError):
-    """Legacy alias for general import errors.
+    """Raised when a dynamic import fails."""
 
-    .. deprecated::
-        Use :class:`DSLightingError` or more specific exceptions instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "DSL-000"
-
-
-# =============================================================================
-# Task-related Legacy Aliases
-# These were used in the old dslighting.utils.exceptions module
-# =============================================================================
-
-class TaskConfigInvalidError(ConfigurationError):
-    """Legacy alias for task configuration-related errors.
-
-    .. deprecated::
-        Use :class:`ConfigurationError` or :class:`TaskError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "CFG"
-
-
-class TaskRegistryNotFoundError(BenchmarkError):
-    """Legacy alias for task registry not found errors.
-
-    .. deprecated::
-        Use :class:`BenchmarkError` or :class:`TaskError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "BMK"
-
-
-class CompetitionContextMissingError(BenchmarkError):
-    """Legacy alias for competition context missing errors.
-
-    .. deprecated::
-        Use :class:`BenchmarkError` or :class:`TaskError` instead.
-        This alias will be removed in version 3.0.0.
-    """
-
-    error_code: str = "BMK"
+    error_code: str = "IMP"
 
 
 # Export all exception classes for convenient imports
@@ -406,16 +291,5 @@ __all__ = [
     "LLMServiceError",
     "TaskError",
     "WorkspaceError",
-    # Legacy aliases
-    "DSLightingFrameworkError",
-    "InvalidConfigError",
-    "WorkflowExecutionError",
-    "BenchmarkTaskLoadError",
-    "LLMError",
-    "SandboxError",
     "DynamicImportError",
-    # Task-related legacy aliases
-    "TaskConfigInvalidError",
-    "TaskRegistryNotFoundError",
-    "CompetitionContextMissingError",
 ]

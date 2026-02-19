@@ -11,7 +11,6 @@ Builder Classes:
 Template Functions:
 - create_modeling_prompt: Create prompts for ML modeling tasks
 - create_eda_prompt: Create prompts for exploratory data analysis
-- create_debug_prompt: Create prompts for debugging (alias for create_generic_debug_prompt)
 - create_generic_debug_prompt: Generic debugging prompt for any task type
 
 Utility Functions:
@@ -38,7 +37,6 @@ from dslighting.prompts.templates.data_science import (
 )
 from dslighting.prompts.templates.debugging import (
     create_generic_debug_prompt,
-    create_debug_prompt,  # Backward compatibility alias
 )
 
 __all__ = [
@@ -55,6 +53,5 @@ __all__ = [
     # Template functions
     "create_modeling_prompt",
     "create_eda_prompt",
-    "create_debug_prompt",
     "create_generic_debug_prompt",
 ]

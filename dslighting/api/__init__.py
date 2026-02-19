@@ -8,7 +8,6 @@ Preferred import paths:
 from . import internal, public
 from .internal import (
     TaskLoader,
-    get_default_paths,
     print_benchmark_banner,
     print_benchmark_info,
     validate_paths,
@@ -41,5 +40,4 @@ __all__ = [
     "print_benchmark_banner",
     "print_benchmark_info",
     "validate_paths",
-    "get_default_paths",
 ]

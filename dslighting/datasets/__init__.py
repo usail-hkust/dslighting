@@ -135,13 +135,8 @@ def load_example(name: str, data_dir: Optional[str] = None) -> dict:
     }
 
 
-# Alias for backwards compatibility
-load_dataset = load_example
-
-
 __all__ = [
     "get_data_path",
     "list_datasets",
     "load_example",
-    "load_dataset",  # Deprecated: use load_example instead
 ]
