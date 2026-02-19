@@ -6,15 +6,21 @@ Provides standard MLE task loading functionality, users don't need to reimplemen
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
+from dslighting.config import DSLightingConfig, RunConfig, SandboxConfig, WorkflowConfig
 from dslighting.core.data import TaskContext
+from dslighting.core.execution import TaskExecutor
+from dslighting.core.interfaces import WorkflowFactoryInterface
+
+if TYPE_CHECKING:
+    from dslighting.runner import DSLightingRunner
 
 logger = logging.getLogger(__name__)
 
 
-class BaseWorkflowFactory(ABC):
+class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
     """
     Base class for Workflow Factory
 
@@ -80,6 +86,7 @@ class BaseWorkflowFactory(ABC):
             provider=provider,
             temperature=temperature,
         )
+        self._base_config = config
 
         # Extract LLM config from configuration
         llm_config = config.llm
@@ -100,6 +107,7 @@ class BaseWorkflowFactory(ABC):
         logger.debug(f"  - Model: {model}")
         logger.debug(f"  - Timeout: {timeout}s")
         logger.debug(f"  - Keep workspace: {keep_workspace}")
+        self._last_runner: Optional[DSLightingRunner] = None
 
     def _get_workflow_name(self) -> str:
         """
@@ -301,247 +309,44 @@ class BaseWorkflowFactory(ABC):
             >>> # Specify output filename
             >>> await factory.run_with_task_id("bike-sharing-demand", output_path="my_submission.csv")
         """
-        logger.info(f"=" * 80)
-        logger.info(f"Running {self.__class__.__name__} with task_id")
-        logger.info(f"=" * 80)
-        logger.info(f"  Task ID: {task_id}")
-        logger.info(f"  Agent Config: {agent_kwargs}")
-        logger.info(f"=" * 80)
+        if task_loader is not None:
+            logger.warning("`task_loader` is ignored; shared runner path always uses MLETaskLoader.")
 
-        # Use TaskLoader to load task
-        if task_loader is None:
-            from dslighting.core.tasks import MLETaskLoader
-            task_loader = MLETaskLoader()
-
-        # For MLE format, only analyze public data (avoid leaking private/test_answer.csv)
-        public_dir = data_dir / "prepared" / "public"
-
-        if not public_dir.exists():
-            logger.error(f"Public data directory not found: {public_dir}")
-            logger.error(f"Expected structure: {data_dir}/prepared/public/train.csv")
-            raise FileNotFoundError(
-                f"Public data directory not found: {public_dir}\n"
-                f"Expected structure: {data_dir}/prepared/public/train.csv"
-            )
-
-        logger.info(f"Using public data directory (avoid leaking answer): {public_dir}")
-
-        # Load standard MLE format task config (pass public_dir, not data_dir)
-        description, io_instructions, _, default_output_path = task_loader.load_task(
+        config = self._build_config(task_id=task_id, run_kwargs=agent_kwargs)
+        executor = TaskExecutor(config=config, workflow_name=self._get_workflow_name())
+        return await executor.run_with_task_id(
             task_id=task_id,
-            data_dir=public_dir  # Only analyze public directory
+            data_dir=data_dir,
+            output=output_path,
+            on_runner_created=lambda runner: setattr(self, "_last_runner", runner),
         )
 
-        # If user provided output_path, use theirs; otherwise use default
-        output_path = output_path or default_output_path
-
-        # Verify load result
-        logger.info(f"Task load completed:")
-        logger.info(f"  - Description length: {len(description)} characters")
-        logger.info(f"  - I/O Instructions length: {len(io_instructions)} characters")
-        logger.info(f"  - Public directory: {public_dir}")
-        logger.info(f"  - Output path: {output_path}")
-
-        # Automatically process data links (base infrastructure layer)
-        # Link contents of public_dir to sandbox root
-        logger.info(f"Automatically linking public data to sandbox...")
-        logger.info(f"  Source directory: {public_dir}")
-        self.workspace_service.link_data_to_workspace(public_dir)
-        logger.info(f"  Sandbox is ready")
-
-        # Check if io_instructions is complete (should contain "CRITICAL I/O REQUIREMENTS")
-        if len(io_instructions) < 100 or "CRITICAL I/O" not in io_instructions:
-            logger.warning(f"I/O Instructions may be incomplete! Length: {len(io_instructions)}")
-            logger.warning(f"  First 200 characters: {io_instructions[:200]}")
-            logger.warning(f"  This may cause the model to not correctly understand file path requirements!")
-            logger.warning(f"  Attempting to regenerate complete I/O instructions...")
-
-            # Attempt to regenerate complete I/O instructions
-            try:
-                from dslighting.services.data_analyzer import DataAnalyzer
-                analyzer = DataAnalyzer()
-                io_instructions = analyzer.generate_io_instructions(
-                    output_path.name,
-                    optimization_context=False
-                )
-                logger.info(f"Successfully regenerated I/O instructions! Length: {len(io_instructions)}")
-            except Exception as e:
-                logger.error(f"Regeneration failed: {e}")
-                # Final fallback: use hardcoded format
-                io_instructions = f"""
---- CRITICAL I/O REQUIREMENTS ---
-
-You MUST follow these file system rules precisely. Failure to do so will cause a fatal error.
-
-1. **INPUT DATA:**
-   - All input files are located in the **current working directory** (./).
-   - Example: Use `pd.read_csv('train.csv')`.
-
-2. **OUTPUT FILE:**
-   - You MUST save your final submission file to the **current working directory** (./).
-   - The required output filename is: `{output_path.name}`
-   - **Correct Example:** `submission_df.to_csv('{output_path.name}', index=False)`
-
-**IMPORTANT:** These path requirements are non-negotiable and must be followed exactly.
-"""
-
-        # Create agent (merge parameters saved during __init__ with runtime parameters)
-        all_agent_kwargs = {**self._agent_init_kwargs, **agent_kwargs}
-        agent = self.create_agent(**all_agent_kwargs)
-
-        # Record start time (used for calculating duration)
-        import time
-        start_time = time.time()
-
-        # Run workflow (pass public_dir to workflow)
-        await agent.solve(
-            description=description,
-            io_instructions=io_instructions,  # Contains output file name requirements
-            data_dir=public_dir  # Only pass public directory to workflow
+    def _build_config(self, task_id: str, run_kwargs: dict[str, Any]) -> DSLightingConfig:
+        config = self._base_config.model_copy(deep=True)
+        config.run = RunConfig(
+            name=f"{self._get_workflow_name()}_{task_id}",
+            keep_all_workspaces=self.keep_workspace,
+            keep_workspace_on_failure=self.keep_workspace,
         )
+        config.workflow = WorkflowConfig(name=self._get_workflow_name(), params={})
+        config.sandbox = SandboxConfig(timeout=self.timeout)
 
-        # Calculate execution time
-        duration = time.time() - start_time
+        merged = {**self._agent_init_kwargs, **run_kwargs}
+        search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
+        if self._get_workflow_name() != "autokaggle":
+            search_keys.add("enforce_no_plotting")
+        for key in search_keys:
+            if key in merged:
+                setattr(config.agent.search, key, merged.pop(key))
 
-        # Auto-grading (base infrastructure, users don't need to care)
-        logger.info(f"\n{'='*80}")
-        logger.info(f"Auto-grading in progress...")
-        logger.info(f"{'='*80}")
+        autokaggle_keys = {"max_attempts_per_phase", "success_threshold"}
+        if self._get_workflow_name() == "autokaggle":
+            autokaggle_keys.add("enforce_no_plotting")
+        for key in autokaggle_keys:
+            if key in merged:
+                setattr(config.agent.autokaggle, key, merged.pop(key))
 
-        score = None
-        try:
-            # Get submission file path
-            submission_file = self.workspace_service.get_path("sandbox_workdir") / output_path.name
+        if merged:
+            config.run.parameters.update(merged)
 
-            if submission_file.exists():
-                logger.info(f"Submission file: {submission_file}")
-
-                # Universal grading logic: try multiple ways to load benchmark
-                benchmark = None
-                benchmark_loaded = False
-
-                # Method 1: Check if task_loader has load_benchmark method
-                if hasattr(task_loader, 'load_benchmark'):
-                    try:
-                        logger.info(f"Attempting to use task_loader.load_benchmark()...")
-                        benchmark = task_loader.load_benchmark(
-                            task_id=task_id,
-                            data_dir=data_dir
-                        )
-                        if benchmark:
-                            benchmark_loaded = True
-                            logger.info(f"Benchmark loaded via task_loader")
-                    except Exception as e:
-                        logger.warning(f"task_loader.load_benchmark() failed: {e}")
-
-                # Fallback 2: Try loading directly from bundled registry
-                if not benchmark_loaded:
-                    try:
-                        logger.info("Attempting to load directly from bundled registry...")
-                        from pathlib import Path as LibPath
-                        if task_id.startswith("dabench-"):
-                            from dslighting.benchmark.vendor.dabench.registry import Registry as DirectRegistry
-                        else:
-                            from dslighting.benchmark.vendor.mlebench.registry import Registry as DirectRegistry
-
-                        data_root = LibPath(data_dir)
-                        if data_root.name in ("public", "public_val") and data_root.parent.name in (
-                            "prepared",
-                            "prepared_val",
-                        ):
-                            data_root = data_root.parent.parent.parent
-                        elif data_root.name == task_id and (data_root / "prepared").exists():
-                            data_root = data_root.parent
-
-                        registry = DirectRegistry().set_data_dir(data_root)
-                        competition = registry.get_competition(task_id)
-
-                        if competition:
-                            # Create simple benchmark wrapper
-                            class DirectBenchmark:
-                                def __init__(self, comp):
-                                    self.competition = comp
-
-                                async def grade(self, submission_path: str):
-                                    from dslighting.benchmark.vendor.mlebench.grade import grade_csv
-                                    report = grade_csv(LibPath(submission_path), self.competition)
-                                    return {
-                                        'score': report.score,
-                                        'valid_submission': report.valid_submission
-                                    }
-
-                            benchmark = DirectBenchmark(competition)
-                            benchmark_loaded = True
-                            logger.debug("Loaded benchmark directly from bundled registry")
-                    except Exception as e:
-                        logger.warning(f"Failed to load bundled registry directly: {e}")
-
-                # Fallback 3: Use universal grading (check file format)
-                if not benchmark_loaded:
-                    logger.info(f"Using universal grading logic...")
-                    try:
-                        import pandas as pd
-                        # Check if file can be read normally
-                        df = pd.read_csv(submission_file)
-                        logger.info(f"Valid submission file: {len(df)} rows")
-
-                        # Universal grading: file exists and is readable = success
-                        # (Cannot calculate real score without ground truth)
-                        score = 0.0
-                        logger.info(f"Universal grading: file valid but cannot calculate real score (requires ground truth)")
-                        logger.info(f"Tip: Implement task_loader.load_benchmark() method to get real score")
-                    except Exception as e:
-                        logger.warning(f"Universal grading failed: {e}")
-
-                # If benchmark was successfully loaded, use it for grading
-                if benchmark_loaded and benchmark and hasattr(benchmark, 'grade'):
-                    try:
-                        # Call benchmark.grade() for grading
-                        grade_result = await benchmark.grade(
-                            submission_path=str(submission_file)
-                        )
-
-                        # Extract score (grade_result may be dict or object)
-                        if isinstance(grade_result, dict):
-                            score = grade_result.get('score', grade_result.get('metric', 0.0))
-                        else:
-                            score = float(grade_result) if grade_result is not None else 0.0
-
-                        logger.info(f"Auto-grading completed | Score: {score}")
-                    except Exception as e:
-                        logger.warning(f"Benchmark grading failed: {e}")
-                        logger.warning(f"   Will fall back to universal grading")
-                        score = 0.0
-            else:
-                logger.warning(f"Submission file not found: {submission_file}")
-                logger.warning(f"   Workflow execution failed, cannot grade")
-
-        except Exception as e:
-            logger.warning(f"Auto-grading failed: {e}")
-            logger.warning(f"   Please check submission file format and benchmark configuration")
-
-        logger.info(f"{'='*80}\n")
-
-        # Build result object
-        from types import SimpleNamespace
-        result = SimpleNamespace()
-
-        # Determine success: submission file exists and grading completed
-        result.score = score if score is not None else 0.0
-        result.success = score is not None
-        result.error = None if score is not None else "Grading failed or submission not found"
-
-        # Get cost (from LLM service)
-        result.cost = self.llm_service.get_total_cost() if hasattr(self.llm_service, 'get_total_cost') else 0.0
-        result.duration = duration
-
-        logger.info(f"=" * 80)
-        logger.info(f"Workflow completed")
-        logger.info(f"  - Success: {result.success}")
-        logger.info(f"  - Score: {result.score}")
-        logger.info(f"  - Cost: ${result.cost:.4f}")
-        logger.info(f"  - Duration: {result.duration:.2f}s")
-        logger.info(f"=" * 80)
-
-        # Return result object
-        return result
+        return config

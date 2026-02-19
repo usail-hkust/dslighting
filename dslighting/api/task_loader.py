@@ -50,31 +50,30 @@ class TaskLoader:
             return f"dabench-{num}"
         return task_id
 
-    # Predefined MLE-Lite task list (22 Low complexity tasks)
+    # Predefined MLE-Lite task list (22 curated tasks)
     MLE_LITE_TASKS = [
         "aerial-cactus-identification",
         "aptos2019-blindness-detection",
-        "bus-ticket-reactor-prediction",
-        "cifar10-object-recognition",
-        "city-of-los-angeles-parking-citations",
-        "connectx",
-        "contradictory-dear-watson",
-        "digit-recognizer",
-        "dm-embedded",
-        "dont-be-deceived",
-        "ghouls-goblins-and-ghosts-boooo",
-        "honey-crypt-prediction",
-        "icecube-neutrinos",
-        "icecube-neutrinos-deep-learning",
-        "janestreet-market-time-series",
-        "jet-tagging",
-        "llm-detect-ai-gen-text",
-        "m5-forecasting-accuracy",
-        "minileagues-modelling-dm-cryptic",
-        "minileagues-replicating-dm-cryptic",
-        "molecular-translation",
-        "nlp-scratch",
+        "denoising-dirty-documents",
+        "detecting-insults-in-social-commentary",
+        "dog-breed-identification",
+        "dogs-vs-cats-redux-kernels-edition",
+        "histopathologic-cancer-detection",
+        "jigsaw-toxic-comment-classification-challenge",
+        "leaf-classification",
+        "mlsp-2013-birds",
+        "new-york-city-taxi-fare-prediction",
+        "nomad2018-predict-transparent-conductors",
+        "plant-pathology-2020-fgvc7",
+        "random-acts-of-pizza",
+        "ranzcr-clip-catheter-line-classification",
         "siim-isic-melanoma-classification",
+        "spooky-author-identification",
+        "tabular-playground-series-dec-2021",
+        "tabular-playground-series-may-2022",
+        "text-normalization-challenge-english-language",
+        "text-normalization-challenge-russian-language",
+        "the-icml-2013-whale-challenge-right-whale-redux",
     ]
 
     # Summary Statistics (90 competitions)

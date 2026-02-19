@@ -142,18 +142,30 @@ class MLELiteBenchmark(BaseBenchmark):
         >>> results = benchmark.run_evaluation(eval_fn)
     """
 
-    # Built-in curated task list (10 core competitions)
+    # Built-in curated task list (22 competitions)
     DEFAULT_COMPETITIONS = [
-        "bike-sharing-demand",
-        "titanic",
-        "house-prices",
-        "new-york-city-taxi-fare-prediction",
-        "tabular-playground-series-dec-2021",
-        "histopathologic-cancer-detection",
+        "aerial-cactus-identification",
         "aptos2019-blindness-detection",
+        "denoising-dirty-documents",
+        "detecting-insults-in-social-commentary",
+        "dog-breed-identification",
+        "dogs-vs-cats-redux-kernels-edition",
+        "histopathologic-cancer-detection",
+        "jigsaw-toxic-comment-classification-challenge",
+        "leaf-classification",
+        "mlsp-2013-birds",
+        "new-york-city-taxi-fare-prediction",
+        "nomad2018-predict-transparent-conductors",
+        "plant-pathology-2020-fgvc7",
+        "random-acts-of-pizza",
+        "ranzcr-clip-catheter-line-classification",
+        "siim-isic-melanoma-classification",
         "spooky-author-identification",
-        "us-patent-phrase-to-phrase-matching",
-        "google-quest-challenge",
+        "tabular-playground-series-dec-2021",
+        "tabular-playground-series-may-2022",
+        "text-normalization-challenge-english-language",
+        "text-normalization-challenge-russian-language",
+        "the-icml-2013-whale-challenge-right-whale-redux",
     ]
 
     RESULT_COLUMNS = [

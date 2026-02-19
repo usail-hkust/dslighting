@@ -55,7 +55,9 @@ _LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
     "AutoMind": ("dslighting.workflows.presets", "AutoMind"),
     "AFlow": ("dslighting.workflows.presets", "AFlow"),
     # Config and task types
+    "DSLightingConfig": ("dslighting.config", "DSLightingConfig"),
     "LLMConfig": ("dslighting.config", "LLMConfig"),
+    "SchedulerConfig": ("dslighting.config", "SchedulerConfig"),
     "DagRuntimeConfig": ("dslighting.config", "DagRuntimeConfig"),
     "TaskConfig": ("dslighting.config", "TaskConfig"),
     "ConfigBuilder": ("dslighting.core.config", "ConfigBuilder"),
@@ -69,6 +71,8 @@ _LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
     "BenchmarkFactory": ("dslighting.benchmark", "BenchmarkFactory"),
     # Datasets
     "datasets": ("dslighting.datasets", None),
+    # Advanced architecture namespace
+    "arch": ("dslighting.arch", None),
     "TaskDefinition": ("dslighting.core.types", "TaskDefinition"),
     "TaskType": ("dslighting.core.types", "TaskType"),
     "TaskMode": ("dslighting.core.types", "TaskMode"),
@@ -214,7 +218,9 @@ __all__ = [
     "DSAgent",
     "AutoMind",
     "AFlow",
+    "DSLightingConfig",
     "LLMConfig",
+    "SchedulerConfig",
     "DagRuntimeConfig",
     "TaskConfig",
     "ConfigBuilder",
@@ -254,6 +260,8 @@ __all__ = [
     "CheckpointManager",
     # Datasets
     "datasets",
+    # Advanced architecture namespace
+    "arch",
     "help",
     "list_workflows",
     "list_prompts",

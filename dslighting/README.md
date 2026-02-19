@@ -89,12 +89,12 @@ cp .env.example .env
 
 ```python
 from dotenv import load_dotenv
+from dslighting.api import run_agent
+
 load_dotenv()
 
-import dslighting
-
 # Built-in dataset - no data preparation needed!
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+result = run_agent(task_id="bike-sharing-demand")
 
 print(f"✅ Success: {result.success}")
 print(f"📊 Score: {result.score}")
@@ -104,10 +104,15 @@ print(f"💰 Cost: ${result.cost}")
 ### Mode 2: Architecture (Full Control)
 
 ```python
-from dslighting import BaseAgent, GenerateCodeAndPlanOperator, ExecuteAndTestOperator
-from dslighting.services import LLMService, SandboxService, WorkspaceService
-from dslighting.state import JournalState
-from dslighting.prompts import PromptBuilder
+from dslighting.arch.workflows import AIDEWorkflow
+from dslighting.arch.operators import (
+    ExecuteAndTestOperator,
+    GenerateCodeAndPlanOperator,
+    LLMBasedReviewOperator,
+)
+from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
+from dslighting.arch.state import JournalState
+from dslighting.arch.prompts import PromptBuilder
 
 # Create services
 services = {
@@ -126,14 +131,17 @@ operators = {
     "execute": ExecuteAndTestOperator(
         sandbox_service=services["sandbox"]
     ),
+    "review": LLMBasedReviewOperator(
+        llm_service=services["llm"]
+    ),
 }
 
 # Create and run agent
-agent = BaseAgent(operators, services)
+agent = AIDEWorkflow(operators, services, {"search": {"max_iterations": 5}})
 result = agent.run(
-    description="Build a model to predict bike sharing demand",
-    data_dir="data/competitions/bike-sharing-demand",
-    output_path="submission.csv"
+    data="data/competitions/bike-sharing-demand",
+    task="Build a model to predict bike sharing demand",
+    output="submission.csv"
 )
 ```
 
@@ -183,7 +191,9 @@ result = agent.run(
 #### `run_agent()` - One-liner execution
 
 ```python
-result = dslighting.run_agent(
+from dslighting.api import run_agent
+
+result = run_agent(
     task_id="bike-sharing-demand",  # Built-in or custom task
     workflow="aide",                 # Optional: workflow name
     model="gpt-4o"                   # Optional: model name
@@ -193,7 +203,9 @@ result = dslighting.run_agent(
 #### `Agent` - Main interface
 
 ```python
-agent = dslighting.Agent(
+from dslighting.api import Agent
+
+agent = Agent(
     workflow="aide",        # Workflow: aide, autokaggle, dsagent, etc.
     model="gpt-4o",         # LLM model
     temperature=0.7,        # LLM temperature
@@ -210,7 +222,9 @@ result = agent.run(
 #### `DataLoader` - Load data
 
 ```python
-loader = dslighting.DataLoader()
+from dslighting.api import DataLoader
+
+loader = DataLoader()
 
 # Auto-detect data type
 data = loader.load("path/to/data")
@@ -227,13 +241,15 @@ data = loader.load_built_in("bike-sharing-demand")
 #### `setup()` - Global configuration
 
 ```python
-dslighting.setup(
+from dslighting.api import Agent, setup
+
+setup(
     data_parent_dir="/path/to/data/competitions",
     registry_parent_dir="/path/to/registry"
 )
 
 # Now tasks can run with just task_id
-agent = dslighting.Agent()
+agent = Agent()
 result = agent.run(task_id="my-task")
 ```
 
@@ -242,20 +258,20 @@ result = agent.run(task_id="my-task")
 #### 🧠 Agent Layer
 
 ```python
-from dslighting import BaseAgent, IterativeAgent
+from dslighting.arch.workflows import BaseWorkflow, AIDEWorkflow
 
-# Base agent for single-step tasks
-agent = BaseAgent(operators, services, agent_config)
-result = agent.run(description, data_dir, output_path)
-
-# Iterative agent for multi-step tasks
-agent = IterativeAgent(operators, services, agent_config)
-result = await agent.solve(description, io_instructions, data_dir, output_path)
+# Base interface for all workflows
+workflow: BaseWorkflow = AIDEWorkflow(operators, services, agent_config)
+result = workflow.run(
+    data="data/competitions/bike-sharing-demand",
+    task="Build a model to predict bike sharing demand",
+    output="submission.csv",
+)
 ```
 
 **Preset Agents**:
 ```python
-from dslighting import AIDE, AutoKaggle, DataInterpreter, DSAgent
+from dslighting.arch.workflows import AIDE, AutoKaggle, DataInterpreter, DSAgent
 
 agent = AIDE(model="gpt-4o")  # Adaptive Iteration & Debugging
 agent = AutoKaggle(model="gpt-4o")  # Competition solver
@@ -266,10 +282,10 @@ agent = DSAgent(model="gpt-4o")  # Structured workflow
 #### 💪 Operator Layer
 
 ```python
-from dslighting.operators import (
+from dslighting.arch.operators import (
     GenerateCodeAndPlanOperator,
     ExecuteAndTestOperator,
-    ReviewOperator,
+    LLMBasedReviewOperator,
     Pipeline,
     Parallel
 )
@@ -278,7 +294,7 @@ from dslighting.operators import (
 operators = {
     "generate": GenerateCodeAndPlanOperator(llm_service=llm),
     "execute": ExecuteAndTestOperator(sandbox_service=sandbox),
-    "review": ReviewOperator(llm_service=llm),
+    "review": LLMBasedReviewOperator(llm_service=llm),
 }
 
 # Orchestration
@@ -292,7 +308,7 @@ pipeline = Pipeline([
 #### ⚙️ Service Layer
 
 ```python
-from dslighting.services import LLMService, SandboxService, WorkspaceService
+from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
 
 # LLM Service
 llm = LLMService(
@@ -318,7 +334,7 @@ services = {
 #### 📝 State Layer
 
 ```python
-from dslighting.state import JournalState, Node, MetricValue
+from dslighting.arch.state import JournalState, Node, MetricValue
 
 # Journal state for search tree
 state = JournalState()
@@ -337,7 +353,7 @@ state.add_node(node)
 #### 🗣️ Prompt Layer
 
 ```python
-from dslighting.prompts import (
+from dslighting.arch.prompts import (
     PromptBuilder,
     create_modeling_prompt,
     get_common_guidelines
@@ -364,34 +380,36 @@ prompt = create_modeling_prompt(
 ### Example 1: Built-in Dataset (Simplest)
 
 ```python
-import dslighting
+from dslighting.api import run_agent
 
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+result = run_agent(task_id="bike-sharing-demand")
 print(f"Score: {result.score}")
 ```
 
 ### Example 2: Custom Dataset with Simplified API
 
 ```python
-import dslighting
+from dslighting.api import Agent, setup
 
 # Setup data directories
-dslighting.setup(
+setup(
     data_parent_dir="data/competitions",
     registry_parent_dir="dslighting/registry"
 )
 
 # Run agent
-agent = dslighting.Agent(workflow="aide")
+agent = Agent(workflow="aide")
 result = agent.run(task_id="my-competition")
 ```
 
 ### Example 3: Custom Agent with Operators
 
 ```python
-from dslighting import IterativeAgent, GenerateCodeAndPlanOperator, ExecuteAndTestOperator
-from dslighting.services import LLMService, SandboxService, WorkspaceService
-from dslighting.state import JournalState
+from pathlib import Path
+from dslighting.arch.workflows import AIDEWorkflow
+from dslighting.arch.operators import GenerateCodeAndPlanOperator, ExecuteAndTestOperator, LLMBasedReviewOperator
+from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
+from dslighting.arch.state import JournalState
 
 # Create services
 services = {
@@ -405,26 +423,27 @@ services = {
 operators = {
     "generate": GenerateCodeAndPlanOperator(llm_service=services["llm"]),
     "execute": ExecuteAndTestOperator(sandbox_service=services["sandbox"]),
+    "review": LLMBasedReviewOperator(llm_service=services["llm"]),
 }
 
 # Create agent
-agent = IterativeAgent(operators, services, {"max_iterations": 5})
+agent = AIDEWorkflow(operators, services, {"search": {"max_iterations": 5}})
 
 # Run
 result = await agent.solve(
     description="Build a model to predict customer churn",
     io_instructions="Use train.csv for training, submit predictions on test.csv",
-    data_dir="data/churn-competition",
-    output_path="submission.csv"
+    data_dir=Path("data/churn-competition"),
+    output_path=Path("submission.csv"),
 )
 ```
 
 ### Example 4: Custom Workflow Factory (v2.3.0+)
 
 ```python
-from dslighting import BaseWorkflowFactory
-from dslighting.operators import GenerateCodeAndPlanOperator, ExecuteAndTestOperator
-from dslighting.state import JournalState
+from dslighting.arch.workflows import BaseWorkflowFactory
+from dslighting.arch.operators import GenerateCodeAndPlanOperator, ExecuteAndTestOperator
+from dslighting.arch.state import JournalState
 
 class MyWorkflowFactory(BaseWorkflowFactory):
     """Custom workflow factory"""
@@ -453,23 +472,23 @@ await factory.run_with_task_id("bike-sharing-demand")
 ### Example 5: Exploration and Discovery
 
 ```python
-import dslighting
+from dslighting import explore, help, list_workflows, list_operators, list_prompts
 
 # Show help
-dslighting.help()
+help()
 
 # List available workflows
-dslighting.list_workflows()
+list_workflows()
 
 # Explore all components
-dslighting.explore()
+explore()
 
 # List available operators
-ops = dslighting.list_operators()
+ops = list_operators()
 print(f"Available operators: {ops}")
 
 # List available prompts
-prompts = dslighting.list_prompts()
+prompts = list_prompts()
 print(f"Available prompts: {prompts}")
 ```
 
@@ -555,9 +574,9 @@ class AgentResult:
 ### Access Underlying DSAT Components
 
 ```python
-import dslighting
+from dslighting.api import Agent
 
-agent = dslighting.Agent()
+agent = Agent()
 
 # Access DSATConfig
 config = agent.get_config()
@@ -590,7 +609,7 @@ result = agent.run(
 ### Batch Processing
 
 ```python
-agent = dslighting.Agent()
+agent = Agent()
 
 results = agent.run_batch([
     "data/competitions/titanic",
@@ -613,8 +632,9 @@ DSLighting includes built-in datasets (v1.8.1+):
   - Ready to use, no download needed
 
 ```python
-import dslighting
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+from dslighting.api import run_agent
+
+result = run_agent(task_id="bike-sharing-demand")
 ```
 
 ---
@@ -634,23 +654,18 @@ DSLighting supports multiple benchmarks for evaluating data science agent perfor
 DSLighting uses unified `DSBenchmark` API to run all benchmarks:
 
 ```python
-import os
-from dslighting.api import DSBenchmark, AgentSettingsConfig, RuntimeConfig
+from dslighting.api import DSBenchmark, DSLightingConfig
+from dslighting.config import WorkflowConfig
 
-# Configure agent
-agent_config = AgentSettingsConfig(
-    model="gpt-4o",
-    workflow="aide",
-    max_iterations=3,
-)
-
-# Configure runtime (optional)
-runtime_config = RuntimeConfig(
-    max_concurrency=128,
-    scheduler_policy="full_parallel",
-    dag_enabled=True,
-    dag_mode="fine",
-)
+# Unified single config object
+config = DSLightingConfig()
+config.llm.model = "gpt-4o"
+config.workflow = WorkflowConfig(name="aide", params={})
+config.agent.search.max_iterations = 3
+config.scheduler.max_concurrency = 128
+config.scheduler.scheduler_policy = "full_parallel"
+config.run.dag_runtime.enabled = True
+config.run.dag_runtime.dag_mode = "fine"
 
 # Run DABench
 benchmark = DSBenchmark(
@@ -658,8 +673,7 @@ benchmark = DSBenchmark(
     data_dir="/path/to/dabench/data",
     exp_name="my_dabench_run",
 ).run(
-    agent_config=agent_config,
-    runtime_config=runtime_config,
+    config=config,
     log_path="./logs",
     verbose=True,
 )
@@ -670,8 +684,7 @@ benchmark = DSBenchmark(
     data_dir="/path/to/mle_bench/data",
     exp_name="my_mle_run",
 ).run(
-    agent_config=agent_config,
-    runtime_config=runtime_config,
+    config=config,
     log_path="./logs",
 )
 
@@ -681,8 +694,7 @@ benchmark = DSBenchmark(
     data_dir="/path/to/scienceagent_bench/data",
     exp_name="my_science_run",
 ).run(
-    agent_config=agent_config,
-    runtime_config=runtime_config,
+    config=config,
     log_path="./logs",
 )
 ```
@@ -715,25 +727,23 @@ DSLighting supports fine-grained DAG (Directed Acyclic Graph) optimization for p
 | `coarse` | Coarse-grained DAG mode - optimizes at task level | Simple task dependencies, lower overhead |
 
 ```python
-from dslighting.api import RuntimeConfig
+from dslighting.api import DSLightingConfig
 
-# Enable DAG optimization
-runtime_config = RuntimeConfig(
-    # Task Scheduling
-    max_concurrency=128,
-    scheduler_policy="full_parallel",
-    queue_policy="fifo",
+# Enable DAG optimization in unified config
+config = DSLightingConfig()
 
-    # DAG Runtime Configuration
-    dag_enabled=True,          # Enable DAG optimization
-    dag_mode="fine",           # fine or coarse
-    max_inflight_nodes=18,     # Maximum concurrent nodes
-    dag_node_timeout_seconds=21600.0,  # 6 hours for long-running ML tasks
-    dag_max_retries=3,         # Retry failed nodes
+# Task Scheduling
+config.scheduler.max_concurrency = 128
+config.scheduler.scheduler_policy = "full_parallel"
+config.scheduler.queue_policy = "fifo"
 
-    # Queue policies
-    ready_queue_policy="fifo",
-)
+# DAG Runtime Configuration
+config.run.dag_runtime.enabled = True
+config.run.dag_runtime.dag_mode = "fine"                 # fine or coarse
+config.run.dag_runtime.max_inflight_nodes = 18           # Maximum concurrent nodes
+config.run.dag_runtime.node_timeout_seconds = 21600.0    # 6 hours for long-running ML tasks
+config.run.dag_runtime.max_retries = 3                   # Retry failed nodes
+config.run.dag_runtime.ready_queue_policy = "fifo"
 ```
 
 **DAG Benefits:**
@@ -791,9 +801,9 @@ await benchmark.run_evaluation(eval_fn)
 ### New Way (v2.0+)
 
 ```python
-import dslighting
+from dslighting.api import run_agent
 
-result = dslighting.run_agent("data/competitions/titanic")
+result = run_agent(data="data/competitions/titanic")
 ```
 
 **Key Benefits**:

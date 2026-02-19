@@ -19,6 +19,7 @@ from dslighting.config import (
     WorkflowConfig,
     AgentConfig,
     SandboxConfig,
+    SchedulerConfig,
 )
 from dslighting.error import ConfigurationError
 
@@ -391,6 +392,10 @@ class ConfigBuilder:
         sandbox_dict = config_dict.get("sandbox", {})
         sandbox_config = SandboxConfig(**sandbox_dict)
 
+        # Extract scheduler config
+        scheduler_dict = config_dict.get("scheduler", {})
+        scheduler_config = SchedulerConfig(**scheduler_dict)
+
         # Create DSLightingConfig
         return DSLightingConfig(
             llm=llm_config,
@@ -398,6 +403,7 @@ class ConfigBuilder:
             run=run_config,
             agent=agent_config,
             sandbox=sandbox_config,
+            scheduler=scheduler_config,
         )
 
     def _deep_merge(self, base: Dict, update: Dict) -> Dict:
@@ -520,7 +526,7 @@ class ConfigBuilder:
                     try:
                         section[key] = coercer(section[key])
                     except (ValueError, TypeError):
-                        self.logger.warning(
+                        logger.warning(
                             f"Cannot coerce '{key}' to expected type, keeping original value"
                         )
 

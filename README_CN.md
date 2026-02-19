@@ -206,40 +206,54 @@ result = agent.run(task_id="my-custom-task")
 **示例：构建自定义 Agent**
 
 ```python
-from dslighting.operators.custom import SimpleOperator
+from dslighting.arch.interfaces import WorkflowFactoryInterface
+from dslighting.arch.operators import Operator
+from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
+from dslighting.arch.state import JournalState
+from dslighting.arch.workflows import BaseWorkflow, BaseWorkflowFactory
 
-# 1. 定义操作符（可复用的能力）
-async def summarize(text: str) -> dict:
-    return {"summary": text[:200]}
+# 1. 定义操作符（可复用能力）
+class SummarizeOperator(Operator):
+    async def __call__(self, text: str) -> dict:
+        return {"summary": text[:200]}
 
-summarize_op = SimpleOperator(func=summarize, name="Summarize")
+summarize_op = SummarizeOperator()
 
-# 2. 定义工作流（串联操作符）
-class MyWorkflow:
-    def __init__(self, operators):
-        self.ops = operators
+# 2. 定义工作流（统一继承 BaseWorkflow）
+class MyWorkflow(BaseWorkflow):
+    def __init__(self, operators, services, config=None):
+        self.operators = operators
+        self.services = services
+        self.config = config or {}
 
     async def solve(self, description, io_instructions, data_dir, output_path):
-        # 执行分析、生成代码等步骤
-        _ = await self.ops["summarize"](text=description)
+        _ = await self.operators["summarize"](text=description)
 
-# 3. 创建工厂（构建工作流）
-class MyWorkflowFactory:
-    def __init__(self, model="openai/gpt-4o"):
-        self.model = model
+# 3. 创建工厂（统一继承 BaseWorkflowFactory）
+class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
+    def __init__(self, model="openai/gpt-4o", **kwargs):
+        super().__init__(model=model, **kwargs)
 
-    def create_agent(self):
+    def create_agent(self, **kwargs):
         operators = {"summarize": summarize_op}
-        return MyWorkflow(operators)
+        services = {
+            "llm": LLMService(model=self.model),
+            "sandbox": SandboxService(),
+            "workspace": WorkspaceService(),
+            "state": JournalState(),
+        }
+        return MyWorkflow(operators=operators, services=services, config=kwargs)
 
 # 4. 使用自定义 Agent
-agent = MyWorkflowFactory(model="openai/deepseek-ai/DeepSeek-V3.1-Terminus").create_agent()
+agent = MyWorkflowFactory(
+    model="openai/deepseek-ai/DeepSeek-V3.1-Terminus"
+).create_agent(max_iterations=3)
 ```
 
 **核心概念**：
-- **Operator**：可复用的原子能力（分析、建模、可视化等）
-- **Workflow**：工作流，负责串联多个操作符完成任务
-- **Factory**：工厂模式，负责构建和配置 Agent
+- **Operator**：`dslighting.arch.operators` 的原子能力
+- **Workflow**：统一继承 `dslighting.arch.workflows.BaseWorkflow`
+- **Factory**：统一继承 `dslighting.arch.workflows.BaseWorkflowFactory`
 
 **使用场景**：
 - 🎯 需要特定的任务执行逻辑
@@ -301,6 +315,11 @@ pip install -r requirements_local.txt
 > 💡 **说明**：
 > - `requirements.txt`：锁定具体版本，适合生产环境
 > - `requirements_local.txt`：不锁定版本，依赖更灵活，适合开发环境
+>
+> ⚠️ **兼容性提示**：如果安装后运行时报 `ModuleNotFoundError: aiofiles`，请在同一虚拟环境执行：
+> ```bash
+> pip install aiofiles
+> ```
 
 ### 3. 配置API密钥
 
@@ -375,12 +394,29 @@ data/competitions/
 ### 5. 运行任务
 
 ```bash
-python run_benchmark.py \
-  --workflow aide \
-  --benchmark mle \
-  --data-dir data/competitions \
-  --task-id bike-sharing-demand \
-  --llm-model gpt-4
+python -m dslighting.cli --version
+```
+
+```bash
+python - <<'PY'
+from dslighting import DSBenchmark
+
+benchmark = DSBenchmark(
+    benchmark_type="custom",
+    data_dir="data/competitions",
+    vendor_comp_dir="dslighting/benchmark/vendor/mlebench/competitions",
+    competitions=["bike-sharing-demand"],
+    exp_name="bike_sharing_demo",
+).run(
+    workflow="aide",
+    model="gpt-4o",  # 本地测试可替换为 openai/deepseek-ai/DeepSeek-V3.1-Terminus
+    max_iterations=3,
+    log_path="./runs/benchmarks/bike_sharing_demo",
+)
+
+print("results:", benchmark.results_path)
+print("metadata:", benchmark.metadata_path)
+PY
 ```
 
 ### 6. 使用Web UI（推荐）
@@ -445,6 +481,40 @@ npm run dev  # 启动开发服务器
 - **`autokaggle`**：SOP风格的Kaggle工作流
 - **`aflow`**：工作流的元优化
 - **`deepanalyze`**：专注分析型执行工作流
+
+### 核心架构（贡献者视角）
+
+```
+┌─────────────────────────────────────────┐
+│ 1) Agent 编排层                         │
+│    工作流生命周期与调度                  │
+│    dslighting/workflows, runner.py      │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│ 2) 认知 / Operator 层                   │
+│    规划 / 生成 / 执行 / 评审             │
+│    dslighting/ops, prompts, state       │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│ 3) 执行 / 服务层                        │
+│    LLMService, Sandbox, Workspace, DAG  │
+│    dslighting/services, runtime         │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│ 4) 领域核心层                           │
+│    配置、任务、接口、结果映射            │
+│    dslighting/core, benchmark, datasets │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│ 5) 基础设施层                           │
+│    error, monitoring, checkpoint, utils │
+│    dslighting/error, monitoring, utils  │
+└─────────────────────────────────────────┘
+```
 
 ### 数据布局
 

@@ -2,7 +2,7 @@
 Shared configuration utilities for DSLighting.
 
 This module provides common configuration building utilities used across
-ConfigBuilder and AgentSettingsConfig to avoid code duplication.
+ConfigBuilder and API entrypoints to avoid code duplication.
 """
 
 import logging

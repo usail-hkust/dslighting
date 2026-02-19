@@ -94,6 +94,7 @@ litellm
 nbclient
 diskcache
 appdirs
+aiofiles
 optuna-integration
 deepchem
 rdkit

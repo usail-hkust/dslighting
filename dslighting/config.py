@@ -1,7 +1,10 @@
 # dslighting/config.py
 
-from typing import Dict, Any, Optional, List, Literal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from typing import Dict, Any, Optional, List, Literal, TYPE_CHECKING
+from pydantic import BaseModel, Field, ConfigDict
+
+if TYPE_CHECKING:
+    from dslighting.benchmark import RuntimeSchedulerOptions
 
 
 class LLMConfig(BaseModel):
@@ -93,6 +96,66 @@ class RunConfig(BaseModel):
     dag_runtime: DagRuntimeConfig = Field(default_factory=DagRuntimeConfig)
 
 
+class SchedulerConfig(BaseModel):
+    """Task scheduling and runtime resource settings."""
+
+    max_concurrency: Optional[int] = None
+    scheduler_policy: str = "full_parallel"
+    queue_policy: str = "fifo"
+    workload_mode: str = "auto"
+    gpu_policy: str = "auto"
+    gpu_ids: Optional[List[int]] = None
+    gpu_max_tasks_per_device: Optional[int] = None
+    gpu_memory_utilization_target: float = 0.85
+    gpu_reserved_memory_gb: float = 2.0
+    enable_monitoring: bool = False
+    enable_adaptive_concurrency: bool = False
+    adaptive_target_p95_seconds: float = 60.0
+    oom_max_retries: int = 1
+    oom_retry_backoff_seconds: float = 2.0
+    oom_retry_memory_growth: float = 1.35
+    sandbox_memory_mode: str = "off"
+    sandbox_default_memory_gb: float = 6.0
+    llm_max_concurrency: Optional[int] = None
+    cpu_worker_pool_size: Optional[int] = None
+    exp_name: Optional[str] = None
+    monitor_language: Optional[str] = None
+    enable_file_sharing: bool = True
+    checkpoint_resume_enabled: bool = False
+    run_id: Optional[str] = None
+
+    def to_runtime_options(self) -> "RuntimeSchedulerOptions":
+        """Convert scheduler settings to RuntimeSchedulerOptions."""
+        from dslighting.benchmark import RuntimeSchedulerOptions
+
+        return RuntimeSchedulerOptions(
+            max_concurrency=self.max_concurrency,
+            scheduler_policy=self.scheduler_policy,
+            queue_policy=self.queue_policy,
+            workload_mode=self.workload_mode,
+            gpu_policy=self.gpu_policy,
+            gpu_ids=self.gpu_ids,
+            gpu_max_tasks_per_device=self.gpu_max_tasks_per_device,
+            gpu_memory_utilization_target=self.gpu_memory_utilization_target,
+            gpu_reserved_memory_gb=self.gpu_reserved_memory_gb,
+            enable_monitoring=self.enable_monitoring,
+            enable_adaptive_concurrency=self.enable_adaptive_concurrency,
+            adaptive_target_p95_seconds=self.adaptive_target_p95_seconds,
+            oom_max_retries=self.oom_max_retries,
+            oom_retry_backoff_seconds=self.oom_retry_backoff_seconds,
+            oom_retry_memory_growth=self.oom_retry_memory_growth,
+            sandbox_memory_mode=self.sandbox_memory_mode,
+            sandbox_default_memory_gb=self.sandbox_default_memory_gb,
+            llm_max_concurrency=self.llm_max_concurrency,
+            cpu_worker_pool_size=self.cpu_worker_pool_size,
+            exp_name=self.exp_name,
+            monitor_language=self.monitor_language,
+            enable_file_sharing=self.enable_file_sharing,
+            checkpoint_resume_enabled=self.checkpoint_resume_enabled,
+            run_id=self.run_id,
+        )
+
+
 class AgentSearchConfig(BaseModel):
     """Parameters for Paradigm 2 (AIDE/AutoMind) search."""
 
@@ -144,6 +207,7 @@ class DSLightingConfig(BaseModel):
     task: TaskConfig = Field(default_factory=TaskConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
 
     # Paradigm-specific configurations
     workflow: Optional[WorkflowConfig] = None

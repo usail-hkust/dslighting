@@ -6,16 +6,18 @@ with minimal configuration while maintaining full control for advanced users.
 """
 
 import logging
+import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from dslighting.api.config import AgentSettingsConfig, RuntimeConfig
 from dslighting.api.task_loader import TaskLoader
 from dslighting.api.utils import print_benchmark_banner, print_benchmark_info
 from dslighting.benchmark import DABenchmark, MLEBenchmark
-from dslighting.core import ConfigBuilder
-from dslighting.runner import DSLightingRunner
+from dslighting.config import DSLightingConfig, WorkflowConfig
+from dslighting.core.config.shared import get_workflow_for_benchmark
+if TYPE_CHECKING:
+    from dslighting.runner import DSLightingRunner
 
 if TYPE_CHECKING:
     from dslighting.benchmark import RuntimeSchedulerOptions
@@ -27,13 +29,13 @@ class DSBenchmark:
     """
     Unified DSLighting Benchmark interface.
 
-    Simplifies running DSLighting benchmarks with intelligent defaults and
-    a clean API while maintaining backward compatibility.
+    Simplifies running DSLighting benchmarks with a single configuration
+    object as the only source of runtime truth.
 
     **Predefined modes:**
         - "dabench": All DABench tasks
         - "mlebench": All MLE-Bench tasks
-        - "mle-lite": 22 low-complexity MLE-Bench tasks
+        - "mle-lite": 22 curated MLE-Bench tasks
 
     **Custom mode:**
         Provide explicit competitions list with data_dir and vendor_comp_dir.
@@ -42,12 +44,8 @@ class DSBenchmark:
         >>> # Predefined mode (simplest)
         >>> DSBenchmark("dabench").run()
         >>>
-        >>> # With parameters
-        >>> DSBenchmark("dabench").run(
-        ...     model="gpt-4",
-        ...     max_iterations=5,
-        ...     enable_monitoring=True
-        ... )
+        >>> config = DSLightingConfig()
+        >>> DSBenchmark("dabench").run(config=config)
         >>>
         >>> # Custom mode
         >>> DSBenchmark(
@@ -134,6 +132,7 @@ class DSBenchmark:
 
             # Resolve vendor_dir: use package default path if None
             if vendor_comp_dir is None:
+                import dslighting
                 package_dir = Path(dslighting.__file__).parent
                 self._vendor_comp_dir = str(package_dir / "benchmark" / "vendor" / inferred_type / "competitions")
             else:
@@ -233,7 +232,7 @@ class DSBenchmark:
                 f"Unknown benchmark type: {benchmark_type}\n"
                 f"Available predefined modes:\n"
                 f"  - dabench, mlebench: Full benchmark\n"
-                f"  - mle-lite: MLE-Lite subset (22 tasks)\n"
+                f"  - mle-lite: MLE-Lite curated subset (22 tasks)\n"
                 f"  - da_summary_statistics: DABench summary statistics (90 tasks)\n"
                 f"  - da_comprehensive_preprocessing: DABench comprehensive preprocessing (45 tasks)\n"
                 f"  - da_correlation_analysis: DABench correlation analysis (72 tasks)\n"
@@ -251,26 +250,7 @@ class DSBenchmark:
 
     def run(
         self,
-        # Agent configuration (Second Layer)
-        model: Optional[str] = None,
-        workflow: Optional[str] = None,
-        max_iterations: Optional[int] = None,
-        temperature: Optional[float] = None,
-        num_drafts: Optional[int] = None,
-        api_key: Optional[str] = None,
-        # Runtime configuration (Third Layer)
-        max_concurrency: Optional[int] = None,
-        scheduler_policy: Optional[str] = None,
-        queue_policy: Optional[str] = None,
-        workload_mode: Optional[str] = None,
-        dag_enabled: Optional[bool] = None,
-        dag_mode: Optional[str] = None,
-        gpu_policy: Optional[str] = None,
-        gpu_ids: Optional[List[int]] = None,
-        enable_monitoring: bool = False,
-        # Config objects (optional, override above params)
-        agent_config: Optional[AgentSettingsConfig] = None,
-        runtime_config: Optional[RuntimeConfig] = None,
+        config: DSLightingConfig,
         # Other options
         log_path: Optional[str] = None,
         verbose: bool = True,
@@ -279,28 +259,7 @@ class DSBenchmark:
         Run the benchmark.
 
         Args:
-            # Agent configuration
-            model: LLM model name (REQUIRED)
-            workflow: Workflow name ("aide", "autokaggle", etc.)
-            max_iterations: Max agent iterations
-            temperature: LLM temperature
-            num_drafts: Number of drafts
-            api_key: LLM API key
-
-            # Runtime configuration
-            max_concurrency: Max concurrent tasks
-            scheduler_policy: Scheduling policy
-            queue_policy: Queue policy
-            workload_mode: Workload mode
-            dag_enabled: Enable DAG runtime
-            dag_mode: DAG mode ("coarse", "fine")
-            gpu_policy: GPU policy
-            gpu_ids: GPU ID list
-            enable_monitoring: Enable monitoring
-
-            # Config objects (override above)
-            agent_config: AgentSettingsConfig object
-            runtime_config: RuntimeConfig object (task + DAG settings)
+            config: Unified DSLightingConfig object.
 
             # Other options
             log_path: Log directory path
@@ -319,56 +278,11 @@ class DSBenchmark:
             - benchmark.metadata_path: JSON file with aggregated statistics
 
             Example:
-                >>> benchmark = DSBenchmark("dabench").run(model="gpt-4o")
-                >>> # Access results
-                >>> benchmark.results  # List of all task results
-                >>> # Access metadata
-                >>> benchmark.metadata  # Aggregated statistics
-
-        Raises:
-            ValueError: If model is not specified via argument or LLM_MODEL env var
+                >>> config = DSLightingConfig()
+                >>> benchmark = DSBenchmark("dabench").run(config=config)
         """
-        # Validate model is specified
-        if model is None and agent_config is None:
-            env_model = os.getenv("LLM_MODEL")
-            if env_model is None:
-                raise ValueError(
-                    "model parameter is required!\n"
-                    "Please specify the model via one of the following:\n"
-                    "  1. Set LLM_MODEL in .env file\n"
-                    "  2. Pass model parameter in code, e.g.:\n"
-                    "     DSBenchmark('dabench').run(model='gpt-4o-mini')"
-                )
-
-        # Build final configurations
-        final_agent_config = self._build_agent_config(
-            agent_config,
-            model=model,
-            workflow=workflow,
-            max_iterations=max_iterations,
-            temperature=temperature,
-            num_drafts=num_drafts,
-            api_key=api_key,
-        )
-
-        final_runtime_config = self._build_runtime_config(
-            runtime_config,
-            max_concurrency=max_concurrency,
-            scheduler_policy=scheduler_policy,
-            queue_policy=queue_policy,
-            workload_mode=workload_mode,
-            dag_enabled=dag_enabled,
-            dag_mode=dag_mode,
-            gpu_policy=gpu_policy,
-            gpu_ids=gpu_ids,
-            enable_monitoring=enable_monitoring,
-        )
-
-        # Build DSLightingConfig
-        dslighting_config = self._build_dslighting_config(final_agent_config, final_runtime_config)
-
-        # Build RuntimeSchedulerOptions
-        runtime_options = self._build_runtime_options(final_runtime_config)
+        dslighting_config = self._prepare_config(config)
+        runtime_options = self._build_runtime_options(dslighting_config)
 
         # Execute benchmark and return benchmark object
         return self._execute_benchmark(
@@ -384,62 +298,72 @@ class DSBenchmark:
             return "mlebench"
         return "dabench"
 
-    def _build_agent_config(self, base_config: Optional[AgentSettingsConfig], **kwargs) -> AgentSettingsConfig:
-        """Build final AgentSettingsConfig."""
-        if base_config:
-            config = base_config
-        else:
-            config = AgentSettingsConfig()
+    def _prepare_config(self, config: DSLightingConfig) -> DSLightingConfig:
+        """Prepare and normalize benchmark config."""
+        if not isinstance(config, DSLightingConfig):
+            raise TypeError(
+                f"`config` must be DSLightingConfig, got {type(config).__name__}."
+            )
 
-        # Apply kwargs overrides
-        for key, value in kwargs.items():
-            if value is not None and hasattr(config, key):
-                setattr(config, key, value)
+        prepared = config.model_copy(deep=True)
+        if prepared.workflow is None:
+            prepared.workflow = WorkflowConfig(
+                name=get_workflow_for_benchmark(self._benchmark_type, default="aide"),
+                params={},
+            )
 
-        return config
+        if prepared.scheduler.exp_name is None:
+            prepared.scheduler.exp_name = self.name
 
-    def _build_runtime_config(self, base_config: Optional[RuntimeConfig], **kwargs) -> RuntimeConfig:
-        """Build final RuntimeConfig.
+        # Backward-compatible env fallback for direct DSLightingConfig usage.
+        # In previous API layers, API_KEY could be injected indirectly by ConfigBuilder.
+        if not prepared.llm.api_key and not prepared.llm.api_keys:
+            env_api_key = os.getenv("API_KEY")
+            if env_api_key:
+                prepared.llm.api_key = env_api_key
 
-        If base_config is provided, use it as-is (preserving all user-provided values).
-        If base_config is None, create a new RuntimeConfig and apply kwargs overrides.
-        """
-        if base_config:
-            # When user provides RuntimeConfig, use it directly (don't override)
-            return base_config
+        # Backward-compatible model-specific env overrides (LLM_MODEL_CONFIGS).
+        # Format:
+        # {
+        #   "model-name": {
+        #       "api_key": "sk-..." or ["sk-1", "sk-2"],
+        #       "api_base": "https://.../v1",
+        #       "provider": "siliconflow",
+        #       "temperature": 1.0
+        #   }
+        # }
+        raw_model_configs = os.getenv("LLM_MODEL_CONFIGS")
+        if raw_model_configs:
+            try:
+                parsed = json.loads(raw_model_configs)
+            except Exception:
+                parsed = None
+            if isinstance(parsed, dict):
+                model_cfg = parsed.get(prepared.llm.model)
+                if isinstance(model_cfg, dict):
+                    if "api_key" in model_cfg:
+                        key_val = model_cfg.get("api_key")
+                        if isinstance(key_val, list) and key_val:
+                            prepared.llm.api_keys = [str(k) for k in key_val if str(k).strip()]
+                            prepared.llm.api_key = None
+                        elif isinstance(key_val, str) and key_val.strip():
+                            prepared.llm.api_key = key_val.strip()
+                            prepared.llm.api_keys = None
+                    if isinstance(model_cfg.get("api_base"), str) and model_cfg["api_base"].strip():
+                        prepared.llm.api_base = model_cfg["api_base"].strip()
+                    if isinstance(model_cfg.get("provider"), str) and model_cfg["provider"].strip():
+                        prepared.llm.provider = model_cfg["provider"].strip()
+                    if model_cfg.get("temperature") is not None:
+                        try:
+                            prepared.llm.temperature = float(model_cfg["temperature"])
+                        except (TypeError, ValueError):
+                            pass
 
-        # Create new RuntimeConfig and apply kwargs overrides
-        config = RuntimeConfig()
-        for key, value in kwargs.items():
-            if value is not None and hasattr(config, key):
-                setattr(config, key, value)
+        return prepared
 
-        return config
-
-    def _build_dslighting_config(self, agent_config: AgentSettingsConfig, runtime_config: RuntimeConfig):
-        """Build DSLightingConfig from AgentSettingsConfig."""
-        builder = ConfigBuilder()
-
-        config = builder.build_config(
-            workflow=agent_config.get_workflow(self._benchmark_type),
-            model=agent_config.get_model(),
-            max_iterations=agent_config.get_max_iterations(),
-            temperature=agent_config.get_temperature(),
-            num_drafts=agent_config.get_num_drafts(),
-            api_key=agent_config.api_key,
-        )
-
-        # Apply DAG configuration
-        runtime_config.apply_dag_to_config(config)
-
-        # Apply sandbox backend configuration
-        runtime_config.apply_sandbox_to_config(config)
-
-        return config
-
-    def _build_runtime_options(self, runtime_config: RuntimeConfig) -> "RuntimeSchedulerOptions":
-        """Build RuntimeSchedulerOptions from RuntimeConfig."""
-        return runtime_config.to_runtime_options()
+    def _build_runtime_options(self, config: DSLightingConfig) -> "RuntimeSchedulerOptions":
+        """Build RuntimeSchedulerOptions from DSLightingConfig.scheduler."""
+        return config.scheduler.to_runtime_options()
 
     def _execute_benchmark(
         self,
@@ -453,6 +377,8 @@ class DSBenchmark:
         Returns:
             Benchmark object (with .results attribute containing results list)
         """
+        from dslighting.runner import DSLightingRunner
+
         runner = DSLightingRunner(config)
 
         # Select benchmark class based on type

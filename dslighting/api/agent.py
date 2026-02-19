@@ -28,10 +28,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 # Import core interfaces
 from dslighting.config import DSLightingConfig, LLMConfig, RunConfig, SandboxConfig, WorkflowConfig
-from dslighting.core.interfaces import AgentResult
-from dslighting.core.tasks import MLETaskLoader
-from dslighting.core.types import TaskDefinition
-from dslighting.runner import DSLightingRunner
+from dslighting.core.execution import TaskExecutor
+from dslighting.core.interfaces import AgentInterface, AgentResult
+if TYPE_CHECKING:
+    from dslighting.runner import DSLightingRunner
 from dslighting.error import ConfigurationError, TaskError
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ WORKFLOW_ALIASES = {
 }
 
 
-class Agent:
+class Agent(AgentInterface):
     """
     High-level Agent interface.
 
@@ -305,67 +305,14 @@ class Agent:
         **kwargs,
     ) -> AgentResult:
         config = self._build_config(task_id=task_id, run_kwargs=kwargs)
-        runner = DSLightingRunner(config)
-        self._last_runner = runner
-
-        loader = MLETaskLoader()
-        description, _, public_data_dir, output_path = loader.load_task(
+        executor = TaskExecutor(config=config, workflow_name=self.workflow_name)
+        return await executor.run_with_task_id(
             task_id=task_id,
             data_dir=data_dir,
             registry_dir=registry_dir,
-        )
-        task_type = getattr(loader, "last_task_type", "kaggle")
-        resolved_registry_dir = getattr(loader, "last_registry_root", None)
-
-        if task_description:
-            description = task_description
-
-        if output is not None:
-            output_path = Path(output)
-
-        task = TaskDefinition(
-            task_id=task_id,
-            task_type=task_type,
-            payload={
-                "description": description,
-                "public_data_dir": str(public_data_dir),
-                "output_submission_path": str(output_path),
-                "registry_dir": str(resolved_registry_dir) if resolved_registry_dir else None,
-            },
-        )
-
-        eval_fn = runner.get_eval_function()
-        raw_output, total_cost, usage = await eval_fn(task)
-
-        score = None
-        error = None
-        output_value: Any = raw_output
-        success = True
-
-        if isinstance(raw_output, dict):
-            score = raw_output.get("score")
-            error = raw_output.get("error")
-            output_value = raw_output.get("submission_path") or raw_output.get("output") or raw_output
-            success = error is None
-        elif isinstance(raw_output, str) and raw_output.startswith("[ERROR]"):
-            success = False
-            error = raw_output
-        elif isinstance(raw_output, Path):
-            output_value = str(raw_output)
-
-        if score is not None:
-            try:
-                score = float(score)
-            except Exception:
-                pass
-
-        return AgentResult(
-            success=success,
-            output=output_value,
-            score=score,
-            cost=float(total_cost) if total_cost is not None else 0.0,
-            error=error,
-            metadata={"usage": usage, "workflow": self.workflow_name, "task_id": task_id},
+            task_description=task_description,
+            output=output,
+            on_runner_created=lambda runner: setattr(self, "_last_runner", runner),
         )
 
     def cleanup(self):

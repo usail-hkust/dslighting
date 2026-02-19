@@ -49,6 +49,7 @@ setup(
         "diskcache",
         "tenacity",
         "appdirs",
+        "aiofiles>=23.2.1",
         "pyyaml",
         "tqdm",
         "py7zr",
