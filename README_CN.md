@@ -41,6 +41,26 @@
 
 ---
 
+## 🆕 v2.7.9 最新更新
+
+| 功能 | 说明 |
+|------|------|
+| **Benchmark Mode** | 支持 DABench 与 MLEBench 基准评测体系 |
+| **DAG Mode** | 增强有向无环图（DAG）运行时编排能力 |
+| **Web UI** | 当前为实验态，正在持续重构（不属于稳定 API） |
+
+> DSLighting 是一个 LLM 驱动的数据科学执行框架，可将任务描述与数据集转化为代码生成、执行、评估与迭代优化的完整流程。
+
+## 🎯 两种使用模式（Two Usage Modes）
+
+1. **Simplified API（推荐快速上手）**  
+   面向标准数据科学任务与快速原型开发。
+
+2. **Architecture（推荐深度定制）**  
+   面向自定义 Operator / Workflow / Factory 的高级开发场景。
+
+---
+
 ## 📸 Web界面预览
 
 ### 主页面
