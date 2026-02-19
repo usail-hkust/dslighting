@@ -542,15 +542,15 @@ custom_model_pricing:
 ```python
 @dataclass
 class AgentResult:
-    success: bool              # Task success status
-    output: Any                # Task output
-    score: Optional[float]     # Evaluation score
-    cost: float                # LLM cost in USD
-    duration: float            # Execution time in seconds
-    artifacts_path: Path       # Path to artifacts
-    workspace_path: Path       # Path to workspace
-    error: Optional[str]       # Error message if failed
-    metadata: Dict             # Additional metadata
+    success: bool                        # Task success status
+    output: Any                          # Task output
+    cost: float = 0.0                    # LLM cost in USD
+    duration: float = 0.0                # Execution time in seconds
+    score: float | None = None           # Evaluation score
+    artifacts_path: Path | None = None   # Path to artifacts
+    workspace_path: Path | None = None   # Path to workspace
+    error: str | None = None             # Error message if failed
+    metadata: dict[str, Any] = field(default_factory=dict)  # Additional metadata
 ```
 
 ---

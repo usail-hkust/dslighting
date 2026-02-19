@@ -7,9 +7,9 @@ This module defines sensible defaults that can be overridden by:
 3. These defaults (lowest priority)
 
 NOTE: This is the PRIMARY source for default configuration values.
-While some constants are duplicated in constants.py for backward compatibility,
-this module should be considered the single source of truth for configuration defaults.
-Any changes to default values should be made here first.
+This module is the single source of truth for configuration defaults.
+constants.py may re-export selected values for backward compatibility.
+Any default-value changes should be made here first.
 """
 
 from __future__ import annotations
@@ -50,6 +50,18 @@ DEFAULT_SANDBOX_TIMEOUT = 6 * 3600  # 6 hours
 DEFAULT_WORKSPACE_DIR = "./runs/dslighting"
 DEFAULT_KEEP_WORKSPACE_ON_FAILURE = True
 DEFAULT_KEEP_ALL_WORKSPACES = False
+
+
+# ============================================================================
+# Runtime / Scheduling Defaults
+# ============================================================================
+
+DEFAULT_TOTAL_STEPS = 4
+DEFAULT_DEBUG_PROBABILITY = 0.8
+DEFAULT_SUCCESS_THRESHOLD = 3.0
+DEFAULT_MAX_ROUNDS = 10
+DEFAULT_MAX_INFLIGHT_NODES = 256
+DEFAULT_CACHE_TTL_SECONDS = 3600
 
 
 # ============================================================================

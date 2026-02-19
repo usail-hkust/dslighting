@@ -4,13 +4,28 @@ DSLighting Core Modules
 Internal module; prefer importing from the package root (`dslighting`) for the single public entrypoint.
 """
 
-# Core interfaces
-from .interfaces import AgentResult, AgentInterface
+from importlib import import_module
+from typing import Dict, Tuple
 
-# Re-export selected internal APIs
-from .data import DataLoader, TaskContext
-from .detection import TaskDetector
-from .config import ConfigBuilder
+_LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
+    "AgentResult": ("dslighting.core.interfaces", "AgentResult"),
+    "AgentInterface": ("dslighting.core.interfaces", "AgentInterface"),
+    "DataLoader": ("dslighting.core.data", "DataLoader"),
+    "TaskContext": ("dslighting.core.data", "TaskContext"),
+    "TaskDetector": ("dslighting.core.detection", "TaskDetector"),
+    "ConfigBuilder": ("dslighting.core.config", "ConfigBuilder"),
+}
+
+
+def __getattr__(name: str):
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(f"module 'dslighting.core' has no attribute '{name}'")
+
+    module_name, attr_name = _LAZY_EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attr_name)
+    globals()[name] = value
+    return value
 
 __all__ = [
     "DataLoader",
@@ -20,6 +35,3 @@ __all__ = [
     "TaskDetector",
     "ConfigBuilder",
 ]
-
-# Note: DSLightingRunner/Runner should be imported from dslighting.runner directly
-# to avoid circular dependencies between core and runtime modules

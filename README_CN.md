@@ -133,6 +133,22 @@ print(result.success, result.score, result.cost)
 # 常用字段: success / score / cost / duration / output / error
 ```
 
+**`AgentResult` 结构（与代码一致）**
+
+```python
+@dataclass
+class AgentResult:
+    success: bool                        # 是否成功
+    output: Any                          # 任务输出
+    cost: float = 0.0                    # LLM 成本（USD）
+    duration: float = 0.0                # 执行时长（秒）
+    score: float | None = None           # 评估分数
+    artifacts_path: Path | None = None   # 产物目录路径
+    workspace_path: Path | None = None   # 工作目录路径
+    error: str | None = None             # 失败时错误信息
+    metadata: dict[str, Any] = field(default_factory=dict)  # 扩展元数据
+```
+
 #### 🎯 第三步：选择使用方式
 
 ---

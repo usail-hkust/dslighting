@@ -4,16 +4,22 @@ This module centralizes all magic number constants used throughout
 the dslighting project to improve code maintainability and reduce
 hardcoded values across the codebase.
 
-NOTE: Some configuration defaults (e.g., DEFAULT_TEMPERATURE) are duplicated
-in defaults.py for backward compatibility. The defaults.py module is the PRIMARY
-source of truth for configuration defaults. This constants.py module contains
-both operational constants and a subset of configuration defaults.
-When in doubt, prefer importing from defaults.py for configuration values.
+NOTE: Configuration defaults are defined in defaults.py as the single source of truth.
+This constants.py module contains operational constants and may re-export
+selected defaults for backward compatibility.
 """
 
 from __future__ import annotations
 
 from typing import Final
+from dslighting.utils.defaults import (
+    DEFAULT_TOTAL_STEPS,
+    DEFAULT_DEBUG_PROBABILITY,
+    DEFAULT_SUCCESS_THRESHOLD,
+    DEFAULT_MAX_ROUNDS,
+    DEFAULT_MAX_INFLIGHT_NODES,
+    DEFAULT_CACHE_TTL_SECONDS,
+)
 
 # =============================================================================
 # LLM Service Constants
@@ -74,34 +80,10 @@ CODE_FILENAME_ZERO_PADDING: Final[int] = 3
 """Zero padding width for numbered code filenames."""
 
 # =============================================================================
-# Configuration Constants
+# Configuration Defaults (Re-export from defaults.py)
 # =============================================================================
-# NOTE: DEFAULT_TEMPERATURE, DEFAULT_NUM_DRAFTS, and SANDBOX_TIMEOUT_SECONDS
-# are defined in defaults.py as the primary source of truth.
-# For backward compatibility, these values are also available from this module
-# via re-export from defaults.py (see dslighting.utils.__init__.py).
-
-DEFAULT_TOTAL_STEPS: Final[int] = 4
-"""Default number of total steps in workflow."""
-
-DEFAULT_DEBUG_PROBABILITY: Final[float] = 0.8
-"""Default probability for debug mode."""
-
-DEFAULT_SUCCESS_THRESHOLD: Final[float] = 3.0
-"""Default success threshold for evaluations."""
-
-DEFAULT_MAX_ROUNDS: Final[int] = 10
-"""Default maximum number of workflow rounds."""
-
-DEFAULT_MAX_INFLIGHT_NODES: Final[int] = 256
-"""Default maximum number of in-flight execution nodes."""
-
-# =============================================================================
-# Cache TTL Constants
-# =============================================================================
-
-DEFAULT_CACHE_TTL_SECONDS: Final[int] = 3600
-"""Default cache time-to-live in seconds (1 hour)."""
+# These defaults are intentionally imported from defaults.py so values are
+# maintained in a single source of truth.
 
 # =============================================================================
 # Sandbox Resource Limits
