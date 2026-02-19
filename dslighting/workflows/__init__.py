@@ -37,7 +37,6 @@ try:
     # Import all factory classes
     from .factory.base import BaseWorkflowFactory
     from .factory import (
-        WorkflowFactory,
         WorkflowRegistry,
         default_workflow_registry,
         AIDEWorkflowFactory,
@@ -97,7 +96,6 @@ except ImportError as e:
     # Set all imports to None for graceful degradation
     BaseWorkflow = None  # type: ignore
     BaseWorkflowFactory = None  # type: ignore
-    WorkflowFactory = None  # type: ignore
     WorkflowRegistry = None  # type: ignore
     default_workflow_registry = None  # type: ignore
     AIDEWorkflowFactory = None  # type: ignore
@@ -145,7 +143,6 @@ except ImportError as e:
 __all__ = [
     "BaseWorkflow",
     "BaseWorkflowFactory",
-    "WorkflowFactory",
     "WorkflowRegistry",
     "default_workflow_registry",
     "AIDEWorkflowFactory",

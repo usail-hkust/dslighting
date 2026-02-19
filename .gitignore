@@ -298,6 +298,8 @@ backend*.log
 test_*.py
 verify_*.py
 verify-imports.sh
+!tests/test_*.py
+!tests/**/test_*.py
 
 # User test/development documentation
 @*.md

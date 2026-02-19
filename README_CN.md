@@ -105,6 +105,34 @@ LLM_MODEL=gpt-4o
 - **智谱AI** (推荐): https://bigmodel.cn/ - API Base: `https://open.bigmodel.cn/api/paas/v4`
 - **硅基流动**: https://siliconflow.cn/ - API Base: `https://api.siliconflow.cn/v1`
 
+**最小可运行示例**
+
+`.env` 最小配置：
+
+```bash
+API_KEY=your_key
+API_BASE=https://api.openai.com/v1
+LLM_MODEL=gpt-4o
+```
+
+Python 示例：
+
+```python
+from dotenv import load_dotenv
+load_dotenv()  # 读取项目根目录 .env
+
+import dslighting
+
+result = dslighting.run_agent(
+    task_id="bike-sharing-demand",   # 内置任务ID
+    workflow="aide",                 # 可选，默认 aide
+    model="gpt-4o",                  # 可选，默认值由配置决定
+)
+
+print(result.success, result.score, result.cost)
+# 常用字段: success / score / cost / duration / output / error
+```
+
 #### 🎯 第三步：选择使用方式
 
 ---
@@ -123,9 +151,15 @@ load_dotenv()
 import dslighting
 
 # 使用内置数据集，无需配置数据路径
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+result = dslighting.run_agent(
+    task_id="bike-sharing-demand",
+    workflow="aide",    # 可选，默认 aide
+    model="gpt-4o",     # 可选，默认读取配置
+)
 
-print(f"✅ 任务完成！Score: {result.score}")
+print(f"✅ 成功: {result.success}")
+print(f"📊 分数: {result.score}")
+print(f"💰 成本: ${result.cost}")
 ```
 
 **内置数据集**：

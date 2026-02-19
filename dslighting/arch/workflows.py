@@ -33,7 +33,6 @@ from dslighting.workflows import (
     MyCustomAgentWorkflowFactory,
     OUTPUT_EXTENSIONS,
     SearchStrategy,
-    WorkflowFactory,
     build_error_history,
     capture_llm_history,
     collect_output_files,
@@ -46,7 +45,6 @@ from dslighting.workflows import (
 __all__ = [
     "BaseWorkflow",
     "BaseWorkflowFactory",
-    "WorkflowFactory",
     "AIDEWorkflowFactory",
     "AutoMindWorkflowFactory",
     "DSAgentWorkflowFactory",

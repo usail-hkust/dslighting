@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Dict, Type
 
-from .standard import (
-    WorkflowFactory,
+from .base import BaseWorkflowFactory
+from .builtin import (
     AIDEWorkflowFactory,
     AutoMindWorkflowFactory,
     DSAgentWorkflowFactory,
@@ -21,7 +21,7 @@ class WorkflowRegistry:
     """Single source of truth for workflow->factory mapping."""
 
     def __init__(self) -> None:
-        self._factory_classes: Dict[str, Type[WorkflowFactory]] = {
+        self._factory_classes: Dict[str, Type[BaseWorkflowFactory]] = {
             "aide": AIDEWorkflowFactory,
             "automind": AutoMindWorkflowFactory,
             "dsagent": DSAgentWorkflowFactory,
@@ -31,12 +31,23 @@ class WorkflowRegistry:
             "aflow": AFlowWorkflowFactory,
             "my_custom_agent": MyCustomAgentWorkflowFactory,
         }
+        for factory_class in self._factory_classes.values():
+            self._validate_factory_class(factory_class)
 
-    def register(self, workflow_name: str, factory_class: Type[WorkflowFactory]) -> None:
+    @staticmethod
+    def _validate_factory_class(factory_class: type[object]) -> None:
+        if not isinstance(factory_class, type) or not issubclass(factory_class, BaseWorkflowFactory):
+            raise TypeError(
+                "Workflow registry only accepts BaseWorkflowFactory subclasses, "
+                f"got: {factory_class!r}"
+            )
+
+    def register(self, workflow_name: str, factory_class: Type[BaseWorkflowFactory]) -> None:
         """Register or overwrite a workflow factory mapping."""
+        self._validate_factory_class(factory_class)
         self._factory_classes[workflow_name.strip().lower()] = factory_class
 
-    def resolve(self, workflow_name: str) -> WorkflowFactory:
+    def resolve(self, workflow_name: str) -> BaseWorkflowFactory:
         """Create the concrete workflow factory for a name."""
         normalized = (workflow_name or "").strip().lower()
         factory_class = self._factory_classes.get(normalized)
@@ -53,4 +64,3 @@ class WorkflowRegistry:
 
 
 default_workflow_registry = WorkflowRegistry()
-

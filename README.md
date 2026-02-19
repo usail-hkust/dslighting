@@ -93,6 +93,30 @@ cp .env.example .env
 
 > Note: If you see `ModuleNotFoundError: aiofiles` at runtime, run `pip install aiofiles` once in the same environment.
 
+Minimal runnable setup:
+
+```bash
+API_KEY=your_key
+API_BASE=https://api.openai.com/v1
+LLM_MODEL=gpt-4o
+```
+
+```python
+from dotenv import load_dotenv
+load_dotenv()  # load project-root .env
+
+import dslighting
+
+result = dslighting.run_agent(
+    task_id="bike-sharing-demand",  # built-in task id
+    workflow="aide",                # optional, default aide
+    model="gpt-4o",                 # optional, defaults to config
+)
+
+print(result.success, result.score, result.cost)
+# Common fields: success / score / cost / duration / output / error
+```
+
 ---
 
 ## 🚀 Quick Start
@@ -210,12 +234,11 @@ agent = dslighting.Agent(
     workflow="aide",        # Workflow: aide, autokaggle, dsagent, etc.
     model="gpt-4o",         # LLM model
     temperature=0.7,        # LLM temperature
-    max_iterations=5,       # Max iterations
-    verbose=True            # Enable logging
+    max_iterations=5,       # Max iterations (workflow-specific)
 )
 
 result = agent.run(
-    data="path/to/data",    # Data path or LoadedData object
+    task_id="bike-sharing-demand",  # Recommended
     description="Predict target column"  # Optional description
 )
 ```
@@ -519,28 +542,24 @@ class AgentResult:
 
 ## 🔧 Advanced Usage
 
-### Access Underlying DSLighting Components
+### Use `dslighting.api.Agent` Directly
 
 ```python
-import dslighting
+from dslighting.api import Agent
 
-agent = dslighting.Agent()
-
-# Access DSLightingConfig
-config = agent.get_config()
-config.llm.temperature = 0.5
-
-# Access DSLightingRunner
-runner = agent.get_runner()
-eval_fn = runner.get_eval_function()
+agent = Agent(
+    workflow="aide",
+    model="gpt-4o",
+    max_iterations=5,
+)
 ```
 
 ### Custom Output Path
 
 ```python
 result = agent.run(
-    data,
-    output_path="my_submission.csv"
+    task_id="bike-sharing-demand",
+    output="my_submission.csv",
 )
 ```
 
@@ -548,25 +567,28 @@ result = agent.run(
 
 ```python
 result = agent.run(
-    data,
     task_id="my-experiment-001",
     description="Build a model to predict customer churn"
 )
 ```
 
-### Batch Processing
+### Concurrent Runs (async)
 
 ```python
-agent = dslighting.Agent()
+import asyncio
+from dslighting.api import Agent
 
-results = agent.run_batch([
-    "data/competitions/titanic",
-    "data/competitions/house-prices",
-    "data/competitions/fraud"
-])
+agent = Agent(workflow="aide", model="gpt-4o")
 
-for i, result in enumerate(results):
-    print(f"Task {i+1}: score={result.score}, cost=${result.cost}")
+async def main():
+    results = await asyncio.gather(
+        agent.async_run(task_id="bike-sharing-demand"),
+        agent.async_run(task_id="my-other-task"),
+    )
+    for i, result in enumerate(results, start=1):
+        print(f"Task {i}: score={result.score}, cost=${result.cost}")
+
+asyncio.run(main())
 ```
 
 ---

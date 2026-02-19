@@ -31,7 +31,7 @@ from dslighting.core.tasks.handlers import (
     OpenEndedTaskHandler,
 )
 from dslighting.workflows.factory import (
-    WorkflowFactory,
+    BaseWorkflowFactory,
     AutoMindWorkflowFactory,
     AIDEWorkflowFactory,
     DSAgentWorkflowFactory,
@@ -666,15 +666,15 @@ class RegistryGrader:
 # ==                            COMPONENT REGISTRIES                          ==
 # ==============================================================================
 
-WORKFLOW_FACTORIES: dict[str, WorkflowFactory] = {
-    "automind": AutoMindWorkflowFactory(),
-    "aide": AIDEWorkflowFactory(),
-    "dsagent": DSAgentWorkflowFactory(),
-    "data_interpreter": DataInterpreterWorkflowFactory(),
-    "autokaggle": AutoKaggleWorkflowFactory(),
-    "aflow": AFlowWorkflowFactory(),
-    "deepanalyze": DeepAnalyzeWorkflowFactory(),
-    "my_custom_agent": MyCustomAgentWorkflowFactory(),
+WORKFLOW_FACTORIES: dict[str, type[BaseWorkflowFactory]] = {
+    "automind": AutoMindWorkflowFactory,
+    "aide": AIDEWorkflowFactory,
+    "dsagent": DSAgentWorkflowFactory,
+    "data_interpreter": DataInterpreterWorkflowFactory,
+    "autokaggle": AutoKaggleWorkflowFactory,
+    "aflow": AFlowWorkflowFactory,
+    "deepanalyze": DeepAnalyzeWorkflowFactory,
+    "my_custom_agent": MyCustomAgentWorkflowFactory,
 }
 
 TASK_HANDLER_CLASSES: dict[TaskType, type[TaskHandler]] = {
@@ -701,8 +701,8 @@ class DSLightingRunner:
         logger.info(f"Initializing DSLightingRunner for workflow: '{config.workflow.name}'")
         self.config = config
         self.factories = WORKFLOW_FACTORIES.copy()
-        self.factory = self.factories.get(config.workflow.name)
-        if not self.factory:
+        factory_class = self.factories.get(config.workflow.name)
+        if not factory_class:
             available = ", ".join(self.factories.keys())
             raise WorkflowError(
                 f"Unknown workflow '{config.workflow.name}'. Available workflows: [{available}]",
@@ -710,6 +710,7 @@ class DSLightingRunner:
                 details={"workflow_name": config.workflow.name, "available_workflows": list(self.factories.keys())},
                 suggestion="Check the workflow name against the list of available workflows"
             )
+        self.factory: BaseWorkflowFactory = factory_class()
 
         self.handler_classes = TASK_HANDLER_CLASSES
         self.benchmark = None
@@ -718,15 +719,20 @@ class DSLightingRunner:
 
         logger.info("DSLightingRunner is ready to evaluate tasks.")
 
-    def register_workflow(self, name: str, factory: WorkflowFactory) -> None:
+    def register_workflow(self, name: str, factory: BaseWorkflowFactory | type[BaseWorkflowFactory]) -> None:
         """
         Register a workflow factory dynamically for this runner instance.
         Critical for paradigms like AFLOW which synthesize workflows at runtime.
         """
         logger.info(f"Registering workflow '{name}' for this runner instance.")
-        self.factories[name] = factory
+        if isinstance(factory, type):
+            self.factories[name] = factory
+            candidate = factory()
+        else:
+            self.factories[name] = factory.__class__
+            candidate = factory
         if self.config.workflow and self.config.workflow.name == name:
-            self.factory = factory
+            self.factory = candidate
             logger.info(f"Active workflow factory switched to '{name}'.")
 
     def get_eval_function(

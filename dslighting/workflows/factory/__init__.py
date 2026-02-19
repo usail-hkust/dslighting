@@ -2,8 +2,7 @@
 
 from .base import BaseWorkflowFactory
 from .registry import WorkflowRegistry, default_workflow_registry
-from .standard import (
-    WorkflowFactory,
+from .builtin import (
     AIDEWorkflowFactory,
     AutoMindWorkflowFactory,
     DSAgentWorkflowFactory,
@@ -16,14 +15,13 @@ from .standard import (
 )
 
 
-def get_workflow_factory(workflow_name: str) -> WorkflowFactory:
+def get_workflow_factory(workflow_name: str) -> BaseWorkflowFactory:
     """Resolve a workflow name to its concrete workflow factory instance."""
     return default_workflow_registry.resolve(workflow_name)
 
 
 __all__ = [
     "BaseWorkflowFactory",
-    "WorkflowFactory",
     "WorkflowRegistry",
     "default_workflow_registry",
     "get_workflow_factory",

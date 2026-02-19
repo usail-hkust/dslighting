@@ -31,7 +31,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
 
     Users only need to:
     1. Inherit from BaseWorkflowFactory
-    2. Implement create_agent() method
+    2. Implement create_workflow() method
     3. Define their own workflow class
     """
 
@@ -57,7 +57,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             temperature: Temperature parameter (optional, read from env var if not provided)
             timeout: Sandbox timeout
             keep_workspace: Whether to keep workspace
-            **agent_init_kwargs: Additional parameters, will be passed to create_agent()
+            **agent_init_kwargs: Additional parameters, used for run/config initialization
 
         Note:
             Use DSLighting's ConfigBuilder to automatically read config from environment variables:
@@ -88,21 +88,6 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         )
         self._base_config = config
 
-        # Extract LLM config from configuration
-        llm_config = config.llm
-
-        # Create services (infrastructure ready, users don't need to care)
-        from dslighting.services import LLMService, SandboxService, WorkspaceService
-
-        self.llm_service = LLMService(config=llm_config)
-        self.workspace_service = WorkspaceService(
-            run_name=f"{self._get_workflow_name()}_{model.replace('/', '_')}"
-        )
-        self.sandbox_service = SandboxService(
-            workspace=self.workspace_service,
-            timeout=timeout
-        )
-
         logger.debug(f"{self.__class__.__name__} initialized")
         logger.debug(f"  - Model: {model}")
         logger.debug(f"  - Timeout: {timeout}s")
@@ -117,10 +102,12 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         """
         return self.__class__.__name__.replace("Factory", "").lower()
 
-    @abstractmethod
     def create_agent(self, **kwargs: Any) -> Any:
         """
-        Create Agent instance (must be implemented by subclasses).
+        Create workflow/agent instance for advanced usage.
+
+        Default behavior routes through create_workflow() using an ad-hoc config.
+        Subclasses may override this if they require custom create semantics.
 
         Args:
             **kwargs: Agent configuration parameters
@@ -128,11 +115,24 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         Returns:
             Agent instance
         """
-        raise NotImplementedError("Subclasses must implement create_agent()")
+        config = self._build_config(task_id="adhoc", run_kwargs=kwargs)
+        return self.create_workflow(config=config, benchmark=None)
+
+    @abstractmethod
+    def create_workflow(self, config: DSLightingConfig, benchmark: Any = None) -> Any:
+        """
+        Create configured workflow instance for runner execution.
+
+        Args:
+            config: Full DSLighting configuration.
+            benchmark: Optional benchmark object.
+        """
+        raise NotImplementedError("Subclasses must implement create_workflow()")
 
     def cleanup(self):
         """Cleanup workspace"""
-        if not self.keep_workspace:
+        workspace_service = getattr(self, "workspace_service", None)
+        if workspace_service is not None and not self.keep_workspace:
             self.workspace_service.cleanup()
             logger.debug(f"✓ Workspace cleaned")
 

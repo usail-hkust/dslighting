@@ -1,0 +1,81 @@
+"""Application service for Agent facade execution orchestration."""
+
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, Optional, Union
+from pathlib import Path
+
+from dslighting.core.application.agent_config_builder import AgentConfigBuilder
+from dslighting.core.application.task_input_resolver import TaskInputResolver
+from dslighting.core.execution import TaskExecutor
+from dslighting.core.interfaces import AgentResult
+
+
+class AgentAppService:
+    """Orchestrate Agent facade requests into TaskExecutor runs."""
+
+    def __init__(
+        self,
+        *,
+        workflow_name: str,
+        model: str,
+        api_key: Optional[str],
+        api_base: Optional[str],
+        provider: Optional[str],
+        temperature: Optional[float],
+        timeout: int,
+        keep_workspace: bool,
+        init_kwargs: Dict[str, Any],
+    ) -> None:
+        self._workflow_name = workflow_name
+        self._config_builder = AgentConfigBuilder(
+            workflow_name=workflow_name,
+            model=model,
+            api_key=api_key,
+            api_base=api_base,
+            provider=provider,
+            temperature=temperature,
+            timeout=timeout,
+            keep_workspace=keep_workspace,
+            init_kwargs=init_kwargs,
+        )
+
+    async def run(
+        self,
+        *,
+        task_id: Optional[str],
+        data: Any,
+        task: Optional[str],
+        output: Optional[Union[str, Path]],
+        kwargs: Dict[str, Any],
+        on_runner_created: Optional[Callable[[Any], None]] = None,
+    ) -> AgentResult:
+        runtime_kwargs = dict(kwargs)
+        description = runtime_kwargs.pop("description", None)
+        data_dir = runtime_kwargs.pop("data_dir", None)
+        registry_dir = runtime_kwargs.pop("registry_dir", None)
+
+        resolved = TaskInputResolver.resolve(
+            task_id=task_id,
+            data=data,
+            task=task,
+            output=output,
+            description=description,
+            data_dir=data_dir,
+            registry_dir=registry_dir,
+            run_kwargs=runtime_kwargs,
+        )
+        config = self._config_builder.build(
+            task_id=resolved.task_id,
+            run_kwargs=resolved.run_kwargs,
+        )
+
+        executor = TaskExecutor(config=config, workflow_name=self._workflow_name)
+        return await executor.run_with_task_id(
+            task_id=resolved.task_id,
+            data_dir=resolved.data_dir,
+            registry_dir=resolved.registry_dir,
+            task_description=resolved.task_description,
+            output=resolved.output,
+            on_runner_created=on_runner_created,
+        )
