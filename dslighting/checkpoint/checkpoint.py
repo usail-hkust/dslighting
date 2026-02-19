@@ -77,7 +77,7 @@ class CheckpointError(Exception):
         cause: Optional[Exception] = None,
     ) -> None:
         self.message = message or "An unspecified checkpoint error occurred."
-        self.error_code = error_code or self.error_code
+        self.error_code = error_code if error_code is not None else type(self).error_code
         self.details = details or {}
         self.suggestion = suggestion
         self.cause = cause
@@ -190,12 +190,12 @@ class StorageBackend(ABC):
         Returns:
             True if write succeeds.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement write().")
 
     @abstractmethod
     def read(self, key: str) -> Optional[bytes]:
         """Read data from storage."""
-        pass
+        raise NotImplementedError("Subclasses must implement read().")
 
     @abstractmethod
     def delete(self, key: str) -> bool:
@@ -204,27 +204,27 @@ class StorageBackend(ABC):
         Returns:
             True if delete succeeds.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement delete().")
 
     @abstractmethod
     def exists(self, key: str) -> bool:
         """Check if key exists in storage."""
-        pass
+        raise NotImplementedError("Subclasses must implement exists().")
 
     @abstractmethod
     def list_keys(self, prefix: str = "") -> List[str]:
         """List all keys with optional prefix."""
-        pass
+        raise NotImplementedError("Subclasses must implement list_keys().")
 
     @abstractmethod
     def get_size(self, key: str) -> int:
         """Get the size of stored data in bytes."""
-        pass
+        raise NotImplementedError("Subclasses must implement get_size().")
 
     @abstractmethod
     def get_metadata_path(self, key: str) -> str:
         """Get the path for metadata file."""
-        pass
+        raise NotImplementedError("Subclasses must implement get_metadata_path().")
 
 
 class LocalStorageBackend(StorageBackend):

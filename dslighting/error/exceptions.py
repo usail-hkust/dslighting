@@ -72,7 +72,7 @@ class DSLightingError(Exception):
         doc_url: Optional[str] = None,
     ) -> None:
         self.message = message or "An unspecified error occurred in DSLighting."
-        self.error_code = error_code or self.error_code
+        self.error_code = error_code if error_code is not None else type(self).error_code
         self.details = details or {}
         self.suggestion = suggestion
         self.cause = cause

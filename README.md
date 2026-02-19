@@ -105,9 +105,9 @@ LLM_MODEL=gpt-4o
 from dotenv import load_dotenv
 load_dotenv()  # load project-root .env
 
-import dslighting
+from dslighting.api import run_agent
 
-result = dslighting.run_agent(
+result = run_agent(
     task_id="bike-sharing-demand",  # built-in task id
     workflow="aide",                # optional, default aide
     model="gpt-4o",                 # optional, defaults to config
@@ -127,52 +127,67 @@ print(result.success, result.score, result.cost)
 from dotenv import load_dotenv
 load_dotenv()
 
-import dslighting
+from dslighting.api import run_agent
 
 # Built-in dataset - no data preparation needed!
-result = dslighting.run_agent(task_id="bike-sharing-demand")
+result = run_agent(task_id="bike-sharing-demand")
 
-print(f"✅ Success: {result.success}")
-print(f"📊 Score: {result.score}")
-print(f"💰 Cost: ${result.cost}")
+print(f"Success: {result.success}")
+print(f"Score: {result.score}")
+print(f"Cost: ${result.cost}")
 ```
 
 ### Mode 2: Architecture (Full Control)
 
 ```python
-from dslighting.arch.operators import GenerateCodeAndPlanOperator, ExecuteAndTestOperator
-from dslighting.arch.prompts import PromptBuilder
+import asyncio
+
+from dslighting.arch.interfaces import WorkflowFactoryInterface
+from dslighting.arch.operators import Operator
 from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
 from dslighting.arch.state import JournalState
-from dslighting.arch.workflows import AIDE
+from dslighting.arch.workflows import BaseWorkflow, BaseWorkflowFactory
 
-# Create services
-services = {
-    "llm": LLMService(model="gpt-4o"),
-    "sandbox": SandboxService(),
-    "workspace": WorkspaceService(),
-    "state": JournalState(),
-}
 
-# Define operators
-operators = {
-    "generate": GenerateCodeAndPlanOperator(
-        llm_service=services["llm"],
-        prompt_builder=PromptBuilder()
-    ),
-    "execute": ExecuteAndTestOperator(
-        sandbox_service=services["sandbox"]
-    ),
-}
+class SummarizeOperator(Operator):
+    async def __call__(self, text: str) -> dict:
+        return {"summary": text[:200]}
 
-# Build and run architecture workflow
-workflow = AIDE(operators=operators, services=services, config={"max_iterations": 3})
-result = await workflow.solve(
-    description="Build a model to predict bike sharing demand",
-    io_instructions="Use train.csv for training and output submission.csv",
-    data_dir="data/competitions/bike-sharing-demand",
-    output_path="submission.csv",
-)
+
+class MyWorkflow(BaseWorkflow):
+    def __init__(self, operators, services, config=None):
+        self.operators = operators
+        self.services = services
+        self.config = config or {}
+
+    async def solve(self, description, io_instructions, data_dir, output_path):
+        return await self.operators["summarize"](text=description)
+
+
+class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
+    def create_agent(self, **kwargs):
+        operators = {"summarize": SummarizeOperator()}
+        services = {
+            "llm": LLMService(model=self.model),
+            "sandbox": SandboxService(),
+            "workspace": WorkspaceService(),
+            "state": JournalState(),
+        }
+        return MyWorkflow(operators=operators, services=services, config=kwargs)
+
+
+async def main():
+    workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
+    result = await workflow.solve(
+        description="Build a model to predict bike sharing demand",
+        io_instructions="Use train.csv for training and output submission.csv",
+        data_dir="data/competitions/bike-sharing-demand",
+        output_path="submission.csv",
+    )
+    print(result)
+
+
+asyncio.run(main())
 ```
 
 ---

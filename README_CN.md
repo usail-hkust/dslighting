@@ -121,9 +121,9 @@ Python 示例：
 from dotenv import load_dotenv
 load_dotenv()  # 读取项目根目录 .env
 
-import dslighting
+from dslighting.api import run_agent
 
-result = dslighting.run_agent(
+result = run_agent(
     task_id="bike-sharing-demand",   # 内置任务ID
     workflow="aide",                 # 可选，默认 aide
     model="gpt-4o",                  # 可选，默认值由配置决定
@@ -148,10 +148,10 @@ print(result.success, result.score, result.cost)
 from dotenv import load_dotenv
 load_dotenv()
 
-import dslighting
+from dslighting.api import run_agent
 
 # 使用内置数据集，无需配置数据路径
-result = dslighting.run_agent(
+result = run_agent(
     task_id="bike-sharing-demand",
     workflow="aide",    # 可选，默认 aide
     model="gpt-4o",     # 可选，默认读取配置

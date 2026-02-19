@@ -32,7 +32,7 @@ class State(ABC, Generic[T]):
         Returns:
             The stored value or default if key not found.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get().")
 
     @abstractmethod
     def set(self, key: str, value: T) -> None:
@@ -42,7 +42,7 @@ class State(ABC, Generic[T]):
             key: The unique identifier for the value.
             value: The value to store.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement set().")
 
     @abstractmethod
     def delete(self, key: str) -> bool:
@@ -54,7 +54,7 @@ class State(ABC, Generic[T]):
         Returns:
             True if the key existed and was deleted, False otherwise.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement delete().")
 
     @abstractmethod
     def clear(self) -> None:
@@ -62,7 +62,7 @@ class State(ABC, Generic[T]):
 
         Removes all stored keys and values from this state manager.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement clear().")
 
     @abstractmethod
     def snapshot(self) -> bytes:
@@ -74,7 +74,7 @@ class State(ABC, Generic[T]):
         Returns:
             Serialized state data as bytes.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement snapshot().")
 
     @abstractmethod
     def restore(self, data: bytes) -> bool:
@@ -86,7 +86,7 @@ class State(ABC, Generic[T]):
         Returns:
             True if restoration was successful, False otherwise.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement restore().")
 
     @property
     @abstractmethod
@@ -96,4 +96,4 @@ class State(ABC, Generic[T]):
         Returns:
             The datetime when this state instance was created.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement created_at.")
