@@ -245,8 +245,16 @@ print(result)
 
 Use this when you need custom operators/workflows/factories.
 
+What each part does:
+- `Operator`: one async capability unit (for example, summarize, plan, execute).
+- `Workflow.solve(...)`: core async logic of your agent.
+- `WorkflowFactory.create_agent(...)`: wires services + operators into a workflow instance.
+- `workflow.run(...)`: sync wrapper around `solve(...)` for non-async users.
+
 ```python
 import asyncio
+from pathlib import Path
+from typing import Any
 
 from dslighting.arch.interfaces import WorkflowFactoryInterface
 from dslighting.arch.operators import Operator
@@ -257,46 +265,71 @@ from dslighting.config import LLMConfig
 
 
 class SummarizeOperator(Operator):
-    async def __call__(self, text: str) -> dict:
+    async def __call__(self, text: str) -> dict[str, Any]:
         return {"summary": text[:200]}
 
 
 class MyWorkflow(BaseWorkflow):
-    def __init__(self, operators, services, config=None):
-        self.operators = operators
-        self.services = services
-        self.config = config or {}
+    def __init__(self, operators, services, agent_config=None):
+        super().__init__(
+            operators=operators,
+            services=services,
+            agent_config=agent_config or {},
+        )
 
-    async def solve(self, description, io_instructions, data_dir, output_path):
+    async def solve(
+        self,
+        description: str,
+        io_instructions: str,
+        data_dir: Path,
+        output_path: Path,
+    ) -> dict[str, Any]:
         return await self.operators["summarize"](text=description)
 
 
 class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
     def create_agent(self, **kwargs):
         workspace = WorkspaceService(run_name="custom_arch_run")
-        operators = {"summarize": SummarizeOperator()}
         services = {
             "llm": LLMService(config=LLMConfig(model=self.model)),
             "sandbox": SandboxService(workspace=workspace),
             "workspace": workspace,
             "state": JournalState(),
         }
-        return MyWorkflow(operators=operators, services=services, config=kwargs)
+        operators = {
+            "summarize": SummarizeOperator(),
+        }
+        return MyWorkflow(operators=operators, services=services, agent_config=kwargs)
 
 
-async def main():
+# Option A (recommended for normal scripts): sync call
+def run_sync():
+    workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
+    result = workflow.run(data="data/competitions/bike-sharing-demand")
+    print(result)
+
+
+# Option B (when you're already in async context): await solve(...)
+async def run_async():
     workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
     result = await workflow.solve(
         description="Build a model to predict bike sharing demand",
         io_instructions="Use train.csv and output submission.csv",
-        data_dir="data/competitions/bike-sharing-demand",
-        output_path="submission.csv",
+        data_dir=Path("data/competitions/bike-sharing-demand"),
+        output_path=Path("submission.csv"),
     )
     print(result)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    run_sync()
+    # asyncio.run(run_async())  # Use this line only if you want async style
 ```
+
+Usage rule:
+- Use `workflow.run(...)` in synchronous scripts.
+- Use `await workflow.solve(...)` if you are already inside `async def`.
+- Do not call `workflow.run(...)` from an existing async event loop.
 
 ---
 
