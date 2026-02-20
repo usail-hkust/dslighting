@@ -160,6 +160,18 @@ class Agent(AgentInterface):
             # Method 2: Use data path
             result = agent.run(data="path/to/data", task="Predict demand")
         """
+        try:
+            asyncio.get_running_loop()
+            raise ConfigurationError(
+                "Agent.run() cannot be called from an async context.",
+                error_code="CFG-003",
+                details={"method": "run", "alternative": "async_run"},
+                suggestion="Use `await agent.async_run(...)` in async contexts.",
+            )
+        except RuntimeError as e:
+            if "no running event loop" not in str(e):
+                raise
+
         return asyncio.run(self.async_run(task_id=task_id, data=data, task=task, output=output, **kwargs))
 
     async def async_run(
