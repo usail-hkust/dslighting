@@ -134,6 +134,71 @@ llm_pricing:
   custom_models: {}
 ```
 
+## Sandbox 后端（Simplified API）
+
+`run_agent` 与 `Agent` 支持以下后端：
+
+- `local`
+- `e2b`
+- `ds_sandbox`
+
+请在脚本中显式加载 dotenv：
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+### `.env` 示例
+
+```bash
+SANDBOX_BACKEND=local
+SANDBOX_BACKEND_TYPE=docker
+SANDBOX_TIMEOUT=21600
+E2B_API_KEY=
+SANDBOX_WORKSPACE_BASE=/tmp/ds_sandbox_workspaces
+SANDBOX_PAUSED_BASE=/tmp/ds_sandbox_paused
+```
+
+### Local 后端
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="local",
+)
+```
+
+### E2B 后端
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="e2b",
+    sandbox_api_key=None,  # 默认从 E2B_API_KEY 读取
+)
+```
+
+说明：
+
+- 需要安装 SDK：`pip install e2b`
+- 需要在 `.env` 设置 `E2B_API_KEY`（或显式传 `sandbox_api_key`）
+
+### DS-Sandbox 后端
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="ds_sandbox",
+    sandbox_backend_type="local",  # 或 "docker"
+)
+```
+
+说明：
+
+- 需要安装：`pip install ds-sandbox`
+- 默认会使用 `/tmp` 下可写目录，避免 `/opt` 权限问题
+
 ---
 
 ## Quick Start (Simplified API)

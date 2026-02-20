@@ -30,6 +30,10 @@ async def test_app_service_calls_task_executor_with_resolved_input(monkeypatch, 
         temperature=None,
         timeout=300,
         keep_workspace=False,
+        sandbox_backend=None,
+        sandbox_backend_type=None,
+        sandbox_timeout=None,
+        sandbox_api_key=None,
         init_kwargs={"max_iterations": 2},
     )
 

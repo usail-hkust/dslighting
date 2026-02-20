@@ -1,6 +1,7 @@
 """DS-Sandbox backend."""
 
 import logging
+import os
 import time
 import uuid
 from datetime import datetime
@@ -37,6 +38,7 @@ class DSSandboxBackend(SandboxBackend):
         config: Optional[SandboxBackendConfig] = None,
         backend_type: str = "docker",
         workspace_base_dir: Optional[str] = None,
+        paused_workspaces_base_dir: Optional[str] = None,
     ):
         """Initialize the DS-Sandbox backend.
 
@@ -44,10 +46,12 @@ class DSSandboxBackend(SandboxBackend):
             config: Backend configuration.
             backend_type: Type of backend to use ("docker" or "local").
             workspace_base_dir: Base directory for workspaces.
+            paused_workspaces_base_dir: Base directory for paused workspaces.
         """
         super().__init__(config)
         self.backend_type = backend_type
         self.workspace_base_dir = workspace_base_dir
+        self.paused_workspaces_base_dir = paused_workspaces_base_dir
         self._sandbox = None
         self._sandbox_id = None
         self._initialized = False
@@ -70,10 +74,22 @@ class DSSandboxBackend(SandboxBackend):
                 "DS-Sandbox is not installed. Install it with: pip install ds-sandbox"
             )
 
+        workspace_base_dir = (
+            self.workspace_base_dir
+            or os.getenv("SANDBOX_WORKSPACE_BASE")
+            or "/tmp/ds_sandbox_workspaces"
+        )
+        paused_workspaces_base_dir = (
+            self.paused_workspaces_base_dir
+            or os.getenv("SANDBOX_PAUSED_BASE")
+            or "/tmp/ds_sandbox_paused"
+        )
+
         # Create config
         config = SandboxConfig(
             default_backend=self.backend_type,
-            workspace_base_dir=self.workspace_base_dir or "/tmp/ds_sandbox_workspaces",
+            workspace_base_dir=workspace_base_dir,
+            paused_workspaces_base_dir=paused_workspaces_base_dir,
         )
 
         # For local mode, pass external workspace path to create symlink

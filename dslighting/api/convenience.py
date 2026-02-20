@@ -33,6 +33,10 @@ _AGENT_INIT_KWARGS = {
     "temperature",
     "timeout",
     "keep_workspace",
+    "sandbox_backend",
+    "sandbox_backend_type",
+    "sandbox_timeout",
+    "sandbox_api_key",
 }
 
 
@@ -214,6 +218,10 @@ def run_agent(
     data: Optional[Union[str, Path, TaskContext]] = None,
     workflow: str = "aide",
     model: str = "gpt-4o",
+    sandbox_backend: Optional[str] = None,
+    sandbox_backend_type: Optional[str] = None,
+    sandbox_timeout: Optional[int] = None,
+    sandbox_api_key: Optional[str] = None,
     **kwargs
 ):
     """Run an agent - the simplest way to use DSLighting.
@@ -231,6 +239,13 @@ def run_agent(
             "deepanalyze", "dsagent", "automind", "aflow".
         model: LLM model identifier for the agent's reasoning.
             Examples: "gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet".
+        sandbox_backend: Optional sandbox backend selector:
+            "local" | "e2b" | "ds_sandbox".
+        sandbox_backend_type: Optional DS-Sandbox backend type:
+            "docker" | "local". Only used when sandbox_backend="ds_sandbox".
+        sandbox_timeout: Optional sandbox timeout override in seconds.
+        sandbox_api_key: Optional API key for E2B backend.
+            If omitted, E2B_API_KEY from environment is used.
         **kwargs: Additional keyword arguments passed to the agent.
             For RAG workflows, pass namespaced parameters:
             `dsagent={"enable_rag": True, "case_dir": "./experience_replay"}`
@@ -258,6 +273,14 @@ def run_agent(
         ... )
     """
     run_kwargs = dict(kwargs)
+    if sandbox_backend is not None:
+        run_kwargs["sandbox_backend"] = sandbox_backend
+    if sandbox_backend_type is not None:
+        run_kwargs["sandbox_backend_type"] = sandbox_backend_type
+    if sandbox_timeout is not None:
+        run_kwargs["sandbox_timeout"] = sandbox_timeout
+    if sandbox_api_key is not None:
+        run_kwargs["sandbox_api_key"] = sandbox_api_key
 
     # Handle task_id
     if task_id:

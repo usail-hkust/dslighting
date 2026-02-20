@@ -11,6 +11,10 @@ def _make_builder(workflow_name: str, init_kwargs: dict):
         temperature=None,
         timeout=300,
         keep_workspace=True,
+        sandbox_backend=None,
+        sandbox_backend_type=None,
+        sandbox_timeout=None,
+        sandbox_api_key=None,
         init_kwargs=init_kwargs,
     )
 

@@ -25,6 +25,10 @@ class AgentAppService:
         temperature: Optional[float],
         timeout: int,
         keep_workspace: bool,
+        sandbox_backend: Optional[str],
+        sandbox_backend_type: Optional[str],
+        sandbox_timeout: Optional[int],
+        sandbox_api_key: Optional[str],
         init_kwargs: Dict[str, Any],
     ) -> None:
         self._workflow_name = workflow_name
@@ -37,6 +41,10 @@ class AgentAppService:
             temperature=temperature,
             timeout=timeout,
             keep_workspace=keep_workspace,
+            sandbox_backend=sandbox_backend,
+            sandbox_backend_type=sandbox_backend_type,
+            sandbox_timeout=sandbox_timeout,
+            sandbox_api_key=sandbox_api_key,
             init_kwargs=init_kwargs,
         )
 

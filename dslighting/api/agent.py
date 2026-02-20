@@ -76,6 +76,10 @@ class Agent(AgentInterface):
         temperature: float = None,
         timeout: int = 300,
         keep_workspace: bool = False,
+        sandbox_backend: Optional[str] = None,
+        sandbox_backend_type: Optional[str] = None,
+        sandbox_timeout: Optional[int] = None,
+        sandbox_api_key: Optional[str] = None,
         **kwargs
     ):
         """
@@ -90,6 +94,13 @@ class Agent(AgentInterface):
             temperature: Temperature parameter (optional, will be read from env if not provided)
             timeout: Sandbox timeout in seconds
             keep_workspace: Whether to keep workspace after execution
+            sandbox_backend: Optional sandbox backend:
+                "local" | "e2b" | "ds_sandbox"
+            sandbox_backend_type: Optional DS-Sandbox backend type:
+                "docker" | "local"
+            sandbox_timeout: Optional sandbox timeout override in seconds
+            sandbox_api_key: Optional API key for E2B backend.
+                If omitted, E2B_API_KEY from environment is used.
             **kwargs: Additional arguments passed to configuration builder.
                 For RAG workflows, use namespaced arguments:
                 `dsagent={"enable_rag": True, "case_dir": "./experience_replay"}`
@@ -111,6 +122,10 @@ class Agent(AgentInterface):
         self.temperature = temperature
         self.timeout = timeout
         self.keep_workspace = keep_workspace
+        self.sandbox_backend = sandbox_backend
+        self.sandbox_backend_type = sandbox_backend_type
+        self.sandbox_timeout = sandbox_timeout
+        self.sandbox_api_key = sandbox_api_key
         self._agent_kwargs = kwargs
         self._last_runner: Optional[DSLightingRunner] = None
 
@@ -191,6 +206,10 @@ class Agent(AgentInterface):
             temperature=self.temperature,
             timeout=self.timeout,
             keep_workspace=self.keep_workspace,
+            sandbox_backend=self.sandbox_backend,
+            sandbox_backend_type=self.sandbox_backend_type,
+            sandbox_timeout=self.sandbox_timeout,
+            sandbox_api_key=self.sandbox_api_key,
             init_kwargs=self._agent_kwargs,
         )
 

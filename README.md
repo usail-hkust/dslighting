@@ -134,6 +134,71 @@ llm_pricing:
   custom_models: {}
 ```
 
+## Sandbox Backends (Simplified API)
+
+`run_agent` and `Agent` support:
+
+- `local`
+- `e2b`
+- `ds_sandbox`
+
+Use explicit dotenv loading in your script:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+### `.env` example
+
+```bash
+SANDBOX_BACKEND=local
+SANDBOX_BACKEND_TYPE=docker
+SANDBOX_TIMEOUT=21600
+E2B_API_KEY=
+SANDBOX_WORKSPACE_BASE=/tmp/ds_sandbox_workspaces
+SANDBOX_PAUSED_BASE=/tmp/ds_sandbox_paused
+```
+
+### Local sandbox
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="local",
+)
+```
+
+### E2B sandbox
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="e2b",
+    sandbox_api_key=None,  # read from E2B_API_KEY by default
+)
+```
+
+Notes:
+
+- install SDK: `pip install e2b`
+- set `E2B_API_KEY` in `.env` (or pass `sandbox_api_key`)
+
+### DS-Sandbox
+
+```python
+result = run_agent(
+    task_id="bike-sharing-demand",
+    sandbox_backend="ds_sandbox",
+    sandbox_backend_type="local",  # or "docker"
+)
+```
+
+Notes:
+
+- install package: `pip install ds-sandbox`
+- defaults use writable paths under `/tmp` to avoid `/opt` permission issues
+
 ---
 
 ## Quick Start (Simplified API)
