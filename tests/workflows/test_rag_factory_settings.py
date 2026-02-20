@@ -10,7 +10,7 @@ from dslighting.workflows.factory.builtin import _resolve_rag_settings
 def test_resolve_rag_settings_default_values() -> None:
     config = DSLightingConfig(workflow=WorkflowConfig(name="dsagent", params={}))
     enable_rag, case_dir = _resolve_rag_settings(config, "dsagent")
-    assert enable_rag is True
+    assert enable_rag is False
     assert case_dir == "experience_replay"
 
 

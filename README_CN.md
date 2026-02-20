@@ -190,6 +190,7 @@ result = run_agent(
 **注意事项**
 
 - RAG 参数必须放在命名空间里（`dsagent={...}` / `automind={...}`）。
+- `enable_rag` 默认值是 `False`。
 - 平铺参数 `enable_rag=...`、`case_dir=...` 会直接报错。
 - `case_dir` 不存在或没有 `*.py` 文件时，召回结果为空。
 

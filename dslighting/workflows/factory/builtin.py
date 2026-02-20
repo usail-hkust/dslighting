@@ -88,7 +88,7 @@ def _create_sandbox_service(workspace: WorkspaceService, config: Any) -> Sandbox
 
 def _resolve_rag_settings(config: Any, workflow_name: str) -> tuple[bool, str]:
     params = getattr(config.workflow, "params", None) or {}
-    enable_rag = params.get("enable_rag", True)
+    enable_rag = params.get("enable_rag", False)
     case_dir = params.get("case_dir", "experience_replay")
 
     if not isinstance(enable_rag, bool):

@@ -253,6 +253,7 @@ result = run_agent(
 ### Notes
 
 - RAG params must be namespaced (`dsagent={...}` / `automind={...}`).
+- `enable_rag` is `False` by default.
 - Flat keys like `enable_rag=...` or `case_dir=...` are rejected.
 - If `case_dir` does not exist or has no `*.py` files, retrieval returns empty results.
 
