@@ -45,8 +45,12 @@ def cmd_detect_packages(args):
 
     config_path = _find_config_path(args.config)
 
-    # Check if user wants all packages or only data science packages
-    save_all = hasattr(args, 'all') and args.all
+    save_all = bool(getattr(args, "all", False))
+    data_science_only = bool(getattr(args, "data_science_only", False))
+    if not save_all and not data_science_only:
+        data_science_only = True
+    if save_all:
+        data_science_only = False
 
     if save_all:
         print(f"Detecting ALL packages...")
@@ -74,7 +78,6 @@ def cmd_detect_packages(args):
         print(f"   (Use '--data-science-only' to save only DS packages)")
 
     # Save to config
-    data_science_only = not save_all
     detector.save_to_config(config_path, packages, data_science_only=data_science_only)
 
     if save_all:
@@ -602,8 +605,8 @@ result = agent.run(data, description="Analyze sales data and find trends")
     return 0
 
 
-def main():
-    """Main CLI entry point."""
+def build_cli_parser() -> argparse.ArgumentParser:
+    """Build and return the DSLighting CLI parser."""
     parser = argparse.ArgumentParser(
         prog='dslighting',
         description='DSLighting - Data Science Agent CLI'
@@ -614,6 +617,20 @@ def main():
         '-v', '--version',
         action='store_true',
         help='Show version information and exit'
+    )
+    parser.add_argument(
+        '--completions',
+        nargs='?',
+        const='bash',
+        choices=['bash', 'zsh'],
+        help='Print completion candidates (bash/zsh)'
+    )
+    parser.add_argument(
+        '--show-completion',
+        nargs='?',
+        const='bash',
+        choices=['bash', 'zsh'],
+        help='Print full shell completion script (bash/zsh)'
     )
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
@@ -667,12 +684,13 @@ def main():
         help='Path to config.yaml file',
         default=None
     )
-    detect_parser.add_argument(
+    detect_mode_group = detect_parser.add_mutually_exclusive_group()
+    detect_mode_group.add_argument(
         '--all',
         action='store_true',
         help='Save all packages (including dependencies). Default: save only Data Science packages'
     )
-    detect_parser.add_argument(
+    detect_mode_group.add_argument(
         '--data-science-only',
         action='store_true',
         help='Save only Data Science & ML packages (default behavior)'
@@ -703,12 +721,29 @@ def main():
     )
     validate_parser.set_defaults(func=cmd_validate_config)
 
+    return parser
+
+
+def main():
+    """Main CLI entry point."""
+    parser = build_cli_parser()
+
     # Parse arguments
     args = parser.parse_args()
 
     # Handle version flags (-v, --version)
     if args.version:
         cmd_version(args)
+        return 0
+
+    if args.completions:
+        from dslighting.cli.completion import get_argument_completions
+        print(get_argument_completions())
+        return 0
+
+    if args.show_completion:
+        from dslighting.cli.completion import print_completion
+        print_completion(args.show_completion)
         return 0
 
     if args.command is None:

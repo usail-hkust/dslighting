@@ -4,70 +4,90 @@ Shell completion support for DSLighting CLI.
 Provides shell completion scripts for bash and zsh.
 """
 
+import argparse
 import logging
 import os
 import sys
 from pathlib import Path
+from typing import Iterable
+
+from dslighting.cli.__main__ import build_cli_parser
 
 logger = logging.getLogger(__name__)
 
 
-# Shell completion scripts
-BASH_COMPLETION = '''# dslighting bash completion
+def _extract_parser_metadata() -> tuple[list[str], list[str]]:
+    parser = build_cli_parser()
+    global_opts: list[str] = []
+    commands: list[str] = []
+    subparsers_action = None
+
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            subparsers_action = action
+            continue
+        global_opts.extend(action.option_strings)
+
+    if subparsers_action is not None:
+        commands.extend(sorted(subparsers_action.choices.keys()))
+        for subparser in subparsers_action.choices.values():
+            for action in subparser._actions:
+                global_opts.extend(action.option_strings)
+
+    # de-duplicate while preserving stable order
+    seen: set[str] = set()
+    deduped_opts: list[str] = []
+    for item in global_opts:
+        if item and item not in seen:
+            seen.add(item)
+            deduped_opts.append(item)
+
+    return commands, deduped_opts
+
+
+def _format_zsh_commands(commands: Iterable[str]) -> str:
+    items = [f"        '{cmd}:{cmd}'" for cmd in commands]
+    return "\n".join(items)
+
+
+def _build_bash_completion(commands: list[str]) -> str:
+    commands_str = " ".join(commands)
+    return f"""# dslighting bash completion
 _dslighting_completions()
-{
+{{
     local cur prev words cword
     _init_completion || return
 
-    if [[ "$cur" == -* ]]; then
-        COMPREPLY=($(compgen -W "$(dslighting --completions bash 2>/dev/null)" -- "$cur"))
+    if [[ \"$cur\" == -* ]]; then
+        COMPREPLY=($(compgen -W \"$(dslighting --completions bash 2>/dev/null)\" -- \"$cur\"))
         return
     fi
 
-    local commands="help workflows example quickstart detect-packages show-packages validate-config"
-    COMPREPLY=($(compgen -W "$commands" -- "$cur"))
-}
+    local commands=\"{commands_str}\"
+    COMPREPLY=($(compgen -W \"$commands\" -- \"$cur\"))
+}}
 complete -F _dslighting_completions dslighting
-'''
+"""
 
-ZSH_COMPLETION = '''#compdef dslighting
 
-_dslighting_completions() {
+def _build_zsh_completion(commands: list[str]) -> str:
+    command_lines = _format_zsh_commands(commands)
+    return f"""#compdef dslighting
+
+_dslighting_completions() {{
     local -a commands
     commands=(
-        'help:Show help and quick start guide'
-        'workflows:List all available workflows'
-        'example:Show workflow example code'
-        'quickstart:Show detailed quick start guide'
-        'detect-packages:Detect and save Python packages'
-        'show-packages:Show detected packages'
-        'validate-config:Validate configuration'
+{command_lines}
     )
 
     if (( CURRENT == 2 )); then
         _describe -t commands 'dslighting commands' commands
         return
     fi
-
-    local subcmd
-    subcmd="${words[2]}"
-
-    case "$subcmd" in
-        example)
-            _describe -t workflows 'workflows' "aide:Adaptive Iteration & Debugging Enhancement" \
-                "autokaggle:Advanced competition solver" \
-                "data_interpreter:Interactive data analysis" \
-                "automind:Complex planning with knowledge base" \
-                "dsagent:Long-term planning with logging" \
-                "deepanalyze:Deep analysis with structured tags"
-            ;;
-        *)
-            ;;
-    esac
-}
+}}
 
 compdef _dslighting_completions dslighting
-'''
+"""
 
 
 def get_completion_script(shell: str = "bash") -> str:
@@ -80,10 +100,11 @@ def get_completion_script(shell: str = "bash") -> str:
     Returns:
         Completion script string
     """
+    commands, _ = _extract_parser_metadata()
     if shell.lower() == "bash":
-        return BASH_COMPLETION
+        return _build_bash_completion(commands)
     elif shell.lower() == "zsh":
-        return ZSH_COMPLETION
+        return _build_zsh_completion(commands)
     else:
         raise ValueError(f"Unsupported shell: {shell}. Use 'bash' or 'zsh'.")
 
@@ -158,13 +179,8 @@ def get_argument_completions() -> str:
     Returns:
         Space-separated list of completions
     """
-    args = [
-        "--help", "-h",
-        "--config", "-c",
-        "--all",
-        "--data-science-only",
-    ]
-    return " ".join(args)
+    _, opts = _extract_parser_metadata()
+    return " ".join(opts)
 
 
 if __name__ == "__main__":
