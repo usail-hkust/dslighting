@@ -112,7 +112,7 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
         if parent_node is None:
             retrieved_knowledge = ""
             if self.workflow.vdb_service:
-                cases = self.workflow.vdb_service.retrieve(task_goal, top_k=2)
+                cases = self.workflow.vdb_service.retrieve_cases(task_goal, top_k=2)
                 retrieved_knowledge = self.workflow.context_manager.summarize_knowledge(
                     cases, task_goal
                 )
@@ -594,7 +594,7 @@ class AutoMindWorkflow:
             # For new drafts, retrieve similar examples from the knowledge base.
             retrieved_knowledge = ""
             if self.vdb_service:
-                cases = self.vdb_service.retrieve(task_goal, top_k=2)
+                cases = self.vdb_service.retrieve_cases(task_goal, top_k=2)
                 retrieved_knowledge = await self.context_manager.summarize_knowledge(
                     cases, task_goal
                 )

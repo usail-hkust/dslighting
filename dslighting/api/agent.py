@@ -89,7 +89,10 @@ class Agent(AgentInterface):
             temperature: Temperature parameter (optional, will be read from env if not provided)
             timeout: Sandbox timeout in seconds
             keep_workspace: Whether to keep workspace after execution
-            **kwargs: Additional arguments passed to create_agent()
+            **kwargs: Additional arguments passed to configuration builder.
+                For RAG workflows, use namespaced arguments:
+                `dsagent={"enable_rag": True, "case_dir": "./experience_replay"}`
+                or `automind={"enable_rag": True, "case_dir": "./experience_replay"}`.
         """
         workflow_key = workflow.lower()
         if workflow_key not in WORKFLOW_ALIASES:

@@ -214,6 +214,50 @@ asyncio.run(main())
 
 ---
 
+## RAG Usage (DSAgent / AutoMind)
+
+RAG is enabled through workflow namespace params and backed by `VDBService`.
+
+### File Layout
+
+`case_dir` should contain Python case files (`*.py`), for example:
+
+```text
+experience_replay/
+  case_001.py
+  case_002.py
+```
+
+### Simplified API Examples
+
+```python
+from dslighting.api import run_agent
+
+result = run_agent(
+    task_id="bike-sharing-demand",
+    workflow="dsagent",
+    dsagent={"enable_rag": True, "case_dir": "./experience_replay"},
+)
+```
+
+```python
+from dslighting.api import run_agent
+
+result = run_agent(
+    task_id="bike-sharing-demand",
+    workflow="automind",
+    automind={"enable_rag": True, "case_dir": "./experience_replay"},
+)
+```
+
+### Notes
+
+- RAG params must be namespaced (`dsagent={...}` / `automind={...}`).
+- Flat keys like `enable_rag=...` or `case_dir=...` are rejected.
+- If `case_dir` does not exist or has no `*.py` files, retrieval returns empty results.
+
+---
+
 ## Result Object (Single Source of Truth)
 
 `Agent.run()` and `run_agent()` return `AgentResult`:

@@ -28,7 +28,7 @@ class DevelopPlanOperator(Operator):
         safe_running_log = truncate_output(running_log, MAX_HISTORY_CHARS)
         query = f"{research_problem}\n{safe_running_log}"
         if self.vdb:
-            retrieved_cases = self.vdb.retrieve(query, top_k=1)
+            retrieved_cases = self.vdb.retrieve_cases(query, top_k=1)
             case = retrieved_cases[0] if retrieved_cases else "No relevant cases found."
         else:
             case = "No relevant cases found."

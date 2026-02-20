@@ -205,11 +205,14 @@ def run_agent(
         data: Data path or TaskContext object. Can be a file path,
             directory path, or a pre-loaded TaskContext from load_data().
         workflow: Workflow name to use for the agent.
-            Options: "aide" (default), "autokaggle", "data_interpreter".
+            Options: "aide" (default), "autokaggle", "data_interpreter",
+            "deepanalyze", "dsagent", "automind", "aflow".
         model: LLM model identifier for the agent's reasoning.
             Examples: "gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet".
-        **kwargs: Additional keyword arguments passed to the agent,
-            such as max_iterations, verbose, etc.
+        **kwargs: Additional keyword arguments passed to the agent.
+            For RAG workflows, pass namespaced parameters:
+            `dsagent={"enable_rag": True, "case_dir": "./experience_replay"}`
+            or `automind={"enable_rag": True, "case_dir": "./experience_replay"}`.
 
     Returns:
         AgentResult: An object containing the agent's execution results,
@@ -225,6 +228,12 @@ def run_agent(
         >>> result = run_agent(task_id="bike-sharing-demand")
         >>> # Run with custom data
         >>> result = run_agent(data="path/to/data", workflow="autokaggle")
+        >>> # Run RAG-enabled DSAgent
+        >>> result = run_agent(
+        ...     task_id="bike-sharing-demand",
+        ...     workflow="dsagent",
+        ...     dsagent={"enable_rag": True, "case_dir": "./experience_replay"},
+        ... )
     """
     # Handle task_id
     if task_id:

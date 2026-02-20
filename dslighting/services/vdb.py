@@ -1,6 +1,4 @@
-"""
-Service for managing an in-memory vector database for case-based reasoning.
-"""
+"""Case-based vector retrieval service used by RAG-enabled workflows."""
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -27,6 +25,8 @@ class VDBService(VectorStorageInterface):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name).to(self.device).eval()
+        self.model_name = model_name
+        self.case_dir = str(case_dir)
         self.case_files: List[Path] = []
         self.case_texts: Dict[str, str] = {}  # key -> text content
         self.embedding_bank: Optional[torch.Tensor] = None
@@ -34,7 +34,12 @@ class VDBService(VectorStorageInterface):
 
     def _build_index(self, case_dir: Path):
         """Loads cases from a directory and builds the vector index."""
-        logger.info(f"Building vector index from cases in: {case_dir}")
+        logger.info(
+            "Building vector index from case_dir=%s with model=%s on device=%s",
+            case_dir,
+            self.model_name,
+            self.device,
+        )
         if not case_dir.exists():
             logger.warning(f"Case directory not found: {case_dir}. Creating empty index.")
             return
@@ -43,7 +48,9 @@ class VDBService(VectorStorageInterface):
         case_texts = []
         for file_path in self.case_files:
             with open(file_path, "r", encoding="utf-8") as f:
-                case_texts.append(f.read())
+                text = f.read()
+            case_texts.append(text)
+            self.case_texts[str(file_path)] = text
 
         if not case_texts:
             logger.warning("No case files found to build index.")
@@ -57,24 +64,24 @@ class VDBService(VectorStorageInterface):
             self.embedding_bank = torch.nn.functional.normalize(embeddings, p=2, dim=1)
         logger.info(f"Successfully built index with {len(self.case_files)} cases.")
 
-    def retrieve(self, query: str, top_k: int) -> List[str]:
-        """Retrieves the top_k most similar case texts for a given query."""
-        if self.embedding_bank is None:
+    def _semantic_retrieve_with_scores(self, query: str, top_k: int) -> List[Tuple[int, float]]:
+        if self.embedding_bank is None or top_k <= 0:
             return []
 
         with torch.no_grad():
-            inputs = self.tokenizer([query], padding=True, truncation=True, return_tensors='pt', max_length=512).to(self.device)
+            inputs = self.tokenizer(
+                [query],
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+                max_length=512,
+            ).to(self.device)
             query_embedding = self.model(**inputs).last_hidden_state[:, 0]
             query_embedding = torch.nn.functional.normalize(query_embedding, p=2, dim=1)
 
-        similarity = (query_embedding @ self.embedding_bank.T).squeeze()
-        _, indices = torch.topk(similarity, min(top_k, len(self.case_files)))
-
-        retrieved_cases = []
-        for idx in indices.tolist():
-            with open(self.case_files[idx], "r", encoding="utf-8") as f:
-                retrieved_cases.append(f.read())
-        return retrieved_cases
+        similarity = (query_embedding @ self.embedding_bank.T).view(-1)
+        values, indices = torch.topk(similarity, min(top_k, len(self.case_files)))
+        return [(int(idx), float(score)) for idx, score in zip(indices.tolist(), values.tolist())]
 
     async def store_documents(self, documents: list):
         """Store documents in vector database.
@@ -129,10 +136,15 @@ class VDBService(VectorStorageInterface):
         Returns:
             List of (key, similarity_score) tuples
         """
-        top_k = kwargs.get('top_k', limit)
-        results = self.retrieve(query, top_k)
-        # Return as (key, score) tuples - use filename as key
-        return [(str(self.case_files[i]), 1.0 - i/top_k) for i in range(len(results))]
+        if not isinstance(query, str):
+            raise NotImplementedError(
+                "VDBService only supports text queries for semantic search. "
+                "Use retrieve_cases(query, top_k) with a string query."
+            )
+
+        top_k = int(kwargs.get("top_k", limit))
+        hits = self._semantic_retrieve_with_scores(query=query, top_k=top_k)
+        return [(str(self.case_files[idx]), score) for idx, score in hits]
 
     def retrieve(
         self,
@@ -170,7 +182,8 @@ class VDBService(VectorStorageInterface):
         Returns:
             List of retrieved case texts
         """
-        return self.retrieve(query, top_k)
+        hits = self._semantic_retrieve_with_scores(query=query, top_k=top_k)
+        return [self.case_texts.get(str(self.case_files[idx]), "") for idx, _ in hits]
 
     def update(
         self,
@@ -221,4 +234,4 @@ class VDBService(VectorStorageInterface):
 
     async def search_async(self, query: str, top_k: int = 5):
         """Async search for similar documents."""
-        return self.retrieve(query, top_k)
+        return self.retrieve_cases(query, top_k)

@@ -41,26 +41,6 @@
 
 ---
 
-## 🆕 v2.7.9 最新更新
-
-| 功能 | 说明 |
-|------|------|
-| **Benchmark Mode** | 支持 DABench 与 MLEBench 基准评测体系 |
-| **DAG Mode** | 增强有向无环图（DAG）运行时编排能力 |
-| **Web UI** | 当前为实验态，正在持续重构（不属于稳定 API） |
-
-> DSLighting 是一个 LLM 驱动的数据科学执行框架，可将任务描述与数据集转化为代码生成、执行、评估与迭代优化的完整流程。
-
-## 🎯 两种使用模式（Two Usage Modes）
-
-1. **Simplified API（推荐快速上手）**  
-   面向标准数据科学任务与快速原型开发。
-
-2. **Architecture（推荐深度定制）**  
-   面向自定义 Operator / Workflow / Factory 的高级开发场景。
-
----
-
 ## 📸 Web界面预览
 
 ### 主页面
@@ -168,6 +148,50 @@ class AgentResult:
     error: str | None = None             # 失败时错误信息
     metadata: dict[str, Any] = field(default_factory=dict)  # 扩展元数据
 ```
+
+### RAG 使用（DSAgent / AutoMind）
+
+RAG 通过工作流命名空间参数开启，底层实现为 `VDBService`。
+
+**目录规范**
+
+`case_dir` 目录下放置 `*.py` 案例文件，例如：
+
+```text
+experience_replay/
+  case_001.py
+  case_002.py
+```
+
+**DSAgent 示例**
+
+```python
+from dslighting.api import run_agent
+
+result = run_agent(
+    task_id="bike-sharing-demand",
+    workflow="dsagent",
+    dsagent={"enable_rag": True, "case_dir": "./experience_replay"},
+)
+```
+
+**AutoMind 示例**
+
+```python
+from dslighting.api import run_agent
+
+result = run_agent(
+    task_id="bike-sharing-demand",
+    workflow="automind",
+    automind={"enable_rag": True, "case_dir": "./experience_replay"},
+)
+```
+
+**注意事项**
+
+- RAG 参数必须放在命名空间里（`dsagent={...}` / `automind={...}`）。
+- 平铺参数 `enable_rag=...`、`case_dir=...` 会直接报错。
+- `case_dir` 不存在或没有 `*.py` 文件时，召回结果为空。
 
 #### 🎯 第三步：选择使用方式
 

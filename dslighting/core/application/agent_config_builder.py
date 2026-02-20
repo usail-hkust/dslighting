@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from dslighting.config import DSLightingConfig, LLMConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.error import ConfigurationError
 
 
 class AgentConfigBuilder:
@@ -58,6 +59,25 @@ class AgentConfigBuilder:
         # Keep legacy precedence: call-time kwargs override init-time kwargs.
         merged = {**self.init_kwargs, **run_kwargs}
 
+        if self.workflow_name in self._RAG_WORKFLOWS:
+            namespaced = merged.pop(self.workflow_name, None)
+            if namespaced is not None:
+                if not isinstance(namespaced, dict):
+                    raise ConfigurationError(
+                        f"`{self.workflow_name}` must be a dict when provided",
+                        error_code="CFG-002",
+                    )
+                config.workflow.params.update(namespaced)
+
+            invalid_flat = sorted(key for key in self._RAG_KEYS if key in merged)
+            if invalid_flat:
+                raise ConfigurationError(
+                    "RAG parameters must be passed via workflow namespace, e.g. "
+                    f"`{self.workflow_name}={{'enable_rag': True, 'case_dir': './experience_replay'}}`. "
+                    f"Invalid flat keys: {invalid_flat}",
+                    error_code="CFG-002",
+                )
+
         search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
         if self.workflow_name != "autokaggle":
             search_keys.add("enforce_no_plotting")
@@ -76,4 +96,6 @@ class AgentConfigBuilder:
             config.run.parameters.update(merged)
 
         return config
+    _RAG_WORKFLOWS = {"automind", "dsagent"}
+    _RAG_KEYS = {"enable_rag", "case_dir"}
 

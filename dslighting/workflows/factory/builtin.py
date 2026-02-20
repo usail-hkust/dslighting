@@ -11,7 +11,7 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 from dslighting.benchmark.core.base import BaseBenchmark
-from dslighting.error import DynamicImportError
+from dslighting.error import ConfigurationError, DynamicImportError
 from dslighting.ops.code import ExecuteAndTestOperator
 from dslighting.ops.llm.basic import (
     GenerateCodeAndPlanOperator,
@@ -86,6 +86,24 @@ def _create_sandbox_service(workspace: WorkspaceService, config: Any) -> Sandbox
     )
 
 
+def _resolve_rag_settings(config: Any, workflow_name: str) -> tuple[bool, str]:
+    params = getattr(config.workflow, "params", None) or {}
+    enable_rag = params.get("enable_rag", True)
+    case_dir = params.get("case_dir", "experience_replay")
+
+    if not isinstance(enable_rag, bool):
+        raise ConfigurationError(
+            f"`{workflow_name}.enable_rag` must be a boolean, got: {type(enable_rag).__name__}",
+            error_code="CFG-002",
+        )
+    if not isinstance(case_dir, str) or not case_dir.strip():
+        raise ConfigurationError(
+            f"`{workflow_name}.case_dir` must be a non-empty string",
+            error_code="CFG-002",
+        )
+    return enable_rag, case_dir
+
+
 class AIDEWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "aide"
@@ -127,10 +145,9 @@ class AutoMindWorkflowFactory(BaseWorkflowFactory):
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
-        enable_rag = config.workflow.params.get("enable_rag", True)
+        enable_rag, case_dir = _resolve_rag_settings(config, "automind")
         vdb_service = None
         if enable_rag:
-            case_dir = config.workflow.params.get("case_dir", "experience_replay")
             vdb_service = VDBService(case_dir=case_dir)
 
         state = JournalState()
@@ -165,10 +182,9 @@ class DSAgentWorkflowFactory(BaseWorkflowFactory):
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
-        enable_rag = config.workflow.params.get("enable_rag", True)
+        enable_rag, case_dir = _resolve_rag_settings(config, "dsagent")
         vdb_service = None
         if enable_rag:
-            case_dir = config.workflow.params.get("case_dir", "experience_replay")
             vdb_service = VDBService(case_dir=case_dir)
 
         state = DSAgentState()
@@ -418,4 +434,3 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
         if "operators" in params:
             kwargs["operators"] = operators
         return cls(**kwargs)  # type: ignore[arg-type]
-
