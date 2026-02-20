@@ -1396,6 +1396,32 @@ class DSLightingRunner:
             )
 
         summary = await runtime.run_actor(actor)
+        final_result = getattr(summary, "final_result", None)
+        if isinstance(final_result, dict):
+            status = str(final_result.get("status", "")).strip().lower()
+            has_error = bool(final_result.get("error"))
+            if status and status != "success":
+                raise WorkflowError(
+                    final_result.get("error") or f"DAG workflow reported status '{status}' for task '{task_id}'",
+                    error_code="WRK-003",
+                    details={
+                        "task_id": task_id,
+                        "final_result": final_result,
+                        "dag_summary": summary.to_dict() if summary else None,
+                    },
+                    suggestion="Review workflow final_result status/error for the failing phase and retry."
+                )
+            if has_error:
+                raise WorkflowError(
+                    final_result.get("error") or f"DAG workflow reported an error for task '{task_id}'",
+                    error_code="WRK-003",
+                    details={
+                        "task_id": task_id,
+                        "final_result": final_result,
+                        "dag_summary": summary.to_dict() if summary else None,
+                    },
+                    suggestion="Review workflow final_result error payload and execution logs."
+                )
         if not summary.success:
             raise WorkflowError(
                 summary.last_error or f"DAG runtime execution failed for task '{task_id}'",

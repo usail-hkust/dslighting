@@ -131,10 +131,20 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
 
     def cleanup(self):
         """Cleanup workspace"""
-        workspace_service = getattr(self, "workspace_service", None)
-        if workspace_service is not None and not self.keep_workspace:
-            self.workspace_service.cleanup()
-            logger.debug(f"✓ Workspace cleaned")
+        if self.keep_workspace:
+            return
+
+        workspace_service = None
+        last_runner = getattr(self, "_last_runner", None)
+        if last_runner is not None:
+            workspace_service = getattr(last_runner, "workspace_service", None)
+
+        if workspace_service is None:
+            workspace_service = getattr(self, "workspace_service", None)
+
+        if workspace_service is not None:
+            workspace_service.cleanup()
+            logger.debug("✓ Workspace cleaned")
 
     def run(
         self,
