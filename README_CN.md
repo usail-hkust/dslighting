@@ -245,8 +245,15 @@ print(result)
 
 当你需要自定义 operators/workflows/factories 时使用：
 
+各部分职责：
+- `Operator`：一个异步能力单元（如总结、规划、执行）。
+- `Workflow.solve(...)`：你的 Agent 核心异步逻辑。
+- `WorkflowFactory.create_agent(...)`：把 services 和 operators 组装成 workflow。
+- `workflow.run(...)`：给同步用户的包装入口（内部会调用 `solve(...)`）。
+
 ```python
-import asyncio
+from pathlib import Path
+from typing import Any
 
 from dslighting.arch.interfaces import WorkflowFactoryInterface
 from dslighting.arch.operators import Operator
@@ -257,46 +264,66 @@ from dslighting.config import LLMConfig
 
 
 class SummarizeOperator(Operator):
-    async def __call__(self, text: str) -> dict:
+    async def __call__(self, text: str) -> dict[str, Any]:
         return {"summary": text[:200]}
 
 
 class MyWorkflow(BaseWorkflow):
-    def __init__(self, operators, services, config=None):
-        self.operators = operators
-        self.services = services
-        self.config = config or {}
+    def __init__(self, operators, services, agent_config=None):
+        super().__init__(
+            operators=operators,
+            services=services,
+            agent_config=agent_config or {},
+        )
 
-    async def solve(self, description, io_instructions, data_dir, output_path):
+    async def solve(
+        self,
+        description: str,
+        io_instructions: str,
+        data_dir: Path,
+        output_path: Path,
+    ) -> dict[str, Any]:
         return await self.operators["summarize"](text=description)
 
 
 class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
     def create_agent(self, **kwargs):
         workspace = WorkspaceService(run_name="custom_arch_run")
-        operators = {"summarize": SummarizeOperator()}
         services = {
             "llm": LLMService(config=LLMConfig(model=self.model)),
             "sandbox": SandboxService(workspace=workspace),
             "workspace": workspace,
             "state": JournalState(),
         }
-        return MyWorkflow(operators=operators, services=services, config=kwargs)
+        operators = {
+            "summarize": SummarizeOperator(),
+        }
+        return MyWorkflow(operators=operators, services=services, agent_config=kwargs)
 
 
-async def main():
+# 普通脚本推荐：通过 workflow.run(...) 同步调用
+def main():
     workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
-    result = await workflow.solve(
-        description="Build a model to predict bike sharing demand",
-        io_instructions="Use train.csv and output submission.csv",
-        data_dir="data/competitions/bike-sharing-demand",
-        output_path="submission.csv",
-    )
+    result = workflow.run(data="data/competitions/bike-sharing-demand")
     print(result)
 
-
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
 ```
+
+大多数用户（不自定义 workflow）建议直接使用 `Agent.run(...)`：
+
+```python
+from dslighting.api import Agent
+
+agent = Agent(workflow="aide", model="gpt-4o")
+result = agent.run(task_id="bike-sharing-demand")
+print(result)
+```
+
+使用规则：
+- 普通脚本：用 `workflow.run(...)` 或 `agent.run(...)`。
+- 已在 `async def` 中：用 `await workflow.solve(...)`（不要再调 `workflow.run(...)`）。
 
 ---
 

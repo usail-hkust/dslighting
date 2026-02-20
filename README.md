@@ -252,7 +252,6 @@ What each part does:
 - `workflow.run(...)`: sync wrapper around `solve(...)` for non-async users.
 
 ```python
-import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -302,34 +301,29 @@ class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
         return MyWorkflow(operators=operators, services=services, agent_config=kwargs)
 
 
-# Option A (recommended for normal scripts): sync call
-def run_sync():
+# Recommended for normal scripts: sync call via workflow.run(...)
+def main():
     workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
     result = workflow.run(data="data/competitions/bike-sharing-demand")
     print(result)
 
-
-# Option B (when you're already in async context): await solve(...)
-async def run_async():
-    workflow = MyWorkflowFactory(model="gpt-4o").create_agent(max_iterations=3)
-    result = await workflow.solve(
-        description="Build a model to predict bike sharing demand",
-        io_instructions="Use train.csv and output submission.csv",
-        data_dir=Path("data/competitions/bike-sharing-demand"),
-        output_path=Path("submission.csv"),
-    )
-    print(result)
-
-
 if __name__ == "__main__":
-    run_sync()
-    # asyncio.run(run_async())  # Use this line only if you want async style
+    main()
+```
+
+For most users (no custom workflow), use `Agent.run(...)`:
+
+```python
+from dslighting.api import Agent
+
+agent = Agent(workflow="aide", model="gpt-4o")
+result = agent.run(task_id="bike-sharing-demand")
+print(result)
 ```
 
 Usage rule:
-- Use `workflow.run(...)` in synchronous scripts.
-- Use `await workflow.solve(...)` if you are already inside `async def`.
-- Do not call `workflow.run(...)` from an existing async event loop.
+- Normal scripts: use `workflow.run(...)` or `agent.run(...)`.
+- Already inside `async def`: use `await workflow.solve(...)` (do not call `workflow.run(...)` there).
 
 ---
 
