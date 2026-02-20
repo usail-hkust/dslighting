@@ -5,7 +5,6 @@ import tempfile
 import logging
 from typing import Tuple, Any
 from dslighting.core.types import TaskDefinition
-from dslighting.services.data_analyzer import DataAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,18 @@ class TaskHandler(ABC):
         except Exception as e:
             logger.error(f"Failed to create temporary directory for TaskHandler: {e}")
 
-        self.analyzer = DataAnalyzer()
+        self.analyzer = self._create_data_analyzer()
+
+    @staticmethod
+    def _create_data_analyzer():
+        try:
+            from dslighting.services.data_analyzer import DataAnalyzer
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "DataAnalyzer optional dependencies are missing. "
+                "Install benchmark/data-analysis dependencies (e.g., numpy/pandas)."
+            ) from exc
+        return DataAnalyzer()
 
     @abstractmethod
     def prepare_input(self, task: TaskDefinition) -> Tuple[str, str, Path, Path]:

@@ -1,26 +1,34 @@
-"""
-DSLighting services.
+"""Service namespace with lazy imports to avoid heavy import side effects."""
 
-This module provides infrastructure services including:
-- LLM service (via LiteLLM)
-- Sandboxed code execution
-- Workspace management
-- Data analysis and reporting
-- Vector database for case-based reasoning
-"""
+from importlib import import_module
+from typing import Dict, Tuple
 
-from dslighting.services.data_analyzer import DataAnalyzer
-from dslighting.services.llm import LLMService
-from dslighting.services.sandbox import SandboxService, NotebookExecutor, ProcessIsolatedNotebookExecutor
-from dslighting.services.vdb import VDBService
-from dslighting.services.workspace import WorkspaceService
+_LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
+    "LLMService": ("dslighting.services.llm", "LLMService"),
+    "SandboxService": ("dslighting.services.sandbox", "SandboxService"),
+    "NotebookExecutor": ("dslighting.services.sandbox", "NotebookExecutor"),
+    "ProcessIsolatedNotebookExecutor": (
+        "dslighting.services.sandbox",
+        "ProcessIsolatedNotebookExecutor",
+    ),
+    "WorkspaceService": ("dslighting.services.workspace", "WorkspaceService"),
+    "DataAnalyzer": ("dslighting.services.data_analyzer", "DataAnalyzer"),
+    "VDBService": ("dslighting.services.vdb", "VDBService"),
+}
 
-__all__ = [
-    "LLMService",
-    "SandboxService",
-    "NotebookExecutor",
-    "ProcessIsolatedNotebookExecutor",
-    "WorkspaceService",
-    "DataAnalyzer",
-    "VDBService",
-]
+
+def __getattr__(name: str):
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(f"module 'dslighting.services' has no attribute '{name}'")
+    module_name, attr_name = _LAZY_EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attr_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY_EXPORTS.keys()))
+
+
+__all__ = list(_LAZY_EXPORTS.keys())

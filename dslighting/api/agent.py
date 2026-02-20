@@ -17,7 +17,8 @@ Example:
     >>> print(result.score)  # Access task score
     >>>
     >>> # Multiple tasks - returns Benchmark object
-    >>> benchmark = DSBenchmark("dabench").run(model="gpt-4o")
+    >>> from dslighting.config import DSLightingConfig
+    >>> benchmark = DSBenchmark("dabench").run(config=DSLightingConfig())
     >>> print(benchmark.summary["score"])  # Average score across tasks
 """
 

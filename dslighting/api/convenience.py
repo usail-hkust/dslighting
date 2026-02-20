@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Convenience Functions - Top-Level User API
 
@@ -6,13 +8,15 @@ These functions are designed for ease of use and quick prototyping.
 """
 
 from pathlib import Path
-from typing import Union, Optional
+from typing import TYPE_CHECKING, Union, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 from .agent import Agent
-from dslighting.core.data import DataLoader, TaskContext
 from dslighting.error import TaskError
+
+if TYPE_CHECKING:
+    from dslighting.core.data import TaskContext
 
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
@@ -21,6 +25,22 @@ _VENDOR_REGISTRY_ROOTS = [
     _PACKAGE_ROOT / "benchmark" / "vendor" / "dabench" / "competitions",
     _PACKAGE_ROOT / "benchmark" / "vendor" / "sciencebench" / "competitions",
 ]
+
+_AGENT_INIT_KWARGS = {
+    "api_key",
+    "api_base",
+    "provider",
+    "temperature",
+    "timeout",
+    "keep_workspace",
+}
+
+
+def _split_agent_kwargs(kwargs: dict) -> tuple[dict, dict]:
+    """Split kwargs into Agent(...) init kwargs and agent.run(...) kwargs."""
+    init_kwargs = {k: v for k, v in kwargs.items() if k in _AGENT_INIT_KWARGS}
+    run_kwargs = {k: v for k, v in kwargs.items() if k not in _AGENT_INIT_KWARGS}
+    return init_kwargs, run_kwargs
 
 
 def _resolve_task_data_path(task_id: str) -> Optional[Path]:
@@ -112,7 +132,7 @@ def load_data(
     task: Optional[str] = None,
     target: Optional[str] = None,
     registry_dir: Union[str, Path, None] = None,
-) -> TaskContext:
+) -> "TaskContext":
     """Load data for agent processing.
 
     This function loads data from various sources including local files,
@@ -181,6 +201,8 @@ def load_data(
             )
 
     # Respect DataLoader/task-detector semantics (including registry overrides).
+    from dslighting.core.data import DataLoader
+
     loader = DataLoader(import_path)
     loaded_data = loader.load()
 
@@ -235,16 +257,18 @@ def run_agent(
         ...     dsagent={"enable_rag": True, "case_dir": "./experience_replay"},
         ... )
     """
+    run_kwargs = dict(kwargs)
+
     # Handle task_id
     if task_id:
         resolved_registry = _resolve_registry_root(task_id)
-        if "registry_dir" not in kwargs and resolved_registry:
-            kwargs["registry_dir"] = str(resolved_registry)
+        if "registry_dir" not in run_kwargs and resolved_registry:
+            run_kwargs["registry_dir"] = str(resolved_registry)
 
-        if "task" not in kwargs:
+        if "task" not in run_kwargs:
             task_description = _resolve_task_description(task_id, resolved_registry)
             if task_description:
-                kwargs["task"] = task_description
+                run_kwargs["task"] = task_description
 
         if data is None:
             data = _resolve_task_data_path(task_id)
@@ -266,10 +290,11 @@ def run_agent(
         )
 
     # Create agent
-    agent = Agent(workflow=workflow, model=model, **kwargs)
+    agent_init_kwargs, run_only_kwargs = _split_agent_kwargs(run_kwargs)
+    agent = Agent(workflow=workflow, model=model, **agent_init_kwargs)
 
     # Run agent - pass task_id explicitly for benchmark initialization
-    result = agent.run(data=data, task_id=task_id, **kwargs)
+    result = agent.run(data=data, task_id=task_id, **run_only_kwargs)
 
     return result
 
@@ -291,8 +316,10 @@ def analyze(
             Examples: "Create visualizations for the data",
             "Summarize key statistics and patterns".
         model: LLM model identifier for analysis.
-        **kwargs: Additional arguments passed to the Agent constructor.
-            Common options: max_iterations, verbose, keep_workspace.
+        **kwargs: Additional run/config arguments. Runtime arguments are passed
+            to `agent.run(...)`; agent initialization args include
+            `api_key`, `api_base`, `provider`, `temperature`, `timeout`,
+            and `keep_workspace`.
 
     Returns:
         AgentResult: An object containing analysis results including
@@ -305,18 +332,22 @@ def analyze(
         ...     description="Create visualizations showing monthly trends"
         ... )
     """
-    if "workflow" not in kwargs:
-        kwargs["workflow"] = "aide"
-    if "max_iterations" not in kwargs:
-        kwargs["max_iterations"] = 2
-    if "keep_workspace" not in kwargs:
-        kwargs["keep_workspace"] = True
-    agent = Agent(model=model, **kwargs)
+    call_kwargs = dict(kwargs)
+    if "workflow" not in call_kwargs:
+        call_kwargs["workflow"] = "aide"
+    if "max_iterations" not in call_kwargs:
+        call_kwargs["max_iterations"] = 2
+    if "keep_workspace" not in call_kwargs:
+        call_kwargs["keep_workspace"] = True
+
+    agent_init_kwargs, run_only_kwargs = _split_agent_kwargs(call_kwargs)
+    workflow_name = run_only_kwargs.pop("workflow", "aide")
+    agent = Agent(model=model, workflow=workflow_name, **agent_init_kwargs)
     return agent.run(
         data=data,
         description=description,
         task_type="analysis",
-        **kwargs
+        **run_only_kwargs
     )
 
 
@@ -337,7 +368,10 @@ def process(
             Examples: "Handle missing values", "Create new features",
             "Normalize numerical columns".
         model: LLM model identifier for processing.
-        **kwargs: Additional arguments passed to the Agent constructor.
+        **kwargs: Additional run/config arguments. Runtime arguments are passed
+            to `agent.run(...)`; agent initialization args include
+            `api_key`, `api_base`, `provider`, `temperature`, `timeout`,
+            and `keep_workspace`.
 
     Returns:
         AgentResult: An object containing processing results including
@@ -351,18 +385,22 @@ def process(
         ... )
     """
     intent_description = f"User intent: data processing\n\n{description}"
-    if "workflow" not in kwargs:
-        kwargs["workflow"] = "aide"
-    if "max_iterations" not in kwargs:
-        kwargs["max_iterations"] = 3
-    if "keep_workspace" not in kwargs:
-        kwargs["keep_workspace"] = True
-    agent = Agent(model=model, **kwargs)
+    call_kwargs = dict(kwargs)
+    if "workflow" not in call_kwargs:
+        call_kwargs["workflow"] = "aide"
+    if "max_iterations" not in call_kwargs:
+        call_kwargs["max_iterations"] = 3
+    if "keep_workspace" not in call_kwargs:
+        call_kwargs["keep_workspace"] = True
+
+    agent_init_kwargs, run_only_kwargs = _split_agent_kwargs(call_kwargs)
+    workflow_name = run_only_kwargs.pop("workflow", "aide")
+    agent = Agent(model=model, workflow=workflow_name, **agent_init_kwargs)
     return agent.run(
         data=data,
         description=intent_description,
         task_type="processing",
-        **kwargs
+        **run_only_kwargs
     )
 
 
@@ -384,8 +422,10 @@ def model(
             Examples: "Build a classification model to predict customer churn",
             "Train a regression model for price prediction".
         model: LLM model identifier for modeling.
-        **kwargs: Additional arguments passed to the Agent constructor.
-            Common options: max_iterations, verbose, keep_workspace.
+        **kwargs: Additional run/config arguments. Runtime arguments are passed
+            to `agent.run(...)`; agent initialization args include
+            `api_key`, `api_base`, `provider`, `temperature`, `timeout`,
+            and `keep_workspace`.
 
     Returns:
         AgentResult: An object containing model results including trained
@@ -399,16 +439,20 @@ def model(
         ... )
     """
     intent_description = f"User intent: modeling\n\n{description}"
-    if "workflow" not in kwargs:
-        kwargs["workflow"] = "aide"
-    if "max_iterations" not in kwargs:
-        kwargs["max_iterations"] = 4
-    if "keep_workspace" not in kwargs:
-        kwargs["keep_workspace"] = True
-    agent = Agent(model=model, **kwargs)
+    call_kwargs = dict(kwargs)
+    if "workflow" not in call_kwargs:
+        call_kwargs["workflow"] = "aide"
+    if "max_iterations" not in call_kwargs:
+        call_kwargs["max_iterations"] = 4
+    if "keep_workspace" not in call_kwargs:
+        call_kwargs["keep_workspace"] = True
+
+    agent_init_kwargs, run_only_kwargs = _split_agent_kwargs(call_kwargs)
+    workflow_name = run_only_kwargs.pop("workflow", "aide")
+    agent = Agent(model=model, workflow=workflow_name, **agent_init_kwargs)
     return agent.run(
         data=data,
         description=intent_description,
         task_type="modeling",
-        **kwargs
+        **run_only_kwargs
     )

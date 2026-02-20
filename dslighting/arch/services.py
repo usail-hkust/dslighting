@@ -1,21 +1,34 @@
-"""Architecture-layer services exports."""
+"""Architecture-layer services exports (lazy)."""
 
-from dslighting.services import (
-    DataAnalyzer,
-    LLMService,
-    NotebookExecutor,
-    ProcessIsolatedNotebookExecutor,
-    SandboxService,
-    VDBService,
-    WorkspaceService,
-)
+from importlib import import_module
+from typing import Dict, Tuple
 
-__all__ = [
-    "LLMService",
-    "SandboxService",
-    "NotebookExecutor",
-    "ProcessIsolatedNotebookExecutor",
-    "WorkspaceService",
-    "DataAnalyzer",
-    "VDBService",
-]
+_LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
+    "LLMService": ("dslighting.services.llm", "LLMService"),
+    "SandboxService": ("dslighting.services.sandbox", "SandboxService"),
+    "NotebookExecutor": ("dslighting.services.sandbox", "NotebookExecutor"),
+    "ProcessIsolatedNotebookExecutor": (
+        "dslighting.services.sandbox",
+        "ProcessIsolatedNotebookExecutor",
+    ),
+    "WorkspaceService": ("dslighting.services.workspace", "WorkspaceService"),
+    "DataAnalyzer": ("dslighting.services.data_analyzer", "DataAnalyzer"),
+    "VDBService": ("dslighting.services.vdb", "VDBService"),
+}
+
+
+def __getattr__(name: str):
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(f"module 'dslighting.arch.services' has no attribute '{name}'")
+    module_name, attr_name = _LAZY_EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attr_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY_EXPORTS.keys()))
+
+
+__all__ = list(_LAZY_EXPORTS.keys())

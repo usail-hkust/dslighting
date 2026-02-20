@@ -35,70 +35,20 @@ _LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
     "analyze": ("dslighting.api.convenience", "analyze"),
     "process": ("dslighting.api.convenience", "process"),
     "model": ("dslighting.api.convenience", "model"),
-    "DSBenchmark": ("dslighting.api.benchmark", "DSBenchmark"),
-    # i18n utilities
-    "DEFAULT_LANGUAGE": ("dslighting.utils.i18n", "DEFAULT_LANGUAGE"),
-    "SUPPORTED_LANGUAGES": ("dslighting.utils.i18n", "SUPPORTED_LANGUAGES"),
-    # Data API
-    "DataLoader": ("dslighting.core.data", "DataLoader"),
-    "TaskContext": ("dslighting.core.data", "TaskContext"),
-    "DatasetInfo": ("dslighting.core.data", "DatasetInfo"),
-    "load_dataset": ("dslighting.core.data", "load_dataset"),
-    # Workflow API
-    "BaseWorkflow": ("dslighting.workflows.base", "BaseWorkflow"),
-    "BaseWorkflowFactory": ("dslighting.workflows.factory.base", "BaseWorkflowFactory"),
-    "AIDE": ("dslighting.workflows.presets", "AIDE"),
-    "AutoKaggle": ("dslighting.workflows.presets", "AutoKaggle"),
-    "DataInterpreter": ("dslighting.workflows.presets", "DataInterpreter"),
-    "DeepAnalyze": ("dslighting.workflows.presets", "DeepAnalyze"),
-    "DSAgent": ("dslighting.workflows.presets", "DSAgent"),
-    "AutoMind": ("dslighting.workflows.presets", "AutoMind"),
-    "AFlow": ("dslighting.workflows.presets", "AFlow"),
-    # Config and task types
+    # Core config
     "DSLightingConfig": ("dslighting.config", "DSLightingConfig"),
-    "LLMConfig": ("dslighting.config", "LLMConfig"),
-    "SchedulerConfig": ("dslighting.config", "SchedulerConfig"),
-    "DagRuntimeConfig": ("dslighting.config", "DagRuntimeConfig"),
-    "TaskConfig": ("dslighting.config", "TaskConfig"),
-    "ConfigBuilder": ("dslighting.core.config", "ConfigBuilder"),
-    "DSLightingRunner": ("dslighting.runner", "DSLightingRunner"),
-    "Runner": ("dslighting.runner", "DSLightingRunner"),
-    "DagRuntime": ("dslighting.runtime", "DagRuntime"),
-    "DagRuntimeOptions": ("dslighting.runtime", "DagRuntimeOptions"),
-    "OpNode": ("dslighting.runtime", "OpNode"),
-    "NodeResult": ("dslighting.runtime", "NodeResult"),
-    "DABenchmark": ("dslighting.benchmark", "DABenchmark"),
-    "BenchmarkFactory": ("dslighting.benchmark", "BenchmarkFactory"),
-    # Datasets
-    "datasets": ("dslighting.datasets", None),
     # Advanced architecture namespace
     "arch": ("dslighting.arch", None),
-    "TaskDefinition": ("dslighting.core.types", "TaskDefinition"),
-    "TaskType": ("dslighting.core.types", "TaskType"),
-    "TaskMode": ("dslighting.core.types", "TaskMode"),
-    "WorkflowCandidate": ("dslighting.core.types", "WorkflowCandidate"),
-    "ReviewResult": ("dslighting.core.types", "ReviewResult"),
-    "Plan": ("dslighting.core.types", "Plan"),
-    "MLETaskLoader": ("dslighting.core.tasks", "MLETaskLoader"),
-    # Error handling (new unified module)
-    "DSLightingError": ("dslighting.error.exceptions", "DSLightingError"),
-    "ConfigurationError": ("dslighting.error.exceptions", "ConfigurationError"),
-    "WorkflowError": ("dslighting.error.exceptions", "WorkflowError"),
-    "BenchmarkError": ("dslighting.error.exceptions", "BenchmarkError"),
-    "LLMServiceError": ("dslighting.error.exceptions", "LLMServiceError"),
-    "TaskError": ("dslighting.error.exceptions", "TaskError"),
-    "WorkspaceError": ("dslighting.error.exceptions", "WorkspaceError"),
-    "FormattedError": ("dslighting.error.formatter", "FormattedError"),
-    "ErrorRegistry": ("dslighting.error.formatter", "ErrorRegistry"),
-    "ErrorDefinition": ("dslighting.error.formatter", "ErrorDefinition"),
-    "format_error": ("dslighting.error.formatter", "format_error"),
-    "safe_format": ("dslighting.error.formatter", "safe_format"),
-    # Checkpoint
-    "CheckpointManager": ("dslighting.checkpoint.checkpoint", "CheckpointManager"),
 }
 
 
 def __getattr__(name: str):
+    if name == "DSBenchmark":
+        raise AttributeError(
+            "DSBenchmark is no longer exported from the dslighting root package. "
+            "Use 'from dslighting.api import DSBenchmark' instead."
+        )
+
     if name not in _LAZY_EXPORTS:
         raise AttributeError(f"module 'dslighting' has no attribute '{name}'")
 
@@ -203,61 +153,7 @@ __all__ = [
     "analyze",
     "process",
     "model",
-    "DSBenchmark",
-    "DataLoader",
-    "TaskContext",
-    "DatasetInfo",
-    "load_dataset",
-    "BaseWorkflow",
-    "BaseWorkflowFactory",
-    "AIDE",
-    "AutoKaggle",
-    "DataInterpreter",
-    "DeepAnalyze",
-    "DSAgent",
-    "AutoMind",
-    "AFlow",
     "DSLightingConfig",
-    "LLMConfig",
-    "SchedulerConfig",
-    "DagRuntimeConfig",
-    "TaskConfig",
-    "ConfigBuilder",
-    "DSLightingRunner",
-    "Runner",
-    "DagRuntime",
-    "DagRuntimeOptions",
-    "OpNode",
-    "NodeResult",
-    "DABenchmark",
-    "BenchmarkFactory",
-    "TaskDefinition",
-    "TaskType",
-    "TaskMode",
-    "WorkflowCandidate",
-    "ReviewResult",
-    "Plan",
-    "MLETaskLoader",
-    # i18n utilities
-    "DEFAULT_LANGUAGE",
-    "SUPPORTED_LANGUAGES",
-    # Error handling
-    "DSLightingError",
-    "ConfigurationError",
-    "WorkflowError",
-    "BenchmarkError",
-    "LLMServiceError",
-    "TaskError",
-    "WorkspaceError",
-    "FormattedError",
-    "ErrorRegistry",
-    "ErrorDefinition",
-    "format_error",
-    "safe_format",
-    # Checkpoint
-    "CheckpointManager",
-    # Datasets
-    "datasets",
     # Advanced architecture namespace
     "arch",
     "help",

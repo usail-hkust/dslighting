@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 from dslighting.config import DSLightingConfig
 from dslighting.core.execution.result_mapper import map_execution_result
 from dslighting.core.interfaces import AgentResult
-from dslighting.core.tasks import MLETaskLoader
 from dslighting.core.types import TaskDefinition
 
 if TYPE_CHECKING:
@@ -38,6 +37,8 @@ class TaskExecutor:
         runner = DSLightingRunner(self._config)
         if on_runner_created is not None:
             on_runner_created(runner)
+
+        from dslighting.core.tasks import MLETaskLoader
 
         loader = MLETaskLoader()
         description, _, public_data_dir, output_path = loader.load_task(

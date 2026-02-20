@@ -115,6 +115,25 @@ Optional model-specific overrides (`LLM_MODEL_CONFIGS`):
 }
 ```
 
+## `config.yaml` (Optional)
+
+`config.yaml` is optional for normal `run_agent` / `Agent` usage.
+
+- You can run most tasks without it.
+- It is mainly used by benchmark/runtime configuration and custom model pricing metadata.
+- Task registries still use per-task `data_dir/<task_id>/config.yaml` (separate from root config).
+
+Minimal example (`config.yaml`):
+
+```yaml
+run:
+  enable_trajectory_logging: false
+  trajectory_filename: trajectory.jsonl
+
+llm_pricing:
+  custom_models: {}
+```
+
 ---
 
 ## Quick Start (Simplified API)
@@ -169,6 +188,7 @@ from dslighting.arch.operators import Operator
 from dslighting.arch.services import LLMService, SandboxService, WorkspaceService
 from dslighting.arch.state import JournalState
 from dslighting.arch.workflows import BaseWorkflow, BaseWorkflowFactory
+from dslighting.config import LLMConfig
 
 
 class SummarizeOperator(Operator):
@@ -188,11 +208,12 @@ class MyWorkflow(BaseWorkflow):
 
 class MyWorkflowFactory(BaseWorkflowFactory, WorkflowFactoryInterface):
     def create_agent(self, **kwargs):
+        workspace = WorkspaceService(run_name="custom_arch_run")
         operators = {"summarize": SummarizeOperator()}
         services = {
-            "llm": LLMService(model=self.model),
-            "sandbox": SandboxService(),
-            "workspace": WorkspaceService(),
+            "llm": LLMService(config=LLMConfig(model=self.model)),
+            "sandbox": SandboxService(workspace=workspace),
+            "workspace": workspace,
             "state": JournalState(),
         }
         return MyWorkflow(operators=operators, services=services, config=kwargs)
@@ -302,6 +323,12 @@ print(result.metadata_path)
 ```
 
 Supported benchmark families include DABench and MLEBench variants.
+
+If `DSBenchmark` raises an import error (for example missing `pandas`), install the missing package first:
+
+```bash
+pip install pandas
+```
 
 ---
 
