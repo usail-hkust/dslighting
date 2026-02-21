@@ -81,8 +81,10 @@ cd dslighting
 python3.10 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-pip install -r requirements.txt
+pip install -r requirements.txt  # Core runtime dependencies
 pip install -e .
+# Optional: full development/research dependency set
+# pip install -r requirements_local.txt
 ```
 
 If you hit `ModuleNotFoundError: aiofiles`, run:
