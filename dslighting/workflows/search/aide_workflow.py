@@ -625,12 +625,14 @@ class AIDEWorkflow(BaseWorkflow):
                 self.sandbox_service.workspace.get_path("sandbox_workdir") / output_path.name
             )
 
+            maximize = not task_context.get("lower_is_better", False)
+
             if not submission_file_in_sandbox.exists():
                 new_node.is_buggy = True
                 new_node.analysis = (
                     "Code executed without error, but failed to produce the required output file."
                 )
-                new_node.metric = MetricValue(value=0.0, maximize=True)
+                new_node.metric = MetricValue(value=0.0, maximize=maximize)
             elif self.benchmark and hasattr(self.benchmark, "grade"):
                 logger.info(
                     f"Performing grounded validation using benchmark grader on '{submission_file_in_sandbox}'..."
@@ -642,7 +644,7 @@ class AIDEWorkflow(BaseWorkflow):
                 # A score > 0 from the grader is the ground truth for a non-buggy, valid submission.
                 if score > 0:
                     new_node.is_buggy = False
-                    new_node.metric = MetricValue(value=score, maximize=True)
+                    new_node.metric = MetricValue(value=score, maximize=maximize)
                     logger.info(f"Grounded validation PASSED. Score: {score:.4f}")
                     review_context = {
                         "task": task_context,
@@ -660,7 +662,7 @@ class AIDEWorkflow(BaseWorkflow):
                     )
                 else:
                     new_node.is_buggy = True
-                    new_node.metric = MetricValue(value=score, maximize=True)
+                    new_node.metric = MetricValue(value=score, maximize=maximize)
                     new_node.analysis = "Grounded validation FAILED: The generated submission file was invalid or scored 0.0."
                     logger.warning(f"Grounded validation FAILED. Score: {score}")
             else:
@@ -675,13 +677,7 @@ class AIDEWorkflow(BaseWorkflow):
                 review_calls = self._capture_llm_calls_since(review_start)
                 if review_calls:
                     new_node.llm_review = review_calls[-1]
-                new_node.analysis = review.summary
-                new_node.is_buggy = review.is_buggy
-                new_node.metric = (
-                    MetricValue(value=review.metric_value, maximize=not review.lower_is_better)
-                    if review.metric_value is not None
-                    else MetricValue(value=None)
-                )
+                new_node.absorb_review(review, task_context)
 
         # 7. Add the new node to the search tree state and persist artifacts.
         self.state.append(new_node, parent=parent_node)

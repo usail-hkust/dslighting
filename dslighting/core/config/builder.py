@@ -6,10 +6,9 @@ and user parameters to create the final DSLightingConfig. It also provides
 configuration version management and migration support.
 """
 
-import json
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from typing_extensions import ClassVar
 
 from dslighting.config import (
@@ -26,15 +25,10 @@ from dslighting.error import ConfigurationError
 from dslighting.utils.defaults import (
     DEFAULT_CONFIG,
     DEFAULT_WORKSPACE_DIR,
-    ENV_API_KEY,
-    ENV_API_BASE,
-    ENV_LLM_MODEL,
-    ENV_LLM_PROVIDER,
-    ENV_LLM_MODEL_CONFIGS,
-    ENV_LLM_TEMPERATURE,
     ENV_DSLIGHTING_DEFAULT_WORKFLOW,
     ENV_DSLIGHTING_WORKSPACE_DIR,
 )
+from dslighting.core.config.llm_resolution import build_llm_config
 
 # Import shared config utilities
 from dslighting.core.config.shared import (
@@ -80,7 +74,8 @@ class ConfigBuilder:
         self,
         workflow: str = None,
         model: str = None,
-        api_key: str = None,
+        api_key: Union[str, List[str], None] = None,
+        api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
@@ -116,8 +111,8 @@ class ConfigBuilder:
         # 1. Start with defaults
         config = DEFAULT_CONFIG.copy()
 
-        # 2. Load environment overrides
-        env_config = self._load_env_config()
+        # 2. Load non-LLM environment overrides
+        env_config = self._load_non_llm_env_config()
         config = self._deep_merge(config, env_config)
 
         # 3. Apply user parameters
@@ -125,6 +120,7 @@ class ConfigBuilder:
             workflow=workflow,
             model=model,
             api_key=api_key,
+            api_keys=api_keys,
             api_base=api_base,
             provider=provider,
             temperature=temperature,
@@ -138,41 +134,21 @@ class ConfigBuilder:
         )
         config = self._deep_merge(config, user_config)
 
-        # 4. Load model-specific configs if any
-        model_name = config.get("llm", {}).get("model")
-        if model_name:
-            model_configs = self._load_model_configs()
-            if model_name in model_configs:
-                model_override = model_configs[model_name]
-                # Model configs have lower priority than direct user params
-                config["llm"] = self._deep_merge(config["llm"], model_override)
+        llm_config = build_llm_config(
+            model=model,
+            api_key=api_key,
+            api_keys=api_keys,
+            api_base=api_base,
+            provider=provider,
+            temperature=temperature,
+        )
 
         # 5. Convert to DSLightingConfig objects
-        return self._create_dslighting_config(config)
+        return self._create_dslighting_config(config, llm_config=llm_config)
 
-    def _load_env_config(self) -> Dict[str, Any]:
-        """Load configuration from environment variables."""
+    def _load_non_llm_env_config(self) -> Dict[str, Any]:
+        """Load non-LLM configuration from environment variables."""
         config = {}
-
-        # LLM settings
-        if os.getenv(ENV_API_KEY):
-            config.setdefault("llm", {})["api_key"] = os.getenv(ENV_API_KEY)
-
-        if os.getenv(ENV_API_BASE):
-            config.setdefault("llm", {})["api_base"] = os.getenv(ENV_API_BASE)
-
-        if os.getenv(ENV_LLM_MODEL):
-            config.setdefault("llm", {})["model"] = os.getenv(ENV_LLM_MODEL)
-
-        if os.getenv(ENV_LLM_PROVIDER):
-            config.setdefault("llm", {})["provider"] = os.getenv(ENV_LLM_PROVIDER)
-
-        if os.getenv(ENV_LLM_TEMPERATURE):
-            try:
-                temp = float(os.getenv(ENV_LLM_TEMPERATURE))
-                config.setdefault("llm", {})["temperature"] = temp
-            except ValueError:
-                logger.warning(f"Invalid {ENV_LLM_TEMPERATURE} value")
 
         # DSLighting settings
         if os.getenv(ENV_DSLIGHTING_DEFAULT_WORKFLOW):
@@ -185,78 +161,12 @@ class ConfigBuilder:
                 os.getenv(ENV_DSLIGHTING_WORKSPACE_DIR)
 
         return config
-
-    def _load_model_configs(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Load per-model overrides from LLM_MODEL_CONFIGS env var.
-
-        Expected format (JSON object):
-          {
-            "<model_name>": {
-              "api_key": "sk-..." | ["sk-1", "sk-2"],
-              "api_base": "https://.../v1",
-              "provider": "siliconflow",
-              "temperature": 0.7
-            }
-          }
-
-        Note:
-            - api_key can be a single string or a list of strings for rotation
-            - If api_key is a list, it's converted to api_keys for rotation support
-            - api_keys takes precedence over api_key in the final config
-        """
-        raw = os.getenv(ENV_LLM_MODEL_CONFIGS)
-        if not raw:
-            return {}
-
-        try:
-            parsed = json.loads(raw)
-        except Exception as exc:
-            logger.warning(f"Failed to parse LLM_MODEL_CONFIGS as JSON: {exc}")
-            return {}
-
-        if not isinstance(parsed, dict):
-            logger.warning("LLM_MODEL_CONFIGS must be a JSON object")
-            return {}
-
-        # Process each model config
-        result = {}
-        for model_name, model_config in parsed.items():
-            if not isinstance(model_name, str) or not isinstance(model_config, dict):
-                logger.warning(f"Skipping invalid model config: {model_name}")
-                continue
-
-            # Handle api_key as list (convert to api_keys for rotation)
-            config_copy = model_config.copy()
-            if "api_key" in config_copy:
-                api_key_value = config_copy["api_key"]
-                if isinstance(api_key_value, list):
-                    # Convert list of keys to api_keys field
-                    if len(api_key_value) > 0:
-                        config_copy["api_keys"] = api_key_value
-                        del config_copy["api_key"]
-                        logger.info(f"Model '{model_name}': loaded {len(api_key_value)} API keys for rotation")
-                    else:
-                        logger.warning(f"Model '{model_name}': api_key list is empty, skipping")
-                        continue
-                elif isinstance(api_key_value, str):
-                    # Single key - keep as api_key
-                    if not api_key_value or api_key_value == "your_key":
-                        logger.warning(f"Model '{model_name}': api_key is placeholder, skipping")
-                        continue
-                else:
-                    logger.warning(f"Model '{model_name}': api_key must be string or list, skipping")
-                    continue
-
-            result[model_name] = config_copy
-
-        return result
-
     def _build_user_config(
         self,
         workflow: str = None,
         model: str = None,
-        api_key: str = None,
+        api_key: Union[str, List[str], None] = None,
+        api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
@@ -326,6 +236,9 @@ class ConfigBuilder:
         if api_key is not None:
             config.setdefault("llm", {})["api_key"] = api_key
 
+        if api_keys is not None:
+            config.setdefault("llm", {})["api_keys"] = api_keys
+
         if api_base is not None:
             config.setdefault("llm", {})["api_base"] = api_base
 
@@ -364,17 +277,23 @@ class ConfigBuilder:
 
         return config
 
-    def _create_dslighting_config(self, config_dict: Dict[str, Any]) -> DSLightingConfig:
+    def _create_dslighting_config(
+        self,
+        config_dict: Dict[str, Any],
+        *,
+        llm_config: Optional[LLMConfig] = None,
+    ) -> DSLightingConfig:
         """Convert configuration dict to DSLightingConfig object."""
-        # Extract LLM config
-        llm_dict = config_dict.get("llm", {}).copy()
+        if llm_config is None:
+            # Extract LLM config
+            llm_dict = config_dict.get("llm", {}).copy()
 
-        # If both api_key and api_keys exist, prefer api_keys (key pool takes priority)
-        if "api_keys" in llm_dict and "api_key" in llm_dict:
-            logger.debug("Both api_key and api_keys present. Removing api_key in favor of api_keys for key rotation.")
-            del llm_dict["api_key"]
+            # If both api_key and api_keys exist, prefer api_keys (key pool takes priority)
+            if "api_keys" in llm_dict and "api_key" in llm_dict:
+                logger.debug("Both api_key and api_keys present. Removing api_key in favor of api_keys for key rotation.")
+                del llm_dict["api_key"]
 
-        llm_config = LLMConfig(**llm_dict)
+            llm_config = LLMConfig(**llm_dict)
 
         # Extract workflow config
         workflow_dict = config_dict.get("workflow", {})

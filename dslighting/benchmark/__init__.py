@@ -24,11 +24,11 @@ Example:
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.benchmark.core.factory import BenchmarkFactory
 from dslighting.benchmark.core.scheduler_core import RuntimeSchedulerOptions
-from dslighting.benchmark.benchmarks.mle_lite_benchmark import MLELiteBenchmark
 from dslighting.benchmark.benchmarks.custom_benchmark import CustomBenchmark
 from dslighting.benchmark.evaluators import BaseBenchmarkEvaluator, KaggleEvaluator
 
 try:
+    from dslighting.benchmark.benchmarks.mle_lite_benchmark import MLELiteBenchmark
     from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
     from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
     from dslighting.benchmark.benchmarks.sciencebench_benchmark import ScienceBenchBenchmark
@@ -49,6 +49,7 @@ try:
     ]
 
 except ImportError:
+    MLELiteBenchmark = None
     __all__ = [
         "BaseBenchmark",
         "BenchmarkFactory",

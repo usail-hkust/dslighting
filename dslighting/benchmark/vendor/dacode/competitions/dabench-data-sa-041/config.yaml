@@ -1,0 +1,12 @@
+id: dabench-data-sa-041
+name: data-sa-041
+competition_type: code
+awards_medals: false
+description: vendor/dacode/competitions/dabench-data-sa-041/description.md
+dataset:
+  answers: dabench-data-sa-041/prepared/private/answer.csv
+  sample_submission: dabench-data-sa-041/prepared/public/sample_submission.csv
+grader:
+  name: compare_csv
+  grade_fn: file:vendor/dacode/competitions/dabench-data-sa-041/grade.py:grade
+preparer: file:vendor/dacode/competitions/dabench-data-sa-041/prepare.py:prepare

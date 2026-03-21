@@ -1,0 +1,7 @@
+schema_version: 1
+source_id: sciencebench
+contract_id: sciencebench_contract/v1
+engine_id: sciencebench
+registry_root: competitions
+default_data_env_var: DSLIGHTING_SCIENCEBENCH_DATA
+supports_single_task_loader: true

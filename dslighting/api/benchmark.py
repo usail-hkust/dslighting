@@ -6,16 +6,17 @@ with minimal configuration while maintaining full control for advanced users.
 """
 
 import logging
-import json
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-from dslighting.api.task_loader import TaskLoader
 from dslighting.api.utils import print_benchmark_banner, print_benchmark_info
-from dslighting.benchmark import DABenchmark, MLEBenchmark
+from dslighting.benchmark.core.source_catalog import (
+    BenchmarkSourceDescriptor,
+    get_benchmark_source_catalog,
+)
 from dslighting.config import DSLightingConfig, WorkflowConfig
 from dslighting.core.config.shared import get_workflow_for_benchmark
+from dslighting.error import ConfigurationError
 if TYPE_CHECKING:
     from dslighting.runner import DSLightingRunner
 
@@ -42,9 +43,11 @@ class DSBenchmark:
 
     Examples:
         >>> # Predefined mode (simplest)
-        >>> DSBenchmark("dabench").run()
+        >>> from dslighting.core import ConfigBuilder
+        >>> config = ConfigBuilder().build_config(model="gpt-4o")
+        >>> DSBenchmark("dabench").run(config=config)
         >>>
-        >>> config = DSLightingConfig()
+        >>> config = ConfigBuilder().build_config(model="gpt-4o-mini")
         >>> DSBenchmark("dabench").run(config=config)
         >>>
         >>> # Custom mode
@@ -110,6 +113,7 @@ class DSBenchmark:
         """
         # Store benchmark type and experiment name separately
         self._benchmark_type = benchmark_type
+        self._catalog = get_benchmark_source_catalog()
         self.name = exp_name or benchmark_type  # Used for logging/output paths
 
         # Mode detection and configuration
@@ -123,130 +127,69 @@ class DSBenchmark:
             self._mode = "custom"
             self._competitions = competitions
             self._data_dir = data_dir
-            self._vendor_comp_dir = vendor_comp_dir
-
-        elif benchmark_type in TaskLoader.DABENCH_SUBSETS:
-            # DABench subsets (da_summary_statistics, da_correlation_analysis, etc.)
-            self._mode = "predefined"
-            inferred_type = "dabench"
-
-            # Resolve vendor_dir: use package default path if None
-            if vendor_comp_dir is None:
-                import dslighting
-                package_dir = Path(dslighting.__file__).parent
-                self._vendor_comp_dir = str(package_dir / "benchmark" / "vendor" / inferred_type / "competitions")
-            else:
-                self._vendor_comp_dir = vendor_comp_dir
-
-            # Resolve data_dir: Read from environment variable first, otherwise use user-provided value
-            if data_dir is None:
-                env_key = f"DSLIGHTING_{inferred_type.upper()}_DATA"
-                self._data_dir = os.getenv(env_key)
-            else:
-                self._data_dir = data_dir
-
-            if self._data_dir is None:
-                raise ValueError(
-                    f"Cannot determine data path for {inferred_type}. "
-                    f"Please either:\n"
-                    f"  1. Set {env_key} environment variable, or\n"
-                    f"  2. Provide data_dir parameter when initializing DSBenchmark"
-                )
-
-            # Get predefined tasks from TaskLoader
-            self._competitions = TaskLoader.get_dabench_subset_tasks(benchmark_type)
-            if self._competitions is None:
-                raise ValueError(f"DABench subset '{benchmark_type}' not found")
-
-        elif benchmark_type in ["dabench", "mlebench"]:
-            # Full benchmark modes
-            self._mode = "predefined"
-            inferred_type = self._infer_benchmark_type(benchmark_type)
-
-            # Resolve vendor_dir: use package default path if None
-            if vendor_comp_dir is None:
-                import dslighting
-                package_dir = Path(dslighting.__file__).parent
-                self._vendor_comp_dir = str(package_dir / "benchmark" / "vendor" / inferred_type / "competitions")
-            else:
-                self._vendor_comp_dir = vendor_comp_dir
-
-            # Resolve data_dir: Read from environment variable first, otherwise use user-provided value
-            if data_dir is None:
-                env_key = f"DSLIGHTING_{inferred_type.upper()}_DATA"
-                self._data_dir = os.getenv(env_key)
-            else:
-                self._data_dir = data_dir
-
-            if self._data_dir is None:
-                raise ValueError(
-                    f"Cannot determine data path for {inferred_type}. "
-                    f"Please either:\n"
-                    f"  1. Set {env_key} environment variable, or\n"
-                    f"  2. Provide data_dir parameter when initializing DSBenchmark"
-                )
-
-            # Auto-discover all tasks
-            prefix = "dabench-" if inferred_type == "dabench" else None
-            self._competitions = TaskLoader.auto_discover_all_tasks(
-                data_dir=self._data_dir,
-                vendor_comp_dir=self._vendor_comp_dir,
-                prefix=prefix,
+            self._source = self._catalog.resolve_source_by_registry_root(
+                Path(vendor_comp_dir),
+                search_hints=[Path(data_dir), Path.cwd()],
             )
-
-        elif benchmark_type == "mle-lite":
-            # MLE-Lite predefined subset
-            self._mode = "predefined"
-            inferred_type = "mlebench"
-
-            # Resolve vendor_dir: use package default path if None
-            if vendor_comp_dir is None:
-                import dslighting
-                package_dir = Path(dslighting.__file__).parent
-                self._vendor_comp_dir = str(package_dir / "benchmark" / "vendor" / inferred_type / "competitions")
-            else:
-                self._vendor_comp_dir = vendor_comp_dir
-
-            # Resolve data_dir: Read from environment variable first, otherwise use user-provided value
-            if data_dir is None:
-                env_key = f"DSLIGHTING_{inferred_type.upper()}_DATA"
-                self._data_dir = os.getenv(env_key)
-            else:
-                self._data_dir = data_dir
-
-            if self._data_dir is None:
-                raise ValueError(
-                    f"Cannot determine data path for {inferred_type}. "
-                    f"Please either:\n"
-                    f"  1. Set {env_key} environment variable, or\n"
-                    f"  2. Provide data_dir parameter when initializing DSBenchmark"
-                )
-
-            # Get predefined MLE-Lite tasks
-            self._competitions = TaskLoader.get_predefined_tasks("mle-lite")
-            if self._competitions is None:
-                raise ValueError("MLE-Lite task list not found")
+            self._source_id = self._source.source_id
+            self._vendor_comp_dir = str(self._source.registry_root)
 
         else:
-            raise ValueError(
-                f"Unknown benchmark type: {benchmark_type}\n"
-                f"Available predefined modes:\n"
-                f"  - dabench, mlebench: Full benchmark\n"
-                f"  - mle-lite: MLE-Lite curated subset (22 tasks)\n"
-                f"  - da_summary_statistics: DABench summary statistics (90 tasks)\n"
-                f"  - da_comprehensive_preprocessing: DABench comprehensive preprocessing (45 tasks)\n"
-                f"  - da_correlation_analysis: DABench correlation analysis (72 tasks)\n"
-                f"  - da_distribution_analysis: DABench distribution analysis (64 tasks)\n"
-                f"  - da_feature_engineering: DABench feature engineering (50 tasks)\n"
-                f"  - da_machine_learning: DABench machine learning (19 tasks)\n"
-                f"  - da_outlier_detection: DABench outlier detection (35 tasks)\n"
-                f"Or use custom mode (provide competitions parameter)"
-            )
+            preset = self._catalog.resolve_preset(benchmark_type)
+            if preset is not None:
+                self._mode = "predefined"
+                self._source = self._catalog.get_source(preset.source_id)
+                self._source_id = self._source.source_id
+                self._vendor_comp_dir = str(self._resolve_vendor_dir(self._source, vendor_comp_dir))
+                self._data_dir = self._catalog.resolve_data_dir(self._source, data_dir)
+                self._competitions = preset.get_task_ids()
+                if not self._competitions:
+                    raise ValueError(f"Preset '{benchmark_type}' did not resolve to any tasks")
+
+            else:
+                try:
+                    self._source = self._catalog.get_source(benchmark_type)
+                except Exception as exc:
+                    available_modes = ", ".join(self._catalog.list_available_benchmark_types())
+                    raise ValueError(
+                        f"Unknown benchmark type: {benchmark_type}\n"
+                        f"Available predefined modes:\n  - {available_modes}\n"
+                        "Or use custom mode (provide competitions parameter)"
+                    ) from exc
+
+                self._source_id = self._source.source_id
+                self._mode = "predefined"
+                self._vendor_comp_dir = str(self._resolve_vendor_dir(self._source, vendor_comp_dir))
+                self._data_dir = self._catalog.resolve_data_dir(self._source, data_dir)
+                self._competitions = self._catalog.discover_tasks(
+                    self._source,
+                    data_dir=self._data_dir,
+                )
 
         logger.info(f"DSBenchmark initialized: {self.name} ({self._mode} mode)")
+        logger.info(f"  Source: {self._source_id}")
         logger.info(f"  Data dir: {self._data_dir}")
         logger.info(f"  Vendor dir: {self._vendor_comp_dir}")
         logger.info(f"  Competitions: {len(self._competitions)} tasks")
+
+    def _resolve_vendor_dir(
+        self,
+        source: BenchmarkSourceDescriptor,
+        vendor_comp_dir: Optional[str],
+    ) -> Path:
+        if vendor_comp_dir is None:
+            return source.registry_root
+
+        resolved = self._catalog.resolve_source_by_registry_root(
+            Path(vendor_comp_dir),
+            search_hints=[Path.cwd()],
+        )
+        if resolved.source_id != source.source_id and resolved.manifest_path is not None:
+            raise ValueError(
+                f"Registry '{vendor_comp_dir}' belongs to source '{resolved.source_id}', "
+                f"not '{source.source_id}'."
+            )
+        return resolved.registry_root
 
     def run(
         self,
@@ -278,7 +221,8 @@ class DSBenchmark:
             - benchmark.metadata_path: JSON file with aggregated statistics
 
             Example:
-                >>> config = DSLightingConfig()
+                >>> from dslighting.core import ConfigBuilder
+                >>> config = ConfigBuilder().build_config(model="gpt-4o")
                 >>> benchmark = DSBenchmark("dabench").run(config=config)
         """
         dslighting_config = self._prepare_config(config)
@@ -294,12 +238,17 @@ class DSBenchmark:
 
     def _infer_benchmark_type(self, name: str) -> str:
         """Infer benchmark type from name."""
+        preset = self._catalog.resolve_preset(name)
+        if preset is not None:
+            return preset.source_id
+        if name in self._catalog.list_available_benchmark_types():
+            return name
         if name.startswith("mle"):
             return "mlebench"
         return "dabench"
 
     def _prepare_config(self, config: DSLightingConfig) -> DSLightingConfig:
-        """Prepare and normalize benchmark config."""
+        """Prepare benchmark-specific defaults for a fully resolved DSLightingConfig."""
         if not isinstance(config, DSLightingConfig):
             raise TypeError(
                 f"`config` must be DSLightingConfig, got {type(config).__name__}."
@@ -315,49 +264,12 @@ class DSBenchmark:
         if prepared.scheduler.exp_name is None:
             prepared.scheduler.exp_name = self.name
 
-        # Backward-compatible env fallback for direct DSLightingConfig usage.
-        # In previous API layers, API_KEY could be injected indirectly by ConfigBuilder.
-        if not prepared.llm.api_key and not prepared.llm.api_keys:
-            env_api_key = os.getenv("API_KEY")
-            if env_api_key:
-                prepared.llm.api_key = env_api_key
-
-        # Backward-compatible model-specific env overrides (LLM_MODEL_CONFIGS).
-        # Format:
-        # {
-        #   "model-name": {
-        #       "api_key": "sk-..." or ["sk-1", "sk-2"],
-        #       "api_base": "https://.../v1",
-        #       "provider": "siliconflow",
-        #       "temperature": 1.0
-        #   }
-        # }
-        raw_model_configs = os.getenv("LLM_MODEL_CONFIGS")
-        if raw_model_configs:
-            try:
-                parsed = json.loads(raw_model_configs)
-            except Exception:
-                parsed = None
-            if isinstance(parsed, dict):
-                model_cfg = parsed.get(prepared.llm.model)
-                if isinstance(model_cfg, dict):
-                    if "api_key" in model_cfg:
-                        key_val = model_cfg.get("api_key")
-                        if isinstance(key_val, list) and key_val:
-                            prepared.llm.api_keys = [str(k) for k in key_val if str(k).strip()]
-                            prepared.llm.api_key = None
-                        elif isinstance(key_val, str) and key_val.strip():
-                            prepared.llm.api_key = key_val.strip()
-                            prepared.llm.api_keys = None
-                    if isinstance(model_cfg.get("api_base"), str) and model_cfg["api_base"].strip():
-                        prepared.llm.api_base = model_cfg["api_base"].strip()
-                    if isinstance(model_cfg.get("provider"), str) and model_cfg["provider"].strip():
-                        prepared.llm.provider = model_cfg["provider"].strip()
-                    if model_cfg.get("temperature") is not None:
-                        try:
-                            prepared.llm.temperature = float(model_cfg["temperature"])
-                        except (TypeError, ValueError):
-                            pass
+        if not prepared.llm.get_api_keys():
+            raise ConfigurationError(
+                "DSBenchmark.run(config=...) requires a fully resolved LLM config. "
+                "Build the config with ConfigBuilder.build_config(...) or provide llm.api_key/api_keys explicitly.",
+                error_code="CFG-002",
+            )
 
         return prepared
 
@@ -380,27 +292,14 @@ class DSBenchmark:
         from dslighting.runner import DSLightingRunner
 
         runner = DSLightingRunner(config)
-
-        # Select benchmark class based on type
-        benchmark_type = self._infer_benchmark_type(self._benchmark_type)
-
-        if benchmark_type == "dabench":
-            benchmark = DABenchmark(
-                name=self.name,
-                log_path=log_path,
-                data_dir=self._data_dir,
-                competitions=self._competitions,
-                runner=runner,
-            )
-        else:  # mlebench
-            benchmark = MLEBenchmark(
-                name=self.name,
-                file_path=None,
-                log_path=log_path,
-                data_dir=self._data_dir,
-                competitions=self._competitions,
-                runner=runner,
-            )
+        benchmark = self._catalog.build_benchmark(
+            self._source,
+            name=self.name,
+            data_dir=self._data_dir,
+            competitions=self._competitions,
+            runner=runner,
+            log_path=log_path,
+        )
 
         # Print banner and info
         if verbose:

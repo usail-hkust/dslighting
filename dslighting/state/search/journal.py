@@ -9,7 +9,10 @@ import json
 from contextlib import contextmanager
 from datetime import datetime
 from functools import total_ordering
-from typing import Optional, Any, List, Dict, Set
+from typing import TYPE_CHECKING, Optional, Any, List, Dict, Set
+
+if TYPE_CHECKING:
+    from dslighting.core.types import ReviewResult
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -89,6 +92,24 @@ class Node(BaseModel):
         self.exc_type = exec_result.exc_type
         self.is_buggy = not exec_result.success
         self.exec_metadata = exec_result.metadata or {}
+
+    def absorb_review(self, review: "ReviewResult", task_context: Optional[Dict[str, Any]] = None) -> None:
+        """Merges a ReviewResult into this node.
+
+        Metric direction (lower_is_better) is sourced from task_context when
+        available, falling back to the review's own field. This ensures direction
+        is driven by the task spec rather than per-review LLM inference.
+
+        Args:
+            review: Structured result from the review operator.
+            task_context: Optional dict, may carry 'lower_is_better' (bool) and
+                          'metric_name' (str) set by the task runner.
+        """
+        self.analysis = review.summary
+        self.is_buggy = review.is_buggy
+        ctx = task_context or {}
+        lower_is_better = ctx.get("lower_is_better", review.lower_is_better)
+        self.metric = MetricValue(value=review.metric_value, maximize=not lower_is_better)
 
     model_config = ConfigDict(
         # Note: json_encoders deprecated in Pydantic V2

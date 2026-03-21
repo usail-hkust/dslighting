@@ -7,10 +7,14 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 import yaml
 
+from dslighting.benchmark.core.source_catalog import (
+    ResolvedBenchmarkSource,
+    get_benchmark_source_catalog,
+)
 from dslighting.error import BenchmarkError, ConfigurationError
 
 logger = logging.getLogger(__name__)
@@ -32,43 +36,17 @@ class MLETaskLoader:
 
     @staticmethod
     def _candidate_registry_roots() -> list[Path]:
-        package_root = Path(__file__).resolve().parents[2]
-        return [
-            package_root / "benchmark" / "vendor" / "mlebench" / "competitions",
-            package_root / "benchmark" / "vendor" / "dabench" / "competitions",
-            package_root / "benchmark" / "vendor" / "sciencebench" / "competitions",
-            Path.cwd() / "dslighting" / "benchmark" / "vendor" / "mlebench" / "competitions",
-            Path.cwd() / "dslighting" / "benchmark" / "vendor" / "dabench" / "competitions",
-            Path.cwd() / "dslighting" / "benchmark" / "vendor" / "sciencebench" / "competitions",
-            Path.cwd() / "benchmark" / "vendor" / "mlebench" / "competitions",
-            Path.cwd() / "benchmark" / "vendor" / "dabench" / "competitions",
-            Path.cwd() / "benchmark" / "vendor" / "sciencebench" / "competitions",
-        ]
+        return get_benchmark_source_catalog().iter_registry_roots(search_hints=[Path.cwd()])
 
     @staticmethod
     def _normalize_registry_inputs(
         task_id: str,
         registry_dir: Optional[Union[str, Path]],
-    ) -> Tuple[Path, Path]:
-        if registry_dir is not None:
-            user_path = Path(registry_dir).expanduser().resolve()
-            if (user_path / "config.yaml").exists() and user_path.name == task_id:
-                return user_path.parent, user_path
-            if (user_path / task_id / "config.yaml").exists():
-                return user_path, user_path / task_id
-            raise BenchmarkError(
-                f"Registry contract not found for task '{task_id}' under '{user_path}'. "
-                "Expected '<registry_root>/<task_id>/config.yaml'."
-            )
-
-        for root in MLETaskLoader._candidate_registry_roots():
-            task_dir = root / task_id
-            if (task_dir / "config.yaml").exists():
-                return root, task_dir
-
-        raise BenchmarkError(
-            f"Registry contract not found for task '{task_id}'. "
-            "Pass `registry_dir=` explicitly for custom tasks."
+    ) -> ResolvedBenchmarkSource:
+        return get_benchmark_source_catalog().resolve_task(
+            task_id,
+            registry_dir=registry_dir,
+            search_hints=[Path.cwd()],
         )
 
     @staticmethod
@@ -120,20 +98,11 @@ class MLETaskLoader:
         return p
 
     @staticmethod
-    def _build_registry(task_id: str, registry_root: Path, data_root: Path):
-        registry_root_lower = str(registry_root).lower()
-        if task_id.startswith("dabench-") or "/dabench/" in registry_root_lower:
-            from dslighting.benchmark.vendor.dabench.registry import Registry as DABenchRegistry
-
-            return DABenchRegistry().set_data_dir(data_root)
-        if "/sciencebench/" in registry_root_lower:
-            from dslighting.benchmark.vendor.sciencebench.registry import Registry as ScienceBenchRegistry
-
-            return ScienceBenchRegistry().set_data_dir(data_root)
-
-        from dslighting.benchmark.vendor.mlebench.registry import Registry as MLERegistry
-
-        return MLERegistry().set_data_dir(data_root)
+    def _build_registry(resolved_source: ResolvedBenchmarkSource, data_root: Path):
+        return get_benchmark_source_catalog().build_registry(
+            resolved_source.descriptor,
+            data_root=data_root,
+        )
 
     def load_task(
         self,
@@ -143,14 +112,14 @@ class MLETaskLoader:
     ) -> Tuple[str, str, Path, Path]:
         logger.info("Load benchmark task: %s", task_id)
 
-        registry_root, task_registry_dir = self._normalize_registry_inputs(task_id, registry_dir)
-        config = self._validate_registry_contract(task_id, task_registry_dir)
-        self.last_registry_root = registry_root
-        self.last_registry_task_dir = task_registry_dir
+        resolved_source = self._normalize_registry_inputs(task_id, registry_dir)
+        config = self._validate_registry_contract(task_id, resolved_source.task_dir)
+        self.last_registry_root = resolved_source.registry_root
+        self.last_registry_task_dir = resolved_source.task_dir
         self.last_task_type = str(config.get("task_type") or "kaggle").strip() or "kaggle"
 
         data_root = self._infer_data_root(task_id, data_dir=data_dir)
-        registry = self._build_registry(task_id=task_id, registry_root=registry_root, data_root=data_root)
+        registry = self._build_registry(resolved_source=resolved_source, data_root=data_root)
         competition = registry.get_competition(task_id)
 
         if data_dir is None:
@@ -199,28 +168,11 @@ class MLETaskLoader:
         if data_dir is None:
             raise ValueError("`data_dir` is required to create a benchmark instance.")
 
-        registry_root, _ = self._normalize_registry_inputs(task_id, registry_dir)
+        resolved_source = self._normalize_registry_inputs(task_id, registry_dir)
         data_root = self._infer_data_root(task_id, data_dir=data_dir)
-        registry_root_lower = str(registry_root).lower()
-
-        if task_id.startswith("dabench-") or "/dabench/" in registry_root_lower:
-            from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
-
-            return DABenchmark(
-                name=f"direct_{task_id}",
-                log_path="runs/benchmarks/direct",
-                data_dir=str(data_root),
-                competitions=[task_id],
-                data_source="prepared",
-            )
-
-        from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
-
-        return MLEBenchmark(
-            name=f"direct_{task_id}",
-            file_path=None,
+        return get_benchmark_source_catalog().build_single_task_benchmark(
+            resolved_source.descriptor,
+            task_id=task_id,
+            data_root=data_root,
             log_path="runs/benchmarks/direct",
-            data_dir=str(data_root),
-            competitions=[task_id],
-            data_source="prepared",
         )

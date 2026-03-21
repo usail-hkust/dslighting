@@ -1,0 +1,8 @@
+schema_version: 1
+source_id: dabench
+contract_id: mle_task_contract/v1
+engine_id: mle
+registry_root: competitions
+default_data_env_var: DSLIGHTING_DABENCH_DATA
+legacy_task_prefixes:
+  - dabench-

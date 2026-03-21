@@ -9,6 +9,8 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
+from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,22 +41,13 @@ def get_default_benchmark_dir(config: Any, logger_instance: logging.Logger = Non
         if hasattr(run_config, 'parameters') and run_config.parameters:
             benchmark_dir = run_config.parameters.get('benchmark_dir')
 
-    # Fallback 1: Try built-in benchmark registry in dslighting package
     if benchmark_dir is None:
         try:
-            import dslighting
-            dslighting_path = Path(dslighting.__file__).parent
-            built_in_registry = dslighting_path / "benchmark" / "vendor" / "mlebench" / "competitions"
-
-            if built_in_registry.exists():
-                log.info(f"Using built-in registry: {built_in_registry}")
-                return built_in_registry.resolve()
+            benchmark_path = get_benchmark_source_catalog().get_source("mlebench").registry_root
+            log.info(f"Using built-in registry: {benchmark_path}")
+            return benchmark_path.resolve()
         except Exception as e:
             log.debug(f"Could not access built-in registry: {e}")
-
-    # Fallback 2: Use relative path from current working directory
-    if benchmark_dir is None:
-        # Default: dslighting/benchmark/vendor/mlebench/competitions/
         benchmark_dir = "dslighting/benchmark/vendor/mlebench/competitions"
 
     benchmark_path = Path(benchmark_dir).resolve()
@@ -85,9 +78,6 @@ def initialize_benchmark(
     log = logger_instance or logger
 
     try:
-        from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
-        from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
-
         # Only initialize benchmark if we have the required components
         if not task_id or not registry_dir or not data_dir:
             log.debug("Skipping benchmark initialization (missing required parameters)")
@@ -101,23 +91,14 @@ def initialize_benchmark(
         else:
             data_root = data_dir
 
-        if task_id.startswith("dabench-"):
-            benchmark = DABenchmark(
-                name=f"direct_{task_id}",
-                log_path="runs/benchmarks/direct",
-                data_dir=str(data_root),
-                competitions=[task_id],
-                data_source="prepared",
-            )
-        else:
-            benchmark = MLEBenchmark(
-                name=f"direct_{task_id}",
-                file_path=None,
-                log_path="runs/benchmarks/direct",
-                data_dir=str(data_root),
-                competitions=[task_id],
-                data_source="prepared",
-            )
+        catalog = get_benchmark_source_catalog()
+        resolved = catalog.resolve_task(task_id, registry_dir=registry_dir, search_hints=[data_root])
+        benchmark = catalog.build_single_task_benchmark(
+            resolved.descriptor,
+            task_id=task_id,
+            data_root=data_root,
+            log_path="runs/benchmarks/direct",
+        )
 
         log.info(f"Benchmark initialized for task: {task_id}")
         return benchmark

@@ -413,91 +413,14 @@ class RegistryGrader:
         Raises:
             BenchmarkError: If registry cannot be located.
         """
-        import yaml
+        from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
 
-        def resolve_from_registry_dir() -> Path:
-            if not registry_dir:
-                return None
-            user_root = Path(registry_dir).expanduser().resolve()
-            if (user_root / "config.yaml").exists() and user_root.name == task_id:
-                return user_root
-            candidate = user_root / task_id / "config.yaml"
-            if candidate.exists():
-                return candidate.parent
-            raise BenchmarkError(
-                f"Registry for task '{task_id}' not found in '{user_root}'. "
-                "Expected '<registry_root>/<task_id>/config.yaml'."
-            )
-
-        def build_search_roots() -> list[Path]:
-            """Build list of candidate roots to search for task registry."""
-            package_root = Path(__file__).resolve().parent
-            roots = [
-                # Package-relative paths
-                package_root / "benchmark" / "vendor" / "mlebench" / "competitions",
-                package_root / "benchmark" / "vendor" / "dabench" / "competitions",
-                package_root / "benchmark" / "vendor" / "sciencebench" / "competitions",
-                # CWD-relative paths with dslighting prefix
-                Path.cwd() / "dslighting" / "benchmark" / "vendor" / "mlebench" / "competitions",
-                Path.cwd() / "dslighting" / "benchmark" / "vendor" / "dabench" / "competitions",
-                Path.cwd()
-                / "dslighting"
-                / "benchmark"
-                / "vendor"
-                / "sciencebench"
-                / "competitions",
-                # CWD-relative paths without prefix
-                Path.cwd() / "benchmark" / "vendor" / "mlebench" / "competitions",
-                Path.cwd() / "benchmark" / "vendor" / "dabench" / "competitions",
-                Path.cwd() / "benchmark" / "vendor" / "sciencebench" / "competitions",
-            ]
-
-            # Add data directory parents as search hints
-            if data_dir:
-                data_dir_resolved = data_dir.resolve()
-                for parent in [data_dir_resolved] + list(data_dir_resolved.parents)[:6]:
-                    roots.extend(
-                        [
-                            parent / "benchmark" / "vendor" / "mlebench" / "competitions",
-                            parent / "benchmark" / "vendor" / "dabench" / "competitions",
-                            parent / "benchmark" / "vendor" / "sciencebench" / "competitions",
-                            parent
-                            / "dslighting"
-                            / "benchmark"
-                            / "vendor"
-                            / "mlebench"
-                            / "competitions",
-                            parent
-                            / "dslighting"
-                            / "benchmark"
-                            / "vendor"
-                            / "dabench"
-                            / "competitions",
-                            parent
-                            / "dslighting"
-                            / "benchmark"
-                            / "vendor"
-                            / "sciencebench"
-                            / "competitions",
-                        ]
-                    )
-            return roots
-
-        # Try explicit registry_dir first
-        task_registry_dir = resolve_from_registry_dir()
-        if task_registry_dir:
-            return task_registry_dir
-
-        # Search through candidate roots
-        for root in build_search_roots():
-            task_dir = root / task_id
-            if (task_dir / "config.yaml").exists():
-                return task_dir
-
-        raise BenchmarkError(
-            f"Registry contract not found for task '{task_id}'. "
-            "Pass `registry_dir` explicitly for custom tasks."
+        resolved = get_benchmark_source_catalog().resolve_task(
+            task_id,
+            registry_dir=registry_dir,
+            search_hints=[data_dir] if data_dir is not None else None,
         )
+        return resolved.task_dir
 
     async def _load_task_config(
         self,

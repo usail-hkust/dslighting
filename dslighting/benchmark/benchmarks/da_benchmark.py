@@ -1,9 +1,11 @@
 """DABench-specific benchmark wrapper."""
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
 from dslighting.benchmark.core.config_loader import BaseBenchmarkConfigLoader
+from dslighting.benchmark.vendor.dabench.registry import Registry as DABenchRegistry
 
 
 class DABenchmark(MLEBenchmark):
@@ -36,6 +38,7 @@ class DABenchmark(MLEBenchmark):
             data_source=data_source,
             runner=runner,
             eval_fn=eval_fn,
+            registry=DABenchRegistry(Path(data_dir)) if data_dir else DABenchRegistry(),
         )
 
     @staticmethod

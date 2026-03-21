@@ -955,16 +955,18 @@ class LLMService:
             )
 
             # Create tasks for concurrent processing
+            batch_indices: list[int] = []
             tasks = []
             for i, prompt in enumerate(batch_prompts):
+                batch_indices.append(batch_start + i)
                 task = self.call(prompt, system_message=system_message, max_retries=max_retries)
-                tasks.append((batch_start + i, task))
+                tasks.append(task)
 
             # Execute batch concurrently
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Collect results
-            for idx, result in batch_results:
+            for idx, result in zip(batch_indices, batch_results):
                 if isinstance(result, Exception):
                     logger.error(f"Error in prompt {idx}: {result}")
                     responses[idx] = f"Error: {str(result)}"
@@ -1019,14 +1021,16 @@ class LLMService:
                 f"Processing JSON batch {batch_start // batch_size + 1}: prompts {batch_start}-{batch_end}"
             )
 
+            batch_indices: list[int] = []
             tasks = []
             for i, prompt in enumerate(batch_prompts):
+                batch_indices.append(batch_start + i)
                 task = self.call_with_json(prompt, output_model, max_retries=max_retries)
-                tasks.append((batch_start + i, task))
+                tasks.append(task)
 
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for idx, result in batch_results:
+            for idx, result in zip(batch_indices, batch_results):
                 if isinstance(result, Exception):
                     logger.error(f"Error in prompt {idx}: {result}")
                     # Create a dummy instance or handle error as needed

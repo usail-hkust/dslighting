@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import TYPE_CHECKING, Dict, Any, Optional, List, Tuple, Type
+from typing import Dict, Any, Optional, List, Tuple, Type
 from pathlib import Path
 
 from dslighting.runtime.dag import BaseWorkflowActor, NodeResult, OpNode
@@ -23,6 +23,7 @@ from dslighting.state.context import (
     summarize_repetitive_logs,
     truncate_output,
 )
+from dslighting.workflows.search.aide_workflow import AIDEWorkflow
 from dslighting.workflows.utils import (
     build_error_history,
     capture_llm_history,
@@ -30,10 +31,6 @@ from dslighting.workflows.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Use TYPE_CHECKING to avoid circular import at runtime
-if TYPE_CHECKING:
-    from dslighting.workflows.search.aide_workflow import AIDEWorkflow
 
 
 class AutoMindWorkflowDagActor(BaseWorkflowActor):
@@ -542,7 +539,7 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
         return dict(self._final_result)
 
 
-class AutoMindWorkflow:
+class AutoMindWorkflow(AIDEWorkflow):
     """
     Implements the AUTOMIND iterative search algorithm.
     This workflow extends AIDE by incorporating a knowledge base (VDB),
@@ -560,10 +557,7 @@ class AutoMindWorkflow:
         """
         Initializes the AutoMindWorkflow, building upon the AIDE base.
         """
-        # Lazy import to avoid circular dependency
-        from dslighting.workflows.search.aide_workflow import AIDEWorkflow
-        # Initialize base AIDE components, now passing the benchmark instance up.
-        AIDEWorkflow.__init__(self, operators, services, agent_config, benchmark=benchmark)
+        super().__init__(operators, services, agent_config, benchmark=benchmark)
 
         self.vdb_service: VDBService = services.get("vdb")
 
@@ -647,12 +641,14 @@ class AutoMindWorkflow:
                 self.sandbox_service.workspace.get_path("sandbox_workdir") / output_path.name
             )
 
+            maximize = not task_context.get("lower_is_better", False)
+
             if not submission_file_in_sandbox.exists():
                 new_node.is_buggy = True
                 new_node.analysis = (
                     "Code executed without error, but failed to produce the required output file."
                 )
-                new_node.metric = MetricValue(value=0.0, maximize=True)
+                new_node.metric = MetricValue(value=0.0, maximize=maximize)
             elif self.benchmark and hasattr(self.benchmark, "grade"):
                 logger.info(
                     f"Performing grounded validation using benchmark grader on '{submission_file_in_sandbox}'..."
@@ -663,7 +659,7 @@ class AutoMindWorkflow:
 
                 if score > 0:
                     new_node.is_buggy = False
-                    new_node.metric = MetricValue(value=score, maximize=True)
+                    new_node.metric = MetricValue(value=score, maximize=maximize)
                     logger.info(f"Grounded validation PASSED. Score: {score:.4f}")
                     review = await self.review_op(
                         prompt_context={
@@ -677,7 +673,7 @@ class AutoMindWorkflow:
                     )
                 else:
                     new_node.is_buggy = True
-                    new_node.metric = MetricValue(value=score, maximize=True)
+                    new_node.metric = MetricValue(value=score, maximize=maximize)
                     new_node.analysis = "Grounded validation FAILED: The generated submission file was invalid or scored 0.0."
                     logger.warning(f"Grounded validation FAILED. Score: {score}")
             else:
@@ -691,13 +687,7 @@ class AutoMindWorkflow:
                         "output": new_node.term_out,
                     }
                 )
-                new_node.analysis = review.summary
-                new_node.is_buggy = review.is_buggy
-                new_node.metric = (
-                    MetricValue(value=review.metric_value, maximize=not review.lower_is_better)
-                    if review.metric_value is not None
-                    else MetricValue(value=None)
-                )
+                new_node.absorb_review(review, task_context)
 
         # 8. Add the new node to the search tree state.
         self.state.append(new_node, parent=parent_node)

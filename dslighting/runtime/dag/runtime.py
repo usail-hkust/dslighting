@@ -125,8 +125,21 @@ class BaseDagRuntime(ABC):
         await self._before_main_loop(actor, reducer, actor_state)
 
         while True:
+            if self._cancel_requested:
+                if not last_error:
+                    cancel_reason = self._cancel_reason or "cancellation requested"
+                    last_error = f"DAG runtime cancelled: {cancel_reason}"
+
+                if not running_tasks:
+                    self._mark_remaining_nodes_cancelled()
+                    break
+
             # Start new tasks up to max_inflight limit
-            while self._ready and len(running_tasks) < self.options.max_inflight_nodes:
+            while (
+                not self._cancel_requested
+                and self._ready
+                and len(running_tasks) < self.options.max_inflight_nodes
+            ):
                 node_id = self._pop_ready_node_id()
                 if not node_id:
                     break
@@ -254,6 +267,21 @@ class BaseDagRuntime(ABC):
             last_error=last_error,
         )
         return summary
+
+    def _mark_remaining_nodes_cancelled(self) -> None:
+        """Mark all unresolved nodes as cancelled after cancellation is requested."""
+        cancel_reason = self._cancel_reason or "cancellation requested"
+        for node_id, node in self._nodes.items():
+            if node_id in self._results:
+                continue
+            self._results[node_id] = NodeResult(
+                node_id=node_id,
+                task_id=node.task_id,
+                status="cancelled",
+                outputs={},
+                error=cancel_reason,
+                attempt=self._attempts.get(node_id, 0),
+            )
 
     # --- Hook methods for subclass customization ---
 

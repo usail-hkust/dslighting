@@ -13,6 +13,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 from .agent import Agent
+from dslighting.benchmark.core.mle_task_contract import MLETaskContractLoader
+from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
+from dslighting.error import BenchmarkError
 from dslighting.error import TaskError
 
 if TYPE_CHECKING:
@@ -20,14 +23,10 @@ if TYPE_CHECKING:
 
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
-_VENDOR_REGISTRY_ROOTS = [
-    _PACKAGE_ROOT / "benchmark" / "vendor" / "mlebench" / "competitions",
-    _PACKAGE_ROOT / "benchmark" / "vendor" / "dabench" / "competitions",
-    _PACKAGE_ROOT / "benchmark" / "vendor" / "sciencebench" / "competitions",
-]
 
 _AGENT_INIT_KWARGS = {
     "api_key",
+    "api_keys",
     "api_base",
     "provider",
     "temperature",
@@ -60,20 +59,38 @@ def _resolve_task_data_path(task_id: str) -> Optional[Path]:
 
 
 def _resolve_registry_root(task_id: str) -> Optional[Path]:
-    for registry_root in _VENDOR_REGISTRY_ROOTS:
-        if (registry_root / task_id / "config.yaml").exists():
-            return registry_root
-    return None
+    try:
+        resolved = get_benchmark_source_catalog().resolve_task(
+            task_id,
+            search_hints=[Path.cwd()],
+        )
+    except BenchmarkError:
+        return None
+    return resolved.registry_root
 
 
 def _resolve_task_description(task_id: str, registry_root: Optional[Path]) -> Optional[str]:
     if registry_root is None:
         return None
 
-    config_path = registry_root / task_id / "config.yaml"
-    if not config_path.exists():
+    try:
+        resolved = get_benchmark_source_catalog().resolve_task(
+            task_id,
+            registry_dir=registry_root,
+            search_hints=[Path.cwd()],
+        )
+    except BenchmarkError:
         return None
 
+    if resolved.descriptor.contract_id == "mle_task_contract/v1":
+        try:
+            loader = MLETaskContractLoader(resolved.descriptor)
+            config = loader.load_task_config(resolved.task_dir)
+            return loader.resolve_description(resolved.task_dir, config)
+        except (OSError, UnicodeDecodeError, BenchmarkError, ValueError) as exc:
+            logger.debug("Failed to resolve contract description for %s: %s", task_id, exc)
+
+    config_path = resolved.task_dir / "config.yaml"
     try:
         import yaml
 
@@ -91,16 +108,13 @@ def _resolve_task_description(task_id: str, registry_root: Optional[Path]) -> Op
                 return description_path.read_text(encoding="utf-8").strip()
             except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
                 logger.debug(f"Failed to read description from {description_path}: {e}")
-                pass
 
-    fallback = registry_root / task_id / "description.md"
+    fallback = resolved.task_dir / "description.md"
     if fallback.exists():
         try:
             return fallback.read_text(encoding="utf-8").strip()
         except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
             logger.debug(f"Failed to read fallback description from {fallback}: {e}")
-            return None
-
     return None
 
 
@@ -218,6 +232,7 @@ def run_agent(
     data: Optional[Union[str, Path, TaskContext]] = None,
     workflow: str = "aide",
     model: str = "gpt-4o",
+    api_keys: Optional[list[str]] = None,
     sandbox_backend: Optional[str] = None,
     sandbox_backend_type: Optional[str] = None,
     sandbox_timeout: Optional[int] = None,
@@ -239,6 +254,7 @@ def run_agent(
             "deepanalyze", "dsagent", "automind", "aflow".
         model: LLM model identifier for the agent's reasoning.
             Examples: "gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet".
+        api_keys: Optional API key pool for rotation.
         sandbox_backend: Optional sandbox backend selector:
             "local" | "e2b" | "ds_sandbox".
         sandbox_backend_type: Optional DS-Sandbox backend type:
@@ -273,6 +289,8 @@ def run_agent(
         ... )
     """
     run_kwargs = dict(kwargs)
+    if api_keys is not None:
+        run_kwargs["api_keys"] = api_keys
     if sandbox_backend is not None:
         run_kwargs["sandbox_backend"] = sandbox_backend
     if sandbox_backend_type is not None:

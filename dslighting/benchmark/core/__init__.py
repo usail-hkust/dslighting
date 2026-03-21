@@ -21,6 +21,13 @@ from dslighting.benchmark.core.scheduler_core import (
     BenchmarkRuntimeScheduler,
     RuntimeSchedulerOptions,
 )
+from dslighting.benchmark.core.source_catalog import (
+    BenchmarkPresetDescriptor,
+    BenchmarkSourceCatalog,
+    BenchmarkSourceDescriptor,
+    ResolvedBenchmarkSource,
+    get_benchmark_source_catalog,
+)
 from dslighting.benchmark.core.task_profile import (
     RuntimeAssignment,
     RuntimeLease,
@@ -37,8 +44,13 @@ __all__ = [
     "RuntimeAssignment",
     "RuntimeLease",
     "RuntimeSchedulerOptions",
+    "ResolvedBenchmarkSource",
     "TaskResourceProfile",
+    "BenchmarkSourceCatalog",
+    "BenchmarkSourceDescriptor",
+    "BenchmarkPresetDescriptor",
     "create_problem_entry",
+    "get_benchmark_source_catalog",
     # Queue policies
     "BaseQueuePolicy",
     "FIFOQueuePolicy",

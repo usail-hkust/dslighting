@@ -6,7 +6,7 @@ Provides standard MLE task loading functionality, users don't need to reimplemen
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, List, Optional, TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
 from dslighting.config import DSLightingConfig, RunConfig, SandboxConfig, WorkflowConfig
@@ -38,7 +38,8 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
     def __init__(
         self,
         model: str = "gpt-4o",
-        api_key: str = None,
+        api_key: Union[str, List[str], None] = None,
+        api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
@@ -82,6 +83,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         config = config_builder.build_config(
             model=model,
             api_key=api_key,
+            api_keys=api_keys,
             api_base=api_base,
             provider=provider,
             temperature=temperature,

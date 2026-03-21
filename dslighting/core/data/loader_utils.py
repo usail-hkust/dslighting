@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
+from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
 from dslighting.core.detection.detector import TaskDetection
 
 logger = logging.getLogger(__name__)
@@ -197,7 +198,7 @@ def auto_detect_registry_dir(
     logger_instance: Optional[logging.Logger] = None
 ) -> Optional[Path]:
     """
-    Auto-detect MLE-Bench registry directory from data directory structure.
+    Auto-detect benchmark registry directory from nearby source manifests.
 
     The registry contains competition configs (config.yaml) with grading information.
     This function looks for the benchmark registry directory relative to the data directory.
@@ -217,45 +218,45 @@ def auto_detect_registry_dir(
 
     log.info(f"Auto-detecting registry directory for data_dir: {data_dir}")
 
-    # Expected structure:
-    # dslighting/
-    #   ├── data/competitions/{task_id}/     <- data_dir points here
-    #   └── benchmark/vendor/mlebench/competitions/ <- registry we need to find
+    catalog = get_benchmark_source_catalog()
+    search_hints = [data_dir]
 
-    # Strategy 1: Look for benchmark/ sibling to data/
-    if data_dir.is_absolute():
-        # data_dir = /path/to/dslighting/data/competitions/bike-sharing-demand
-        # We want: /path/to/dslighting/benchmark/vendor/mlebench/competitions
+    # Compatibility: prefer nearby source roots even if they have not been
+    # fully normalized with manifest/config files yet.
+    resolved_data_dir = data_dir.resolve()
+    for base in [resolved_data_dir] + list(resolved_data_dir.parents)[:6]:
+        vendor_candidates = [
+            base / "benchmark" / "vendor",
+            base / "dslighting" / "benchmark" / "vendor",
+        ]
+        for vendor_root in vendor_candidates:
+            if not vendor_root.exists():
+                continue
+            for child in sorted(vendor_root.iterdir()):
+                registry_root = child / "competitions"
+                if not registry_root.exists():
+                    continue
+                if task_id is not None and (registry_root / task_id).exists():
+                    log.info(f"  ✓ Found nearby benchmark registry at: {registry_root}")
+                    return registry_root
 
-        # Go up to find data/, then look for benchmark/ sibling
-        current = data_dir
-        for _ in range(5):  # Don't go up more than 5 levels
-            if current.parent.name == "data":
-                # Found data/ directory, look for benchmark/ sibling
-                benchmarks_root = current.parent.parent / "benchmark" / "vendor" / "mlebench" / "competitions"
-                if benchmarks_root.exists():
-                    log.info(f"  ✓ Found benchmark registry at: {benchmarks_root}")
-                    return benchmarks_root
-                break
-            current = current.parent
+    if task_id:
+        try:
+            resolved = catalog.resolve_task(task_id, search_hints=search_hints)
+            log.info(f"  ✓ Found benchmark registry at: {resolved.registry_root}")
+            return resolved.registry_root
+        except Exception as exc:
+            log.debug(f"  Could not resolve task-specific registry via catalog: {exc}")
 
-    # Strategy 2: Check package-relative benchmark location
-    try:
-        # dslighting/core/data/loader_utils.py -> dslighting/
-        file_location = Path(__file__).resolve()
-        dslighting_root = file_location.parent.parent.parent  # Up 3 levels
-        benchmarks_root = dslighting_root / "benchmark" / "vendor" / "mlebench" / "competitions"
-
-        if benchmarks_root.exists():
-            log.info(f"  ✓ Found benchmark registry from package structure: {benchmarks_root}")
-            return benchmarks_root
-    except (OSError, RuntimeError) as e:
-        log.debug(f"  Could not determine package structure: {e}")
+    for registry_root in catalog.iter_registry_roots(search_hints=search_hints):
+        if registry_root.exists():
+            log.info(f"  ✓ Found benchmark registry from source catalog: {registry_root}")
+            return registry_root
 
     # Could not auto-detect
     log.warning("  ⚠️  Could not auto-detect registry directory")
     log.warning("     Pass registry_dir explicitly to load_data() or Agent.run()")
-    log.warning("     Example: load_data(path, registry_dir='path/to/benchmark/vendor/mlebench/competitions')")
+    log.warning("     Example: load_data(path, registry_dir='path/to/benchmark/vendor/<source>/competitions')")
 
     return None
 

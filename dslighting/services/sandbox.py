@@ -682,6 +682,23 @@ class SandboxService:
         This method does the actual synchronous subprocess execution.
         It's wrapped by the public async run_script() method.
         """
+        try:
+            effective_timeout = float(self.timeout if timeout is None else timeout)
+        except (TypeError, ValueError):
+            logger.warning(
+                "Invalid timeout override %r, falling back to default timeout %ss.",
+                timeout,
+                self.timeout,
+            )
+            effective_timeout = float(self.timeout)
+        if effective_timeout <= 0:
+            logger.warning(
+                "Non-positive timeout override %r, falling back to default timeout %ss.",
+                timeout,
+                self.timeout,
+            )
+            effective_timeout = float(self.timeout)
+
         # Optionally inject matplotlib non-interactive backend
         # This is only done if auto_matplotlib=True (used by Web UI for visualization)
         if self.auto_matplotlib:
@@ -701,10 +718,10 @@ class SandboxService:
 
         try:
             script_path.write_text(fixed_code, encoding="utf-8")
-            logger.info(f"Executing script '{script_name}' in sandbox (timeout: {self.timeout}s)...")
+            logger.info(f"Executing script '{script_name}' in sandbox (timeout: {effective_timeout}s)...")
             completed_process = subprocess.run(
                 [sys.executable, str(script_path)],
-                capture_output=True, text=True, timeout=self.timeout,
+                capture_output=True, text=True, timeout=effective_timeout,
                 cwd=self.workspace.get_path("sandbox_workdir"),
                 encoding='utf-8', errors='replace',
                 env={**os.environ, **self.env_overrides},
@@ -733,7 +750,7 @@ class SandboxService:
             logger.warning("Script execution timed out. Process was terminated.")
             execution_result = ExecutionResult(
                 success=False, stdout=e.stdout or "",
-                stderr=e.stderr or f"TimeoutError: Execution exceeded {self.timeout} seconds.",
+                stderr=e.stderr or f"TimeoutError: Execution exceeded {effective_timeout} seconds.",
                 exc_type="TimeoutError"
             )
         except Exception as e:

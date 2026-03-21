@@ -1,13 +1,14 @@
 # dslighting/benchmark/benchmarks/mle_benchmark.py
 
+import logging
 import os
 import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, List, Tuple, Optional, Dict
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import pandas as pd
-import logging
 
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.benchmark.core.config_loader import (
@@ -44,11 +45,17 @@ class MLEBenchmark(BaseBenchmark):
         data_source: str = "prepared",  # Default to "prepared" for competition simulation
         runner: Optional[Any] = None,
         eval_fn: Optional[Callable] = None,
+        registry: Optional[Any] = None,
     ):
         # Set up data_dir and registry before calling parent constructor
         self.data_dir = Path(data_dir) if data_dir else DEFAULT_MLE_REGISTRY.get_data_dir()
-        self.registry: Registry = DEFAULT_MLE_REGISTRY.set_data_dir(self.data_dir)
-        self.dabench_registry: DABenchRegistry = DEFAULT_DABENCH_REGISTRY.set_data_dir(self.data_dir)
+        self.registry: Registry = (
+            registry.set_data_dir(self.data_dir) if registry is not None else DEFAULT_MLE_REGISTRY.set_data_dir(self.data_dir)
+        )
+        self._competition_registries: Dict[str, Any] = {}
+        self._legacy_dabench_registry: Optional[DABenchRegistry] = None
+        if registry is None:
+            self._legacy_dabench_registry = DEFAULT_DABENCH_REGISTRY.set_data_dir(self.data_dir)
         self.data_source = data_source  # Save data source preference
 
         # Load configuration using shared config loader
@@ -75,6 +82,11 @@ class MLEBenchmark(BaseBenchmark):
         
         Path(self.log_path).mkdir(parents=True, exist_ok=True)
         
+        for entry in self.config.get("competitions", []):
+            comp_id = entry if isinstance(entry, str) else entry.get("id")
+            if isinstance(comp_id, str) and comp_id:
+                self._competition_registries[comp_id] = self.registry
+
         # RE-INITIALIZE problems by calling the correct loader after registry is set up.
         self.problems = self._load_problems()
         logger.info(f"MLEBenchmark initialized with data_dir: {self.data_dir}")
@@ -161,15 +173,19 @@ class MLEBenchmark(BaseBenchmark):
         """Sets the benchmark mode to 'validation' or 'test'."""
         logger.info(f"Setting MLEBenchmark mode to '{mode}'")
         self.registry.set_mode(mode)
-        self.dabench_registry.set_mode(mode)
+        if self._legacy_dabench_registry is not None:
+            self._legacy_dabench_registry.set_mode(mode)
 
     @staticmethod
     def _is_dabench_competition(competition_id: str) -> bool:
         return competition_id.startswith("dabench-")
 
     def _get_registry_for_competition(self, competition_id: str):
-        if self._is_dabench_competition(competition_id):
-            return self.dabench_registry
+        registry = self._competition_registries.get(competition_id)
+        if registry is not None:
+            return registry
+        if self._legacy_dabench_registry is not None and self._is_dabench_competition(competition_id):
+            return self._legacy_dabench_registry
         return self.registry
 
     def _get_problem_by_competition_id(self, competition_id: str) -> Optional[Dict[str, Any]]:

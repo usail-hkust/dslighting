@@ -84,19 +84,43 @@ class LLMBasedReviewOperator(Operator):
             raise ValueError("LLMService is required for this operator.")
 
         logger.info("Reviewing execution output...")
-        
+
         raw_output = prompt_context.get('output', '# N/A')
         processed_output = summarize_repetitive_logs(raw_output)
 
+        # task may be a full task_context dict or a plain string
+        task = prompt_context.get('task', {})
+        if isinstance(task, dict):
+            task_str = task.get('goal_and_data', str(task))
+            metric_name: str = task.get('metric_name', '')
+            lower_is_better: bool = task.get('lower_is_better', False)
+        else:
+            task_str = str(task)
+            metric_name = ''
+            lower_is_better = False
+
+        if metric_name:
+            direction = "lower is better" if lower_is_better else "higher is better"
+            metric_hint = (
+                f"\n\nThe primary metric for this task is **{metric_name}** ({direction}). "
+                f"Extract its numeric value from the output as `metric_value`. "
+                f"Only set `metric_value` to null if the code produced no measurable output at all."
+            )
+        else:
+            metric_hint = (
+                "\n\nIf the output contains any quantitative metric "
+                "(e.g. accuracy, F1, loss, RMSE, score), extract it as `metric_value`. "
+                "Only set `metric_value` to null if there is truly no numeric result."
+            )
+
         prompt = (
             "You are a data science judge. Review the following code and its output.\n\n"
-            f"# TASK\n{prompt_context.get('task', 'N/A')}\n\n"
+            f"# TASK\n{task_str}\n\n"
             f"# CODE\n```python\n{prompt_context.get('code', '# N/A')}\n```\n\n"
             f"# OUTPUT\n```\n{processed_output}\n```\n\n"
-            "Respond with a JSON object containing your evaluation."
+            f"Respond with a JSON object containing your evaluation.{metric_hint}"
         )
 
-        # No more simulation! This is a real structured call.
         review_model = await self.llm_service.call_with_json(prompt, output_model=ReviewResult)
         return review_model
 

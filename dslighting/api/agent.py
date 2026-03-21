@@ -17,15 +17,16 @@ Example:
     >>> print(result.score)  # Access task score
     >>>
     >>> # Multiple tasks - returns Benchmark object
-    >>> from dslighting.config import DSLightingConfig
-    >>> benchmark = DSBenchmark("dabench").run(config=DSLightingConfig())
+    >>> from dslighting.core import ConfigBuilder
+    >>> config = ConfigBuilder().build_config(model="gpt-4o")
+    >>> benchmark = DSBenchmark("dabench").run(config=config)
     >>> print(benchmark.summary["score"])  # Average score across tasks
 """
 
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from dslighting.core.application import AgentAppService
 from dslighting.core.interfaces import AgentInterface, AgentResult
@@ -70,7 +71,8 @@ class Agent(AgentInterface):
         self,
         workflow: str = "aide",
         model: str = "gpt-4o",
-        api_key: str = None,
+        api_key: Union[str, List[str], None] = None,
+        api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
@@ -89,6 +91,7 @@ class Agent(AgentInterface):
             workflow: Name of the workflow to use ("aide", "autokaggle", "data_interpreter", "deepanalyze", "dsagent", "automind", "aflow")
             model: LLM model to use
             api_key: API key (optional, will be read from env if not provided)
+            api_keys: API key pool for rotation (optional)
             api_base: API base URL (optional, will be read from env if not provided)
             provider: LLM provider (optional)
             temperature: Temperature parameter (optional, will be read from env if not provided)
@@ -114,9 +117,16 @@ class Agent(AgentInterface):
                 error_code="CFG-002",
             )
 
+        if api_key is not None and api_keys is not None:
+            raise ConfigurationError(
+                "Only one of `api_key` or `api_keys` may be provided.",
+                error_code="CFG-002",
+            )
+
         self.workflow_name = WORKFLOW_ALIASES[workflow_key]
         self.model = model
         self.api_key = api_key
+        self.api_keys = api_keys
         self.api_base = api_base
         self.provider = provider
         self.temperature = temperature
@@ -213,6 +223,7 @@ class Agent(AgentInterface):
             workflow_name=self.workflow_name,
             model=self.model,
             api_key=self.api_key,
+            api_keys=self.api_keys,
             api_base=self.api_base,
             provider=self.provider,
             temperature=self.temperature,
