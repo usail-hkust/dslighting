@@ -402,11 +402,12 @@ Use `DSBenchmark` for multi-task benchmark runs.
 from dotenv import load_dotenv
 load_dotenv()
 
-from dslighting.api import DSBenchmark, DSLightingConfig
-from dslighting.config import WorkflowConfig
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
 
-config = DSLightingConfig(
-    workflow=WorkflowConfig(name="aide", params={})
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
 )
 
 benchmark = DSBenchmark("dabench", data_dir="/path/to/dabench-data")
@@ -415,6 +416,10 @@ result = benchmark.run(config=config)
 print(result.results_path)
 print(result.metadata_path)
 ```
+
+`DSBenchmark.run(config=...)` expects a fully resolved `DSLightingConfig`.
+If you rely on `.env` values or `LLM_MODEL_CONFIGS`, build the config with `ConfigBuilder` first.
+Passing a bare `DSLightingConfig()` no longer triggers benchmark-side LLM env fallback.
 
 Supported benchmark families include DABench and MLEBench variants.
 
@@ -466,7 +471,9 @@ pip install pandas
 
 Use these imports going forward:
 
-- simplified layer: `from dslighting.api import Agent, run_agent, DSBenchmark, DSLightingConfig`
+- simplified layer: `from dslighting.api import Agent, run_agent, DSBenchmark`
+- config construction: `from dslighting.core import ConfigBuilder`
+- config object types: `from dslighting.config import DSLightingConfig, WorkflowConfig`
 - architecture layer: `from dslighting.arch...`
 
 Avoid introducing new imports from removed/deprecated compatibility paths.
