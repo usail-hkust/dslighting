@@ -29,6 +29,8 @@ class MLEStyleCompetition:
     checksums: Path
     leaderboard: Path
     submission_filename: Optional[str] = None
+    api_version: Optional[str] = None
+    validate_fn: Optional[Callable[..., None]] = None
 
     def __post_init__(self) -> None:
         assert isinstance(self.id, str), "Competition id must be a string."
@@ -61,6 +63,8 @@ class MLEStyleCompetition:
             checksums=data["checksums"],
             leaderboard=data["leaderboard"],
             submission_filename=data.get("submission_filename"),
+            api_version=data.get("api_version"),
+            validate_fn=data.get("validate_fn"),
         )
 
 
@@ -205,6 +209,13 @@ class MLETaskContractLoader:
             return None
         return self.resolve_callable_ref(task_dir, str(grade_ref), mode)
 
+    def resolve_validate_fn(self, task_dir: Path, config: dict[str, Any], mode: str) -> Optional[Callable[..., None]]:
+        evaluator_cfg = config.get("evaluator") or {}
+        validate_ref = evaluator_cfg.get("validate_fn")
+        if not validate_ref:
+            return None
+        return import_fn(self.resolve_callable_ref(task_dir, str(validate_ref), mode))
+
     def resolve_dataset_paths(
         self,
         task_dir: Path,
@@ -274,6 +285,8 @@ class MLETaskContractLoader:
         if grade_fn_ref:
             prepared_grader["grade_fn"] = grade_fn_ref
         prepared_config["grader"] = prepared_grader
+        validate_fn = self.resolve_validate_fn(task_dir, prepared_config, mode)
+        api_version = str(((prepared_config.get("evaluator") or {}).get("api_version") or "")).strip() or None
 
         dataset_paths = self.resolve_dataset_paths(task_dir, data_root, prepared_config, mode)
         preparer_fn = self.resolve_preparer(task_dir, prepared_config, mode)
@@ -291,4 +304,6 @@ class MLETaskContractLoader:
             "checksums": task_dir / "checksums.yaml",
             "leaderboard": task_dir / "leaderboard.csv",
             "submission_filename": (prepared_config.get("dataset") or {}).get("submission_filename"),
+            "api_version": api_version,
+            "validate_fn": validate_fn,
         }

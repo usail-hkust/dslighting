@@ -1,23 +1,27 @@
-"""
-DSLighting Tasks - 任务加载器
+"""Unified task resolution and adaptation primitives."""
 
-提供不同类型任务的加载器，统一任务配置和数据加载
-"""
-
-from .handlers import (
-    TaskHandler,
-    KaggleTaskHandler,
-    QATaskHandler,
-    DataSciTaskHandler,
+from .adapters import (
+    BaseTaskAdapter,
+    DataScienceTaskAdapter,
+    FileSubmissionTaskAdapter,
+    OpenEndedTaskAdapter,
+    QATaskAdapter,
+    TaskAdapter,
 )
-
-# DSLighting Task Loaders
-from .mle_task_loader import MLETaskLoader
+from .errors import TaskExecutionSpecError, TaskLayoutResolutionError
+from .models import ResolvedTaskLayout, TaskExecutionSpec
+from .resolver import TaskResolver
 
 __all__ = [
-    "TaskHandler",
-    "KaggleTaskHandler",
-    "QATaskHandler",
-    "DataSciTaskHandler",
-    "MLETaskLoader",
+    "BaseTaskAdapter",
+    "DataScienceTaskAdapter",
+    "FileSubmissionTaskAdapter",
+    "OpenEndedTaskAdapter",
+    "QATaskAdapter",
+    "ResolvedTaskLayout",
+    "TaskAdapter",
+    "TaskExecutionSpec",
+    "TaskExecutionSpecError",
+    "TaskLayoutResolutionError",
+    "TaskResolver",
 ]

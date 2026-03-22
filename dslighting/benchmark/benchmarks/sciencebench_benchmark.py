@@ -7,13 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from dslighting.benchmark.evaluation import TaskEvaluationService
+from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
+from dslighting.benchmark.reporting import CompetitionReport, CompetitionReportBuilder
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.benchmark.core.config_loader import BaseBenchmarkConfigLoader
 from dslighting.core.types.task import TaskDefinition
 
 from dslighting.benchmark.vendor.sciencebench.data import is_dataset_prepared
-from dslighting.benchmark.vendor.sciencebench.grade import grade_submission
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import CompetitionReport
 from dslighting.benchmark.vendor.sciencebench.registry import Competition, Registry
 from dslighting.benchmark.vendor.sciencebench.registry import registry as DEFAULT_SCIENCEBENCH_REGISTRY
 
@@ -49,6 +50,8 @@ class ScienceBenchBenchmark(BaseBenchmark):
 
         super().__init__(name, file_path, log_path)
         Path(self.log_path).mkdir(parents=True, exist_ok=True)
+        self._evaluation_service = TaskEvaluationService()
+        self._report_builder = CompetitionReportBuilder()
 
         self.problems = self._load_problems()
         logger.info("ScienceBenchBenchmark initialized with data_dir: %s", self.data_dir)
@@ -147,31 +150,49 @@ class ScienceBenchBenchmark(BaseBenchmark):
                 logger.warning("Grading failed: submission file not found at %s", submission_path)
                 return 0.0
 
-            report = grade_submission(submission_path, competition)
+            contract = self._build_evaluation_contract(
+                competition=competition,
+                output_submission_path=submission_path,
+            )
+            outcome = await self._evaluation_service.evaluate(
+                submission_path=submission_path,
+                contract=contract,
+                mode="test",
+                metadata={"benchmark_name": self.name},
+            )
+            report = self._report_builder.build(
+                outcome=outcome,
+                semantics=contract.evaluation_semantics,
+                competition_id=resolved_competition_id,
+                submission_path=submission_path,
+            )
             score = report.score if report.score is not None else 0.0
 
-            is_lower_better = False
-            try:
-                if competition.leaderboard.exists():
-                    import pandas as pd
-
-                    leaderboard = pd.read_csv(competition.leaderboard)
-                    if "score" in leaderboard.columns and len(leaderboard.index) > 1:
-                        is_lower_better = competition.grader.is_lower_better(leaderboard)
-            except Exception as exc:
-                logger.warning(
-                    "Could not determine score direction for %s: %s",
-                    resolved_competition_id,
-                    exc,
-                )
-
-            if is_lower_better:
+            if report.is_lower_better:
                 return 1.0 / (1.0 + score) if score > 0 else 1.0
             return float(score)
 
         except Exception as exc:
             logger.error("Error during grading for %s: %s", resolved_competition_id, exc)
             return 0.0
+
+    def _build_evaluation_contract(
+        self,
+        *,
+        competition: Competition,
+        output_submission_path: Path,
+    ):
+        contract, _ = build_task_evaluation_contract(
+            competition=competition,
+            source_id="sciencebench",
+            engine_id="sciencebench",
+            registry_root=self.registry.get_competitions_dir(),
+            data_root=self.registry.get_data_dir(),
+            mode="test",
+            output_submission_path=output_submission_path,
+            evaluation_mode="artifact_submission",
+        )
+        return contract
 
     def get_result_columns(self) -> List[str]:
         return [
@@ -271,6 +292,7 @@ class ScienceBenchBenchmark(BaseBenchmark):
                 task_type="kaggle",
                 payload={
                     "description": competition.description,
+                    "agent_visible_data_dir": str(competition.public_dir.absolute()),
                     "public_data_dir": str(competition.public_dir.absolute()),
                     "output_submission_path": str(output_submission_path.absolute()),
                     "sample_submission_path": (
@@ -288,7 +310,24 @@ class ScienceBenchBenchmark(BaseBenchmark):
             total_tokens = usage_summary.get("total_tokens", 0)
 
             if isinstance(result, Path):
-                report = grade_submission(result, competition)
+                contract = self._build_evaluation_contract(
+                    competition=competition,
+                    output_submission_path=result,
+                )
+                outcome = await self._evaluation_service.evaluate(
+                    submission_path=result,
+                    contract=contract,
+                    mode="test",
+                    metadata={"benchmark_name": self.name},
+                )
+                report = self._report_builder.build(
+                    outcome=outcome,
+                    semantics=contract.evaluation_semantics,
+                    competition_id=competition_id,
+                    submission_path=result,
+                )
+                if outcome.error_kind != "none":
+                    error_message = outcome.error_message
             elif isinstance(result, str) and result.startswith("[ERROR]"):
                 error_message = f"DSLighting workflow failed: {result}"
                 report = self._create_error_report(competition_id, output_submission_path, error_message)

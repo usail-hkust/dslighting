@@ -18,18 +18,18 @@ import logging
 import os
 import threading
 import time
-import uuid
 import weakref
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import litellm
-from litellm.exceptions import RateLimitError
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from dslighting.config import LLMConfig
+from dslighting.debug.api import get_debug_session
 from dslighting.error import LLMServiceError
 from dslighting.services.llm.cost import apply_custom_model_pricing
+from dslighting.services.llm.executor import LLMCallExecutor, LLMCallSpec
 from dslighting.services.llm.pool import GlobalAPIKeyPool
 from dslighting.utils.constants import (
     DEFAULT_CACHE_TTL_SECONDS,
@@ -165,6 +165,7 @@ class LLMService:
         self.total_prompt_cost = 0.0
         self.total_completion_cost = 0.0
         self.call_history: list[dict[str, Any]] = []
+        self._executor = LLMCallExecutor(self)
 
         # Get API keys using the new get_api_keys() method
         api_keys = config.get_api_keys()
@@ -198,6 +199,11 @@ class LLMService:
                 monitor.set_active_keys(len(api_keys), len(api_keys))
         except Exception:
             pass  # Silently fail if monitoring is unavailable
+
+    @staticmethod
+    def _structured_debug_enabled() -> bool:
+        session = get_debug_session()
+        return bool(session and session.enabled and session.config.console_output)
 
     @asynccontextmanager
     async def _concurrency_guard(self) -> AsyncGenerator[None, None]:
@@ -303,6 +309,26 @@ class LLMService:
 
         return payload
 
+    def _build_completion_kwargs(
+        self,
+        *,
+        messages: list,
+        response_format: dict | None,
+        api_key: str,
+    ) -> dict[str, Any]:
+        kwargs = {
+            "model": self.config.model,
+            "messages": messages,
+            "temperature": self.config.temperature,
+            "api_key": api_key,
+            "api_base": self.config.api_base,
+        }
+        if self.config.provider:
+            kwargs["custom_llm_provider"] = self.config.provider
+        if response_format:
+            kwargs["response_format"] = response_format
+        return kwargs
+
     def _is_retryable_error(self, error: Exception) -> bool:
         """
         Determines whether an error is retryable based on litellm exception types.
@@ -377,243 +403,14 @@ class LLMService:
         base_delay: float = 1.0,
     ):
         """
-        Internal method to make LLM calls with centralized retry logic and exponential backoff.
-        This method is the single point of contact with the LiteLLM library.
-
-        Args:
-            messages: List of message dictionaries for the LLM.
-            response_format: Optional response format specification.
-            max_retries: Maximum number of retry attempts.
-            base_delay: Base delay in seconds for exponential backoff.
-
-        Returns:
-            The raw LiteLLM response object upon success.
-
-        Raises:
-            LLMServiceError: If all retry attempts fail due to API errors or empty responses.
+        Backward-compatible wrapper retained for advanced callers that still use the
+        old private helper. Internally it now routes through the unified executor.
         """
-        import litellm.exceptions as litellm_exceptions
-        from dslighting.utils.debug_logger import get_debug_logger
-
-        if response_format and not self._supports_response_format():
-            logger.debug(
-                "Dropping unsupported `response_format` for model %s; using prompt-enforced JSON instead.",
-                self.config.model,
-            )
-            response_format = None
-
-        logger.debug(
-            "Sending request to LLM - model: %s, message count: %d",
-            self.config.model,
-            len(messages),
+        return await self.call_messages(
+            messages=messages,
+            max_retries=max_retries,
+            response_format=response_format,
         )
-        last_exception = None
-        llm_debug_logger = get_debug_logger()
-
-        # 使用全局共享的 API key 池
-        async with self._key_pool.use_key() as api_key:
-            for attempt in range(max_retries):
-                call_id = uuid.uuid4().hex
-                call_started_at = datetime.utcnow()
-                perf_start = time.perf_counter()
-                try:
-                    kwargs = {
-                        "model": self.config.model,
-                        "messages": messages,
-                        "temperature": self.config.temperature,
-                        "api_key": api_key,  # 使用全局池分配的 key
-                        "api_base": self.config.api_base,
-                    }
-                    if self.config.provider:
-                        kwargs["custom_llm_provider"] = self.config.provider
-
-                    if response_format:
-                        kwargs["response_format"] = response_format
-
-                    if llm_debug_logger and llm_debug_logger.enabled:
-                        llm_debug_logger.log_request(
-                            request_id=call_id,
-                            model=self.config.model,
-                            messages=copy.deepcopy(messages),
-                            parameters={
-                                "temperature": self.config.temperature,
-                                "api_base": self.config.api_base,
-                                "provider": self.config.provider,
-                                "response_format": response_format,
-                                "attempt": attempt + 1,
-                                "max_retries": max_retries,
-                            },
-                            metadata={
-                                "message_count": len(messages),
-                            },
-                        )
-
-                    async with self._concurrency_guard():
-                        response = await litellm.acompletion(**kwargs)
-
-                    try:
-                        # Add safe access pattern before accessing response.choices[0]
-                        if (
-                            not response
-                            or not hasattr(response, "choices")
-                            or not response.choices
-                        ):
-                            logger.warning(
-                                f"LLM returned invalid response structure on attempt {attempt + 1}/{max_retries}."
-                            )
-                            last_exception = LLMServiceError(
-                                "Invalid response structure: missing choices"
-                            )
-                            if llm_debug_logger and llm_debug_logger.enabled:
-                                llm_debug_logger.log_error(
-                                    request_id=call_id,
-                                    model=self.config.model,
-                                    error=last_exception,
-                                    duration=time.perf_counter() - perf_start,
-                                    metadata={
-                                        "attempt": attempt + 1,
-                                        "max_retries": max_retries,
-                                    },
-                                )
-                            continue
-
-                        content = response.choices[0].message.content
-                        if content and content.strip():
-                            duration = time.perf_counter() - perf_start
-                            if llm_debug_logger and llm_debug_logger.enabled:
-                                llm_debug_logger.log_response(
-                                    request_id=call_id,
-                                    model=self.config.model,
-                                    response=self._serialize_response_for_debug(response),
-                                    duration=duration,
-                                    metadata={
-                                        "attempt": attempt + 1,
-                                        "max_retries": max_retries,
-                                    },
-                                )
-                            self._record_successful_call(
-                                call_id=call_id,
-                                call_started_at=call_started_at,
-                                duration=duration,
-                                messages=messages,
-                                response=response,
-                                content=content,
-                                response_format=response_format,
-                            )
-                            return response  # Success!
-                        else:
-                            # Treat empty response as a failure to be retried
-                            logger.warning(
-                                f"LLM returned an empty response on attempt {attempt + 1}/{max_retries}."
-                            )
-                            last_exception = LLMServiceError("LLM returned an empty response.")
-                            if llm_debug_logger and llm_debug_logger.enabled:
-                                llm_debug_logger.log_error(
-                                    request_id=call_id,
-                                    model=self.config.model,
-                                    error=last_exception,
-                                    duration=time.perf_counter() - perf_start,
-                                    metadata={
-                                        "attempt": attempt + 1,
-                                        "max_retries": max_retries,
-                                    },
-                                )
-                    except (IndexError, AttributeError) as content_error:
-                        logger.warning(
-                            f"Invalid response structure on attempt {attempt + 1}/{max_retries}: {content_error}"
-                        )
-                        last_exception = LLMServiceError(
-                            f"Invalid response structure: {content_error}"
-                        )
-                        if llm_debug_logger and llm_debug_logger.enabled:
-                            llm_debug_logger.log_error(
-                                request_id=call_id,
-                                model=self.config.model,
-                                error=last_exception,
-                                duration=time.perf_counter() - perf_start,
-                                metadata={
-                                    "attempt": attempt + 1,
-                                    "max_retries": max_retries,
-                                },
-                            )
-
-                except Exception as e:
-                    if llm_debug_logger and llm_debug_logger.enabled:
-                        llm_debug_logger.log_error(
-                            request_id=call_id,
-                            model=self.config.model,
-                            error=e,
-                            duration=time.perf_counter() - perf_start,
-                            metadata={
-                                "attempt": attempt + 1,
-                                "max_retries": max_retries,
-                            },
-                        )
-
-                    # 注意：全局池会自动处理 rate limit，这里只需重试
-                    if isinstance(e, litellm_exceptions.RateLimitError):
-                        logger.warning(
-                            f"RateLimitError on attempt {attempt + 1}/{max_retries}: {e}"
-                        )
-                        logger.debug(
-                            "Global key pool will automatically distribute load to other keys on next call"
-                        )
-
-                        # Update monitoring - record rate limited key
-                        try:
-                            from dslighting.monitoring.monitoring import get_global_monitor
-
-                            monitor = get_global_monitor()
-                            if monitor is not None:
-                                monitor.increment_rate_limited_count()
-                        except Exception:
-                            pass
-
-                        last_exception = e
-                        # 继续重试（全局池会在下次调用时自动分配不同的 key）
-                        continue
-                    elif isinstance(e, litellm_exceptions.APIError) and self._is_insufficient_balance_error(
-                        e
-                    ):
-                        logger.warning(
-                            f"Insufficient balance on attempt {attempt + 1}/{max_retries}: {e}"
-                        )
-                        # 注意：全局池会自动处理，这里不需要手动切换
-                        logger.debug(
-                            "Global key pool will automatically use a different key on next call"
-                        )
-                        last_exception = e
-                        continue
-                    # Check if this is a retryable error
-                    elif self._is_retryable_error(e):
-                        logger.warning(
-                            f"Retryable LLM error on attempt {attempt + 1}/{max_retries}: {e}"
-                        )
-                        last_exception = e
-                        logger.debug(
-                            f"Debug info - messages: {messages}, response_format: {response_format if response_format else 'None'}"
-                        )
-                    else:
-                        # Non-retryable error - fail immediately
-                        logger.error(f"Non-retryable LLM error: {e}")
-                        raise LLMServiceError(
-                            f"LLM call failed with non-retryable error: {e}"
-                        ) from e
-
-                # If this was the last attempt, break the loop to raise the final error
-                if attempt == max_retries - 1:
-                    break
-
-                # Exponential backoff with jitter
-                delay = base_delay * (3**attempt) + (asyncio.get_event_loop().time() % 1)
-                logger.debug(
-                    f"Retrying LLM call in {delay:.2f} seconds ({attempt + 2}/{max_retries})..."
-                )
-                await asyncio.sleep(delay)
-
-        raise LLMServiceError(
-            f"LLM call failed after {max_retries} attempts. Last error: {last_exception}"
-        ) from last_exception
 
     def _record_successful_call(
         self,
@@ -701,9 +498,10 @@ class LLMService:
             "cost_per_token": cost_per_token,
         }
         self.call_history.append(history_entry)
-        logger.debug(
-            f"LLM call complete. Model: {self.config.model}, Cost: ${call_cost:.6f}"
-        )
+        if not self._structured_debug_enabled():
+            logger.debug(
+                f"LLM call complete. Model: {self.config.model}, Cost: ${call_cost:.6f}"
+            )
 
     def _extract_usage(self, response: Any) -> dict[str, Any]:
         """
@@ -759,14 +557,49 @@ class LLMService:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
 
-        logger.debug(
-            f"Calling LLM ({self.config.model}) with prompt: {prompt[:100]}..."
-        )
+        if not self._structured_debug_enabled():
+            logger.debug(
+                f"Calling LLM ({self.config.model}) with prompt: {prompt[:100]}..."
+            )
 
-        response = await self._make_llm_call_with_retries(messages, max_retries=retries)
+        response = await self._executor.execute(
+            LLMCallSpec(
+                messages=messages,
+                response_mode="text",
+                max_transport_retries=retries,
+                max_validation_retries=1,
+            )
+        )
         content = response.choices[0].message.content
-        logger.debug(f"content: {content}")
         return content
+
+    async def call_messages(
+        self,
+        messages: list[dict[str, Any]],
+        max_retries: int | None = None,
+        response_format: dict | None = None,
+    ) -> Any:
+        """
+        Makes an asynchronous multi-turn call to the LLM and returns the raw response.
+
+        Args:
+            messages: Full message list to send.
+            max_retries: Maximum transport retry attempts.
+            response_format: Optional response format specification.
+
+        Returns:
+            The raw LiteLLM response object.
+        """
+        retries = max_retries if max_retries is not None else self.config.max_retries
+        return await self._executor.execute(
+            LLMCallSpec(
+                messages=messages,
+                response_format=response_format,
+                response_mode="text",
+                max_transport_retries=retries,
+                max_validation_retries=1,
+            )
+        )
 
     async def call_with_json(
         self,
@@ -803,54 +636,28 @@ class LLMService:
             {"role": "user", "content": prompt_with_schema},
         ]
 
-        logger.debug(
-            f"Calling LLM ({self.config.model}) for structured JSON output..."
+        if not self._structured_debug_enabled():
+            logger.debug(
+                f"Calling LLM ({self.config.model}) for structured JSON output..."
+            )
+
+        response_format = {"type": "json_object"} if self._supports_response_format() else None
+        if response_format is None and not self._structured_debug_enabled():
+            logger.debug(
+                "Model %s does not support `response_format`; falling back to prompt-enforced JSON.",
+                self.config.model,
+            )
+
+        return await self._executor.execute(
+            LLMCallSpec(
+                messages=messages,
+                response_format=response_format,
+                output_model=output_model,
+                response_mode="json",
+                max_transport_retries=retries,
+                max_validation_retries=max(1, retries),
+            )
         )
-
-        for attempt in range(max(1, retries)):
-            if self._supports_response_format():
-                response = await self._make_llm_call_with_retries(
-                    messages,
-                    response_format={"type": "json_object"},
-                    max_retries=retries,
-                )
-            else:
-                if attempt == 0:
-                    logger.debug(
-                        "Model %s does not support `response_format`; falling back to prompt-enforced JSON.",
-                        self.config.model,
-                    )
-                response = await self._make_llm_call_with_retries(
-                    messages,
-                    response_format=None,
-                    max_retries=retries,
-                )
-
-            try:
-                response_content = response.choices[0].message.content
-                logger.debug(f"content: {response_content}")
-            except (IndexError, AttributeError) as e:
-                raise LLMServiceError(
-                    f"Invalid response structure from LLM: {e}"
-                ) from e
-
-            try:
-                return output_model.model_validate_json(response_content)
-            except ValidationError as e:
-                logger.error(
-                    "Failed to validate LLM JSON response against Pydantic model (attempt %d/%d): %s",
-                    attempt + 1,
-                    retries,
-                    e,
-                )
-                logger.debug("Invalid JSON received: %s", response_content)
-                if attempt + 1 >= retries:
-                    raise LLMServiceError(
-                        f"LLM returned invalid JSON that could not be parsed: {e}",
-                        error_code="LLM-002",
-                        details={"validation_error": str(e)},
-                        suggestion="Check the JSON schema and ensure the LLM response matches the expected format",
-                    ) from e
 
     def get_total_cost(self) -> float:
         """Returns the total accumulated cost for this LLM instance."""

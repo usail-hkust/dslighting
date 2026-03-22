@@ -10,11 +10,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Coroutine, Any
 
-# Async file I/O
-import aiofiles
-
 # Core configuration and models
 from dslighting.config import DSLightingConfig, DagRuntimeConfig
+from dslighting.core.config.runtime_logging import log_resolved_runtime_config
 from dslighting.core.types import TaskDefinition, TaskType
 
 # Services and workflows
@@ -22,14 +20,16 @@ from dslighting.services.llm import LLMService
 from dslighting.workflows.base import BaseWorkflow
 from dslighting.runtime.dag import DagRunSummary, DagRuntime, DagRuntimeOptions, DeclarativeWorkflowActor, NodeDispatcher, SolveWorkflowActor, create_pipeline_runtime
 
-# Dynamic components (factories and handlers)
-from dslighting.core.tasks.handlers import (
-    TaskHandler,
-    KaggleTaskHandler,
-    QATaskHandler,
-    DataSciTaskHandler,
-    OpenEndedTaskHandler,
+# Dynamic components (factories and adapters)
+from dslighting.core.tasks import (
+    BaseTaskAdapter,
+    DataScienceTaskAdapter,
+    FileSubmissionTaskAdapter,
+    OpenEndedTaskAdapter,
+    QATaskAdapter,
+    TaskResolver,
 )
+from dslighting.benchmark.evaluation import TaskEvaluationService
 from dslighting.workflows.factory import (
     BaseWorkflowFactory,
     AutoMindWorkflowFactory,
@@ -359,229 +359,26 @@ class RegistryGrader:
         Returns:
             Score as float
         """
-        import pandas as pd
-
         logger.info("[RegistryGrader] Direct grading for task: %s", task_id)
-
-        # Step 1: Locate the task registry directory
-        task_registry_dir = self._locate_task_registry(
+        resolver = TaskResolver()
+        layout = resolver.resolve(
             task_id=task_id,
+            data=data_dir,
             registry_dir=registry_dir,
-            data_dir=data_dir,
         )
-
-        # Step 2: Load and validate task configuration
-        config = await self._load_task_config(
-            task_registry_dir=task_registry_dir,
-            task_id=task_id,
-        )
-
-        # Step 3: Execute grading
-        score = self._execute_grading(
-            task_id=task_id,
+        outcome = await TaskEvaluationService().evaluate(
             submission_path=submission_path,
-            data_dir=data_dir,
-            task_registry_dir=task_registry_dir,
-            config=config,
+            contract=layout.evaluation_contract,
+            mode="test",
+            metadata={"registry_dir": str(layout.registry_root)},
         )
-
-        return score
-
-    def _locate_task_registry(
-        self,
-        *,
-        task_id: str,
-        registry_dir: str | None,
-        data_dir: Path | None,
-    ) -> Path:
-        """Locate the task registry directory containing config.yaml.
-
-        This method searches for the task registry in the following order:
-        1. Explicit registry_dir if provided
-        2. Package root locations (mlebench, dabench, sciencebench)
-        3. Current working directory structures
-        4. Data directory parent hierarchies
-
-        Args:
-            task_id: Task/competition ID to locate.
-            registry_dir: Optional explicit registry root path.
-            data_dir: Data directory for additional search hints.
-
-        Returns:
-            Path to the task registry directory.
-
-        Raises:
-            BenchmarkError: If registry cannot be located.
-        """
-        from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
-
-        resolved = get_benchmark_source_catalog().resolve_task(
-            task_id,
-            registry_dir=registry_dir,
-            search_hints=[data_dir] if data_dir is not None else None,
-        )
-        return resolved.task_dir
-
-    async def _load_task_config(
-        self,
-        *,
-        task_registry_dir: Path,
-        task_id: str,
-    ) -> dict[str, Any]:
-        """Load and validate the task configuration from config.yaml.
-
-        Args:
-            task_registry_dir: Path to the task registry directory.
-            task_id: Expected task ID for validation.
-
-        Returns:
-            Parsed configuration dictionary.
-
-        Raises:
-            ConfigurationError: If config is invalid or missing required fields.
-        """
-        import yaml
-
-        config_path = task_registry_dir / "config.yaml"
-        async with aiofiles.open(config_path, "r", encoding="utf-8") as f:
-            content = await f.read()
-            config = yaml.safe_load(content) or {}
-
-        # Validate config ID matches task_id
-        config_id = str(config.get("id", "")).strip()
-        if config_id != task_id:
-            raise ConfigurationError(
-                f"Registry id mismatch in {config_path}: expected '{task_id}', got '{config_id}'."
-            )
-
-        # Ensure required dataset.answers field exists
-        answers_rel = (config.get("dataset") or {}).get("answers")
-        if not answers_rel:
-            raise ConfigurationError(
-                f"Registry config missing required field `dataset.answers`: {config_path}"
-            )
-
-        return config
-
-    def _execute_grading(
-        self,
-        *,
-        task_id: str,
-        submission_path: Path,
-        data_dir: Path | None,
-        task_registry_dir: Path,
-        config: dict[str, Any],
-    ) -> float:
-        """Execute the grading process using grade.py.
-
-        Args:
-            task_id: Task/competition ID.
-            submission_path: Path to the submission CSV file.
-            data_dir: Data directory containing prepared/ folder.
-            task_registry_dir: Path to the task registry directory.
-            config: Validated task configuration.
-
-        Returns:
-            Grading score as float.
-
-        Raises:
-            ConfigurationError: If grade.py is missing or invalid.
-            BenchmarkError: If grading execution fails.
-        """
-        import importlib.util
-        import pandas as pd
-
-        # Resolve answers path from config
-        answers_rel = (config.get("dataset") or {}).get("answers")
-        answers_path = self._resolve_answers_path(
-            task_id=task_id,
-            answers_rel=answers_rel,
-            data_dir=data_dir,
-        )
-
-        # Locate and validate grade.py
-        grade_py = task_registry_dir / "grade.py"
-        if not grade_py.exists():
-            raise ConfigurationError(
-                f"`grade.py` not found for task '{task_id}' at {grade_py}."
-            )
-
-        # Load grade.py as a module
-        spec = importlib.util.spec_from_file_location("grade_module", str(grade_py))
-        if spec is None or spec.loader is None:
-            raise BenchmarkError(
-                f"Cannot import grade module from {grade_py}",
-                error_code="BMK-003",
-                details={"grade_py_path": str(grade_py), "task_id": task_id},
-                suggestion="Check that the grade.py file is properly formatted as a Python module"
-            )
-        grade_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(grade_module)
-
-        # Get and execute the grade function
-        grade_fn = getattr(grade_module, "grade", None)
-        if grade_fn is None:
-            raise ConfigurationError(f"No `grade` function found in {grade_py}.")
-
-        # Perform grading
-        submission_df = pd.read_csv(submission_path)
-        answers_df = pd.read_csv(answers_path)
-        score = grade_fn(submission_df, answers_df)
-
         logger.info(
-            "✓ [RegistryGrader] Grading successful | task=%s score=%s", task_id, score
+            "✓ [RegistryGrader] Grading completed | task=%s score=%s valid=%s",
+            task_id,
+            outcome.score,
+            outcome.valid_submission,
         )
-        return float(score)
-
-    def _resolve_answers_path(
-        self,
-        *,
-        task_id: str,
-        answers_rel: str,
-        data_dir: Path | None,
-    ) -> Path:
-        """Resolve the absolute path to the answers CSV file.
-
-        Args:
-            task_id: Task/competition ID.
-            answers_rel: Relative path to answers from config.
-            data_dir: Data directory provided by user.
-
-        Returns:
-            Absolute Path to the answers file.
-
-        Raises:
-            BenchmarkError: If answers file cannot be found.
-        """
-        if data_dir is None:
-            data_root = Path.cwd() / "data" / "competitions"
-        else:
-            resolved = data_dir.resolve()
-            if resolved.name in ("public", "public_val") and resolved.parent.name in (
-                "prepared",
-                "prepared_val",
-            ):
-                data_root = resolved.parent.parent.parent
-            elif resolved.name == task_id and (resolved / "prepared").exists():
-                data_root = resolved.parent
-            elif (resolved / task_id / "prepared").exists():
-                data_root = resolved
-            else:
-                data_root = resolved
-
-        answers_rel_path = Path(answers_rel)
-        answer_candidates = [data_root / answers_rel_path, data_root / task_id / answers_rel_path]
-        answers_path = next((p for p in answer_candidates if p.exists()), None)
-
-        if answers_path is None:
-            raise BenchmarkError(
-                f"Answers file not found for task '{task_id}'. Tried: {[str(p) for p in answer_candidates]}",
-                error_code="BMK-002",
-                details={"task_id": task_id, "tried_paths": [str(p) for p in answer_candidates]},
-                suggestion="Ensure the competition data is properly prepared with answer files"
-            )
-
-        return answers_path
+        return float(outcome.score) if outcome.score is not None else 0.0
 
 
 # ==============================================================================
@@ -599,12 +396,11 @@ WORKFLOW_FACTORIES: dict[str, type[BaseWorkflowFactory]] = {
     "my_custom_agent": MyCustomAgentWorkflowFactory,
 }
 
-TASK_HANDLER_CLASSES: dict[TaskType, type[TaskHandler]] = {
-    "kaggle": KaggleTaskHandler,
-    "qa": QATaskHandler,
-    "datasci": DataSciTaskHandler,
-    "open_ended": OpenEndedTaskHandler,
-    # "code": CodeTaskHandler, # future extension
+TASK_ADAPTER_CLASSES: dict[TaskType, type[BaseTaskAdapter]] = {
+    "kaggle": FileSubmissionTaskAdapter,
+    "qa": QATaskAdapter,
+    "datasci": DataScienceTaskAdapter,
+    "open_ended": OpenEndedTaskAdapter,
 }
 
 
@@ -634,7 +430,7 @@ class DSLightingRunner:
             )
         self.factory: BaseWorkflowFactory = factory_class()
 
-        self.handler_classes = TASK_HANDLER_CLASSES
+        self.adapter_classes = TASK_ADAPTER_CLASSES
         self.benchmark = None
         self.run_records: list[dict[str, Any]] = []
         self.registry_grader = RegistryGrader()
@@ -683,7 +479,7 @@ class DSLightingRunner:
             workspace_service = None
             sandbox_service = None
             llm_service: LLMService | None = None
-            handler: TaskHandler | None = None
+            adapter: BaseTaskAdapter | None = None
             description, io_instructions = "", ""
             data_dir, output_path = None, None
 
@@ -708,17 +504,17 @@ class DSLightingRunner:
                     return "[ERROR] Missing LLM service", 0.0
 
                 # ========================================================================
-                # Stage 3: Execute task handler
+                # Stage 3: Build runtime input and execute workflow
                 # ========================================================================
                 (
                     result,
                     dag_summary,
-                    handler,
+                    adapter,
                     description,
                     io_instructions,
                     data_dir,
                     output_path,
-                ) = await self._execute_task_handler(
+                ) = await self._execute_task_adapter(
                     task,
                     workflow,
                     llm_service,
@@ -745,13 +541,12 @@ class DSLightingRunner:
 
                 try:
                     # Grade submission if applicable
-                    if handler and output_path:
+                    if output_path:
                         result = await self._grade_submission(
                             task=task,
                             result=result,
                             output_path=output_path,
                             data_dir=data_dir,
-                            handler=handler,
                             llm_service=llm_service,
                         )
                 except Exception as grade_error:
@@ -791,9 +586,8 @@ class DSLightingRunner:
                         keep_workspace=keep_all or (failed and keep_on_fail)
                     )
 
-                # Cleanup handler
-                if handler:
-                    handler.cleanup()
+                if adapter:
+                    adapter.cleanup()
 
             # Note: run_total_cost is already set in the finally block above
             usage_summary = llm_service.get_usage_summary() if llm_service else {}
@@ -840,6 +634,12 @@ class DSLightingRunner:
         dag_runtime_options = config_parser.parse_dag_options(runtime_hints)
         self._configure_llm_runtime_limits(
             task_config=task_config, dag_options=dag_runtime_options
+        )
+        log_resolved_runtime_config(
+            logger,
+            config=task_config,
+            source=self.__class__.__name__,
+            task_id=task.task_id,
         )
 
         return task_config
@@ -898,7 +698,7 @@ class DSLightingRunner:
 
         return workflow, llm_service, sandbox_service, workspace_service
 
-    async def _execute_task_handler(
+    async def _execute_task_adapter(
         self,
         task: TaskDefinition,
         workflow: BaseWorkflow,
@@ -906,11 +706,11 @@ class DSLightingRunner:
         sandbox_service: Any,
         workspace_service: Any,
         task_config: DSLightingConfig,
-    ) -> tuple[Any, DagRunSummary | None, TaskHandler, str, str, Path | None, Path | None]:
-        """Execute task handler and workflow.
+    ) -> tuple[Any, DagRunSummary | None, BaseTaskAdapter, str, str, Path | None, Path | None]:
+        """Build task runtime input and execute workflow.
 
         This method handles:
-        1. Selecting and preparing the appropriate task handler
+        1. Selecting and preparing the appropriate task adapter
         2. Linking data to workspace
         3. Executing the workflow (with or without DAG)
         4. Collecting output artifacts
@@ -924,19 +724,23 @@ class DSLightingRunner:
             task_config: The task configuration.
 
         Returns:
-            A tuple of (result, dag_summary, handler, description, io_instructions, data_dir, output_path).
+            A tuple of (result, dag_summary, adapter, description, io_instructions, data_dir, output_path).
         """
-        handler_class = self.handler_classes.get(task.task_type)
-        if not handler_class:
-            logger.error(f"No handler registered for task type '{task.task_type}'.")
+        adapter_class = self.adapter_classes.get(task.task_type)
+        if not adapter_class:
+            logger.error(f"No adapter registered for task type '{task.task_type}'.")
             return f"[ERROR] Unsupported task type '{task.task_type}'", None, None, "", "", None, None
 
-        handler: TaskHandler = handler_class()
+        adapter: BaseTaskAdapter = adapter_class(task_config)
 
         description, io_instructions = "", ""
         data_dir, output_path = None, None
 
-        description, io_instructions, data_dir, output_path = handler.prepare_input(task)
+        execution_spec = adapter.build_execution_spec(task)
+        description = execution_spec.description_text
+        io_instructions = execution_spec.io_instructions
+        data_dir = execution_spec.agent_visible_dir
+        output_path = execution_spec.output_path
 
         if workspace_service:
             try:
@@ -953,10 +757,10 @@ class DSLightingRunner:
 
         if data_dir is None or output_path is None:
             raise WorkflowError(
-                "Task handler returned empty data_dir or output_path.",
+                "Task adapter returned empty data_dir or output_path.",
                 error_code="WRK-002",
                 details={"data_dir": str(data_dir) if data_dir else None, "output_path": str(output_path) if output_path else None},
-                suggestion="Check the task handler implementation to ensure data_dir and output_path are properly set"
+                suggestion="Check the task adapter implementation to ensure data_dir and output_path are properly set"
             )
 
         # Resolve DAG runtime options for execution
@@ -982,9 +786,9 @@ class DSLightingRunner:
                 output_path=output_path,
             )
 
-        result = handler.parse_output(output_path) if output_path else None
+        result = adapter.parse_output(output_path) if output_path else None
 
-        return result, dag_summary, handler, description, io_instructions, data_dir, output_path
+        return result, dag_summary, adapter, description, io_instructions, data_dir, output_path
 
     def _collect_output_artifacts(
         self,
@@ -1049,7 +853,6 @@ class DSLightingRunner:
         result: Any,
         output_path: Path,
         data_dir: Path | None,
-        handler: TaskHandler,
         llm_service: LLMService | None,
     ) -> Any:
         """Grade submission and return score.
@@ -1064,7 +867,6 @@ class DSLightingRunner:
             result: The current result (typically a Path).
             output_path: Path to the output file.
             data_dir: Path to the data directory.
-            handler: The task handler instance.
             llm_service: The LLM service instance.
 
         Returns:
@@ -1530,8 +1332,8 @@ class DSLightingRunner:
             workspace_service: Service for workspace file operations.
             task_config: The task configuration.
             task: The task definition.
-            description: Task description from handler.
-            io_instructions: I/O instructions from handler.
+            description: Task description from adapter/runtime spec.
+            io_instructions: I/O instructions from adapter/runtime spec.
             data_dir: Path to data directory.
             output_path: Path to expected output file.
             result: The workflow execution result.
@@ -1663,8 +1465,8 @@ class DSLightingRunner:
         Args:
             task_config: The task configuration.
             task: The task definition.
-            description: Task description from handler.
-            io_instructions: I/O instructions from handler.
+            description: Task description from adapter/runtime spec.
+            io_instructions: I/O instructions from adapter/runtime spec.
             data_dir: Path to data directory.
             output_path: Path to expected output file.
             result: The workflow execution result.

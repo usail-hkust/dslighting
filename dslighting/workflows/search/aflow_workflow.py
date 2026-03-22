@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 import shutil # Import shutil
 
 from dslighting.state.search.experience import Experience
+from dslighting.benchmark.evaluation import TaskEvaluationService
+from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
 from dslighting.services.llm import LLMService
 from dslighting.core.types import WorkflowCandidate
 from dslighting.prompts.workflows.aflow import get_graph_optimize_prompt, GraphOptimize
@@ -17,14 +19,10 @@ from dslighting.workflows.templates.basic_kaggle_loop import get_initial_workflo
 from dslighting.ops.presets import ScEnsembleOperator, AFlowReviewOperator, AFlowReviseOperator
 from dslighting.utils.dynamic_import import import_workflow_from_string
 from dslighting.benchmark.core.base import BaseBenchmark
-from dslighting.services.data_analyzer import DataAnalyzer
 from dslighting.error import DynamicImportError # Import DynamicImportError
 from dslighting.benchmark.vendor.mlebench.utils import (
     get_module_dir,
-    import_fn,
-    load_answers,
     load_yaml,
-    read_csv,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,6 +42,7 @@ class AFlowWorkflow:
         self.llm_service: LLMService = services["llm"]
         self.workspace = services["workspace"]
         self.sandbox_service = services["sandbox"]
+        self.data_analyzer = services.get("data_analyzer")
         self.experience = Experience(self.workspace)
         self.benchmark = benchmark
         
@@ -99,29 +98,26 @@ class AFlowWorkflow:
         desc_path = get_module_dir().parent / config["description"]
         return desc_path.read_text()
 
-    def _grade_dabench_without_preparer(self, submission_path: Path, competition_id: str) -> float:
+    async def _grade_dabench_without_preparer(self, submission_path: Path, competition_id: str) -> float:
         """Grade a DABench submission using existing prepared answers and local grade.py."""
-        comp_dir = self._resolve_competition_dir(competition_id)
-        config = load_yaml(comp_dir / "config.yaml")
-
-        # Resolve grade function from file to avoid import issues with hyphenated IDs.
-        grade_import = config["grader"]["grade_fn"]
-        module_str, fn_name = grade_import.split(":")
-        leaf = module_str.split(".")[-1]  # usually "grade"
-        grade_file = comp_dir / f"{leaf}.py"
-        grade_fn = import_fn(f"file:{grade_file}:{fn_name}")
-
-        # Resolve answers path with val->test fallback.
-        _, private_dir = self._get_prepared_dirs(competition_id)
-        answers_rel = config["dataset"]["answers"]
-        answers_path = self.benchmark.registry.get_data_dir() / answers_rel  # type: ignore[union-attr]
-        if private_dir.name.endswith("_val") and "/private/" in str(answers_rel):
-            answers_path = Path(str(answers_path).replace("/private/", "/private_val/"))
-
-        submission_df = read_csv(submission_path)
-        answers = load_answers(answers_path)
-        score = grade_fn(submission_df, answers)
-        return float(score) if score is not None else 0.0
+        competition = self.benchmark.registry.get_competition(competition_id)  # type: ignore[union-attr]
+        contract, _ = build_task_evaluation_contract(
+            competition=competition,
+            source_id=getattr(getattr(self.benchmark.registry, "descriptor", None), "source_id", "mlebench"),  # type: ignore[union-attr]
+            engine_id="mle",
+            registry_root=self.benchmark.registry.get_competitions_dir(),  # type: ignore[union-attr]
+            data_root=self.benchmark.registry.get_data_dir(),  # type: ignore[union-attr]
+            mode="validation",
+            output_submission_path=submission_path,
+            evaluation_mode="artifact_submission",
+        )
+        outcome = await TaskEvaluationService().evaluate(
+            submission_path=submission_path,
+            contract=contract,
+            mode="validation",
+            metadata={"workflow": "aflow"},
+        )
+        return float(outcome.score) if outcome.score is not None else 0.0
 
     async def optimize(self) -> str:
         """
@@ -260,14 +256,14 @@ class AFlowWorkflow:
         public_dir, _ = self._get_prepared_dirs(competition_id)
         data_dir = public_dir.absolute()
 
-        analyzer = DataAnalyzer()
-        
         # 1. Perform static analysis only ONCE.
-        base_report = analyzer.analyze_data(
-            data_dir,
-            task_type="kaggle",
-            task_id=competition_id,
-        )
+        base_report = ""
+        if self.data_analyzer is not None:
+            base_report = self.data_analyzer.analyze_data(
+                data_dir,
+                task_type="kaggle",
+                task_id=competition_id,
+            )
 
         for i in range(self.validation_runs_per_candidate):
             unique_id = uuid.uuid4().hex[:6]
@@ -275,10 +271,19 @@ class AFlowWorkflow:
             temp_output_path = self.workspace.get_path("artifacts") / temp_output_filename
 
             try:
-                io_instructions = analyzer.generate_io_instructions(temp_output_path.name, optimization_context=False)
+                if self.data_analyzer is not None:
+                    io_instructions = self.data_analyzer.generate_io_instructions(
+                        temp_output_path.name,
+                        optimization_context=False,
+                    )
+                else:
+                    io_instructions = (
+                        "All input data files are in the current working directory.\n"
+                        f"Save the final submission file to `{temp_output_path.name}` in the current working directory."
+                    )
                     
                 # 3. Combine the raw description and cached base report. (IO instructions are passed separately now)
-                description = f"{raw_description}\n{base_report}"
+                description = f"{raw_description}\n{base_report}" if base_report else raw_description
                 
                 # 4. Setup the environment
                 self.workspace.link_data_to_workspace(data_dir)
@@ -313,7 +318,7 @@ class AFlowWorkflow:
 
                 # Grade without depending on preparers for DABench tasks.
                 if competition_id.startswith("dabench-"):
-                    score = self._grade_dabench_without_preparer(temp_output_path, competition_id)
+                    score = await self._grade_dabench_without_preparer(temp_output_path, competition_id)
                 else:
                     score = await self.benchmark.grade(temp_output_path, competition_id=competition_id)
                 scores.append(score)

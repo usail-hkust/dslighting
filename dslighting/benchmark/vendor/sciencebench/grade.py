@@ -82,7 +82,7 @@ def grade_submission(submission_path: Path, competition: "Competition") -> Compe
         submission_exists=submission_exists,
         valid_submission=valid_submission,
         is_lower_better=False,
-        created_at=datetime.now().isoformat(),
+        created_at=datetime.now(),
         submission_path=str(submission_path),
     )
     return report
@@ -134,7 +134,7 @@ def grade_csv(submission_path: Path, competition: "Competition") -> CompetitionR
         submission_exists=submission_exists,
         valid_submission=valid_submission,
         is_lower_better=False,  # Will be set by leaderboard ranking
-        created_at=datetime.now().isoformat(),
+        created_at=datetime.now(),
         submission_path=str(submission_path),
     )
 

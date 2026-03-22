@@ -4,22 +4,23 @@ import logging
 import os
 import time
 import uuid
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
-
-import pandas as pd
 
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.benchmark.core.config_loader import (
     BaseBenchmarkConfigLoader,
     create_problem_entry,
 )
+from dslighting.benchmark.evaluation import TaskEvaluationService
+from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
+from dslighting.benchmark.evaluation.models import EvaluationOutcome
+from dslighting.benchmark.reporting import CompetitionReport, CompetitionReportBuilder
 
 # --- mlebench related imports ---
 from dslighting.benchmark.vendor.mlebench.data import is_dataset_prepared
-from dslighting.benchmark.vendor.mlebench.grade import aggregate_reports, grade_csv
-from dslighting.benchmark.vendor.mlebench.grade_helpers import CompetitionReport
 from dslighting.benchmark.vendor.mlebench.registry import Registry
 from dslighting.benchmark.vendor.mlebench.registry import registry as DEFAULT_MLE_REGISTRY
 from dslighting.benchmark.vendor.dabench.registry import Registry as DABenchRegistry
@@ -89,6 +90,8 @@ class MLEBenchmark(BaseBenchmark):
 
         # RE-INITIALIZE problems by calling the correct loader after registry is set up.
         self.problems = self._load_problems()
+        self._evaluation_service = TaskEvaluationService()
+        self._report_builder = CompetitionReportBuilder()
         logger.info(f"MLEBenchmark initialized with data_dir: {self.data_dir}")
 
     # _load_config() removed - now uses self.config_loader.load_config() directly
@@ -248,15 +251,6 @@ class MLEBenchmark(BaseBenchmark):
 
         mode = problem.get("mode", "standard_ml")
 
-        if mode == "open_ended":
-            # For open-ended tasks, validate that submission_path is actually a directory (artifacts)
-            if not submission_path.is_dir():
-                raise ValueError(
-                    f"artifacts_path must be a directory for open-ended tasks, got: {submission_path}"
-                )
-            # For open-ended tasks, use LLM judge for scoring
-            return await self._grade_open_ended(submission_path, resolved_competition_id, mode)
-
         try:
             competition = self._get_registry_for_competition(resolved_competition_id).get_competition(
                 resolved_competition_id
@@ -265,7 +259,24 @@ class MLEBenchmark(BaseBenchmark):
                 logger.warning(f"Grading failed: submission file not found at {submission_path}")
                 return 0.0
 
-            report = grade_csv(submission_path, competition)
+            contract = self._build_evaluation_contract(
+                competition=competition,
+                competition_id=resolved_competition_id,
+                mode=mode,
+                output_submission_path=submission_path,
+            )
+            outcome = await self._evaluation_service.evaluate(
+                submission_path=submission_path,
+                contract=contract,
+                mode="validation" if mode == "validation" else "test",
+                metadata={"benchmark_name": self.name},
+            )
+            report = self._report_builder.build(
+                outcome=outcome,
+                semantics=contract.evaluation_semantics,
+                competition_id=resolved_competition_id,
+                submission_path=submission_path,
+            )
             score = report.score if report.score is not None else 0.0
 
             # Normalize score to be a fitness value (higher is better)
@@ -278,6 +289,33 @@ class MLEBenchmark(BaseBenchmark):
         except Exception as e:
             logger.error(f"Error during grading for {resolved_competition_id}: {e}")
             return 0.0
+
+    def _build_evaluation_contract(
+        self,
+        *,
+        competition: Any,
+        competition_id: str,
+        mode: str,
+        output_submission_path: Path,
+    ):
+        registry = self._get_registry_for_competition(competition_id)
+        source_id = getattr(getattr(registry, "descriptor", None), "source_id", "mlebench")
+        contract, _ = build_task_evaluation_contract(
+            competition=competition,
+            source_id=source_id,
+            engine_id="mle",
+            registry_root=registry.get_competitions_dir() if hasattr(registry, "get_competitions_dir") else None,
+            data_root=registry.get_data_dir() if hasattr(registry, "get_data_dir") else self.data_dir,
+            mode="validation" if mode == "validation" else "test",
+            output_submission_path=output_submission_path,
+            evaluation_mode="judge_based" if mode == "open_ended" else "artifact_submission",
+        )
+        if mode == "open_ended" and contract.judging is not None:
+            contract = replace(
+                contract,
+                judging=replace(contract.judging, judge_fn=self._evaluate_open_ended_contract),
+            )
+        return contract
 
     def _resolve_llm_judge_model(self) -> str:
         """
@@ -512,6 +550,33 @@ Respond ONLY with the JSON object, no additional text.
             logger.error(f"Error during LLM judge grading: {e}", exc_info=True)
             return 0.0
 
+    async def _evaluate_open_ended_contract(
+        self,
+        *,
+        submission_path: Path,
+        contract: Any,
+        mode: str,
+        metadata: Dict[str, Any],
+    ) -> EvaluationOutcome:
+        if not submission_path.is_dir():
+            return EvaluationOutcome(
+                score=None,
+                submission_exists=submission_path.exists(),
+                valid_submission=False,
+                error_kind="invalid_submission",
+                error_message=f"Open-ended artifacts path is not a directory: {submission_path}",
+                diagnostics={"metadata": dict(metadata or {})},
+            )
+        score = await self._grade_open_ended(submission_path, contract.task_id, mode)
+        return EvaluationOutcome(
+            score=score,
+            submission_exists=submission_path.exists(),
+            valid_submission=submission_path.exists(),
+            error_kind="none" if submission_path.exists() else "invalid_submission",
+            error_message=None if submission_path.exists() else "Artifacts directory missing.",
+            diagnostics={"metadata": dict(metadata or {})},
+        )
+
     def _heuristic_score(self, artifact_files) -> float:
         """Fallback heuristic scoring when LLM judge is unavailable."""
         has_code = any(f.suffix == '.py' for f in artifact_files if f.is_file())
@@ -643,6 +708,7 @@ Respond ONLY with the JSON object, no additional text.
                     "description_file": str(description_path) if description_path.exists() else "",
                     "rubric": "",  # Will be loaded from file
                     "rubric_file": str(rubric_path),
+                    "agent_visible_data_dir": str(source_data_dir.absolute()),
                     "public_data_dir": str(source_data_dir.absolute()),
                     "raw_data_dir": "./data",
                     "output_submission_path": str(output_submission_path.absolute())
@@ -658,6 +724,7 @@ Respond ONLY with the JSON object, no additional text.
 
                 payload = {
                     "description": competition.description,
+                    "agent_visible_data_dir": str(source_data_dir.absolute()),
                     "public_data_dir": str(source_data_dir.absolute()),  # Use the determined source
                     "output_submission_path": str(output_submission_path.absolute()),
                     "sample_submission_path": (
@@ -688,33 +755,26 @@ Respond ONLY with the JSON object, no additional text.
 
             if isinstance(result, Path):
                 logger.debug(f"Grading submission {result} for {competition_id} (mode={mode})")
-                
-                if mode == "open_ended":
-                    # Use LLM judge for open-ended tasks instead of CSV grading
-                    logger.info(f"Using LLM judge for open-ended task {competition_id}")
-                    score = await self._grade_open_ended(result, competition_id, mode)
-                    # Create report based on LLM judge score
-                    base_data = {
-                        "competition_id": competition_id,
-                        "score": score,
-                        "gold_threshold": 0.9,
-                        "silver_threshold": 0.7,
-                        "bronze_threshold": 0.5,
-                        "median_threshold": 0.5,
-                        "any_medal": score >= 0.5,
-                        "gold_medal": score >= 0.9,
-                        "silver_medal": score >= 0.7,
-                        "bronze_medal": score >= 0.5,
-                        "above_median": score >= 0.5,
-                        "submission_exists": result.exists(),
-                        "valid_submission": result.exists(),
-                        "is_lower_better": False,
-                        "created_at": datetime.now().isoformat(),
-                        "submission_path": str(result),
-                    }
-                    report = CompetitionReport.from_dict(base_data)
-                else:
-                    report = grade_csv(result, competition)
+                contract = self._build_evaluation_contract(
+                    competition=competition,
+                    competition_id=competition_id,
+                    mode=mode,
+                    output_submission_path=result,
+                )
+                outcome = await self._evaluation_service.evaluate(
+                    submission_path=result,
+                    contract=contract,
+                    mode="validation" if mode == "validation" else "test",
+                    metadata={"benchmark_name": self.name},
+                )
+                report = self._report_builder.build(
+                    outcome=outcome,
+                    semantics=contract.evaluation_semantics,
+                    competition_id=competition_id,
+                    submission_path=result,
+                )
+                if outcome.error_kind != "none":
+                    error_message = outcome.error_message
 
             elif isinstance(result, str) and result.startswith("[ERROR]"):
                 error_message = f"DSLighting workflow failed: {result}"

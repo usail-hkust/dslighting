@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from appdirs import user_cache_dir
-
 from dslighting.benchmark.core.mle_style_registry import MLEStyleRegistry
 from dslighting.benchmark.core.mle_task_contract import MLEStyleCompetition as Competition
 from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalog
 
 
-DEFAULT_DATA_DIR = (Path(user_cache_dir()) / "mle-bench" / "data").resolve()
+DEFAULT_DATA_DIR = (Path.home() / ".cache" / "mle-bench" / "data").resolve()
 
 
 class Registry:

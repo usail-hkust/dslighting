@@ -1,4 +1,8 @@
-# Exclude benchmark directories from package
-recursive-exclude dsat/benchmark/dabench/ *
-recursive-exclude dsat/benchmark/mlebench/ *
-recursive-exclude dsat/benchmark/sciencebench/ *
+# Include benchmark competition metadata and helper scripts used at runtime.
+# These files are required by the bundled benchmark registries (YAML configs,
+# descriptions, leaderboards, and per-competition grade/prepare helpers).
+recursive-include dslighting/benchmark/vendor/dabench/competitions *.yaml *.md *.csv *.py
+recursive-include dslighting/benchmark/vendor/dacode/competitions *.yaml *.md *.csv *.py
+recursive-include dslighting/benchmark/vendor/mlebench/competitions *.yaml *.md *.csv *.py
+recursive-include dslighting/benchmark/vendor/sciencebench/competitions *.yaml *.md *.csv *.py
+recursive-include dslighting/benchmark/vendor *.yaml

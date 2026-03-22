@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from appdirs import user_cache_dir
-
 from dslighting.benchmark.core.mle_task_contract import (
     MLEStyleCompetition,
     MLETaskContractLoader,
@@ -11,7 +9,7 @@ from dslighting.benchmark.core.mle_task_contract import (
 from dslighting.benchmark.core.source_catalog import BenchmarkSourceDescriptor
 
 
-DEFAULT_DATA_DIR = (Path(user_cache_dir()) / "mle-bench" / "data").resolve()
+DEFAULT_DATA_DIR = (Path.home() / ".cache" / "mle-bench" / "data").resolve()
 
 
 class MLEStyleRegistry:

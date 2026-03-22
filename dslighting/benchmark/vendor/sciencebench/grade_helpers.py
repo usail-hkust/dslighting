@@ -1,19 +1,14 @@
 """Helper classes related to grading"""
 import inspect
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Optional, Union
 
 import pandas as pd
 
+from dslighting.benchmark.grading.errors import InvalidSubmissionError
+from dslighting.benchmark.reporting.models import CompetitionReport
 from dslighting.benchmark.vendor.sciencebench.utils import get_logger, import_fn
 
 logger = get_logger(__name__)
-
-
-class InvalidSubmissionError(Exception):
-    """Exception raised when a submission is invalid."""
-    pass
 
 
 class Grader:
@@ -57,48 +52,3 @@ class Grader:
             return None
         rounded_score = round(score, 5)
         return rounded_score
-
-
-@dataclass
-class CompetitionReport:
-    """Report for a single competition evaluation."""
-    competition_id: str
-    score: Optional[float]
-    gold_medal: bool
-    silver_medal: bool
-    bronze_medal: bool
-    above_median: bool
-    submission_exists: bool
-    valid_submission: bool
-    is_lower_better: bool
-    created_at: str
-    submission_path: str
-    gold_threshold: float = float('nan')
-    silver_threshold: float = float('nan')
-    bronze_threshold: float = float('nan')
-    median_threshold: float = float('nan')
-    any_medal: bool = False
-
-    @staticmethod
-    def from_dict(data: dict) -> "CompetitionReport":
-        return CompetitionReport(**data)
-
-    def to_dict(self) -> dict:
-        return {
-            "competition_id": self.competition_id,
-            "score": self.score,
-            "gold_medal": self.gold_medal,
-            "silver_medal": self.silver_medal,
-            "bronze_medal": self.bronze_medal,
-            "above_median": self.above_median,
-            "submission_exists": self.submission_exists,
-            "valid_submission": self.valid_submission,
-            "is_lower_better": self.is_lower_better,
-            "created_at": self.created_at,
-            "submission_path": self.submission_path,
-            "gold_threshold": self.gold_threshold,
-            "silver_threshold": self.silver_threshold,
-            "bronze_threshold": self.bronze_threshold,
-            "median_threshold": self.median_threshold,
-            "any_medal": self.any_medal,
-        }

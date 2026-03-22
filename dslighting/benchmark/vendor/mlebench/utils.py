@@ -12,10 +12,14 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pandas as pd
-import py7zr
 import yaml
 from pandas import DataFrame
 from tqdm.auto import tqdm
+
+try:
+    import py7zr
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    py7zr = None
 
 
 def purple(str: str) -> str:
@@ -73,6 +77,14 @@ def load_answers(path_to_answers: Path) -> Any:
         return read_jsonl(str(path_to_answers))
 
     raise ValueError(f"Unsupported file format for answers: {path_to_answers}")
+
+
+def _require_py7zr() -> Any:
+    if py7zr is None:
+        raise ModuleNotFoundError(
+            "py7zr is required for 7z archive support. Install benchmark optional dependencies."
+        )
+    return py7zr
 
 
 def get_runs_dir() -> Path:
@@ -169,7 +181,8 @@ def compress(src: Path, compressed: Path, exist_ok: bool = False) -> None:
                 zipf.write(file_path, arcname=file_path.relative_to(src))
 
     def sevenz_compress(src: Path, compressed: Path):
-        with py7zr.SevenZipFile(compressed, "w") as archive:
+        sevenzip = _require_py7zr()
+        with sevenzip.SevenZipFile(compressed, "w") as archive:
             for file_path in tqdm(file_paths, desc=tqdm_desc, unit="file", total=total_files):
                 archive.write(file_path, arcname=file_path.relative_to(src))
 
@@ -193,7 +206,8 @@ def extract(
     assert is_compressed(compressed), f"File `{compressed}` is not compressed."
 
     if compressed.suffix == ".7z":
-        with py7zr.SevenZipFile(compressed, mode="r") as ref:
+        sevenzip = _require_py7zr()
+        with sevenzip.SevenZipFile(compressed, mode="r") as ref:
             ref.extractall(dst)
     elif compressed.suffix == ".zip":
         with zipfile.ZipFile(compressed, "r") as ref:

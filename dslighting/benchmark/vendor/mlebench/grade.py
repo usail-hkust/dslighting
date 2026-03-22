@@ -60,16 +60,17 @@ def grade_csv(path_to_submission: Path, competition: Competition) -> Competition
         )
 
     score = None
-    submission_exists = path_to_submission.is_file()
+    submission_exists = path_to_submission.is_file() and path_to_submission.suffix.lower() == ".csv"
 
     if submission_exists:
+        submission_df = read_csv(path_to_submission)
         logger.info(purple(f"Load answers from {competition.answers}"))
-        if competition.answers.suffix == ".csv":
-            score = competition.grader(read_csv(path_to_submission), load_answers(competition.answers))
-        else:
-            score = competition.grader(path_to_submission, competition.answers)
+        answers = load_answers(competition.answers)
+        score = competition.grader(submission_df, answers)
     else:
-        logger.warning(f"Submission file not found: {path_to_submission}")
+        logger.warning(
+            f"Invalid submission file: {path_to_submission}. Please check that the file exists and it is a CSV."
+        )
 
     valid_submission = score is not None
     competition_leaderboard = get_leaderboard(competition)

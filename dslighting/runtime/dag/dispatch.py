@@ -12,6 +12,8 @@ import inspect
 import time
 from typing import Any, Callable, Dict, Optional
 
+from dslighting.debug import debug_scope
+from dslighting.debug.models import NodeDebugContext
 from dslighting.runtime.dag.types import NodeResult, OpNode
 
 
@@ -69,40 +71,47 @@ class NodeDispatcher:
 
         started_at = time.time()
         perf_start = time.perf_counter()
+        node_context = NodeDebugContext(
+            node_id=node.node_id,
+            operator_name=node.operator_name,
+            op_type=node.op_type,
+            node_attempt=attempt,
+        )
 
-        try:
-            outputs = await asyncio.wait_for(
-                self._execute_node(node=node, resolved_inputs=resolved_inputs),
-                timeout=timeout_duration
-            )
+        with debug_scope(node=node_context):
+            try:
+                outputs = await asyncio.wait_for(
+                    self._execute_node(node=node, resolved_inputs=resolved_inputs),
+                    timeout=timeout_duration
+                )
 
-            ended_at = time.time()
-            duration = time.perf_counter() - perf_start
-            return NodeResult(
-                node_id=node.node_id,
-                task_id=node.task_id,
-                status="success",
-                outputs=outputs,
-                error=None,
-                metrics={"duration_seconds": round(duration, 4)},
-                attempt=attempt,
-                started_at=started_at,
-                ended_at=ended_at,
-            )
-        except asyncio.TimeoutError:
-            ended_at = time.time()
-            duration = time.perf_counter() - perf_start
-            return NodeResult(
-                node_id=node.node_id,
-                task_id=node.task_id,
-                status="failed",
-                outputs={},
-                error=f"Node execution timed out after {timeout_duration}s",
-                metrics={"duration_seconds": round(duration, 4)},
-                attempt=attempt,
-                started_at=started_at,
-                ended_at=ended_at,
-            )
+                ended_at = time.time()
+                duration = time.perf_counter() - perf_start
+                return NodeResult(
+                    node_id=node.node_id,
+                    task_id=node.task_id,
+                    status="success",
+                    outputs=outputs,
+                    error=None,
+                    metrics={"duration_seconds": round(duration, 4)},
+                    attempt=attempt,
+                    started_at=started_at,
+                    ended_at=ended_at,
+                )
+            except asyncio.TimeoutError:
+                ended_at = time.time()
+                duration = time.perf_counter() - perf_start
+                return NodeResult(
+                    node_id=node.node_id,
+                    task_id=node.task_id,
+                    status="failed",
+                    outputs={},
+                    error=f"Node execution timed out after {timeout_duration}s",
+                    metrics={"duration_seconds": round(duration, 4)},
+                    attempt=attempt,
+                    started_at=started_at,
+                    ended_at=ended_at,
+                )
 
     async def _execute_node(
         self,
