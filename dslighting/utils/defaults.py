@@ -62,6 +62,7 @@ DEFAULT_SUCCESS_THRESHOLD = 3.0
 DEFAULT_MAX_ROUNDS = 10
 DEFAULT_MAX_INFLIGHT_NODES = 256
 DEFAULT_CACHE_TTL_SECONDS = 3600
+DEFAULT_CACHE_MAX_ENTRIES = 512
 
 
 # ============================================================================
@@ -133,6 +134,14 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "sandbox": {
         "timeout": DEFAULT_SANDBOX_TIMEOUT,
+    },
+    "data_analysis": {
+        "enabled": True,
+        "cache_enabled": True,
+        "cache_dir": None,
+        "cache_max_entries": DEFAULT_CACHE_MAX_ENTRIES,
+        "cache_debug_metrics": False,
+        "analyzer_version": None,
     },
     "scheduler": {
         "max_concurrency": None,

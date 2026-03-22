@@ -22,6 +22,7 @@ from dslighting.ops.presets import AFlowReviewOperator, AFlowReviseOperator, ScE
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
 from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
 from dslighting.services.llm import LLMService
+from dslighting.services.data_analysis_provider import create_data_analyzer
 from dslighting.services.sandbox import SandboxService
 from dslighting.services.vdb import VDBService
 from dslighting.services.workspace import WorkspaceService
@@ -297,9 +298,7 @@ class MyCustomAgentWorkflowFactory(BaseWorkflowFactory):
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
-        from dslighting.services.data_analyzer import DataAnalyzer
-
-        data_analyzer = DataAnalyzer()
+        data_analyzer = create_data_analyzer(config)
         state = JournalState()
         operators = {
             "generate": GenerateCodeAndPlanOperator(llm_service=llm_service),
@@ -331,10 +330,12 @@ class AFlowWorkflowFactory(BaseWorkflowFactory):
         workspace = WorkspaceService(run_name=config.run.name, base_dir=workspace_base)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
+        data_analyzer = create_data_analyzer(config)
         services = {
             "llm": llm_service,
             "workspace": workspace,
             "sandbox": sandbox_service,
+            "data_analyzer": data_analyzer,
         }
         agent_config = config.agent.model_dump()
         if config.optimizer:

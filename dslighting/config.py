@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, ConfigDict
 if TYPE_CHECKING:
     from dslighting.benchmark import RuntimeSchedulerOptions
 
+from dslighting.utils.constants import DEFAULT_CACHE_MAX_ENTRIES
+
 
 class LLMConfig(BaseModel):
     """LLM service settings."""
@@ -48,6 +50,17 @@ class SandboxConfig(BaseModel):
     backend: str = "local"  # Sandbox backend: local, e2b, ds_sandbox
     backend_type: str = "docker"  # Backend type for ds_sandbox: docker, local
     api_key: Optional[str] = None  # API key for e2b
+
+
+class DataAnalysisConfig(BaseModel):
+    """Settings for DataAnalyzer runtime behavior."""
+
+    enabled: bool = True
+    cache_enabled: bool = True
+    cache_dir: Optional[str] = None
+    cache_max_entries: int = DEFAULT_CACHE_MAX_ENTRIES
+    cache_debug_metrics: bool = False
+    analyzer_version: Optional[str] = None
 
 
 class TaskConfig(BaseModel):
@@ -207,6 +220,7 @@ class DSLightingConfig(BaseModel):
     task: TaskConfig = Field(default_factory=TaskConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    data_analysis: DataAnalysisConfig = Field(default_factory=DataAnalysisConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
 
     # Paradigm-specific configurations

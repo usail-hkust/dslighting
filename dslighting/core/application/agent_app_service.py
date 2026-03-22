@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Union
 from pathlib import Path
+from uuid import uuid4
 
 from dslighting.core.application.agent_config_builder import AgentConfigBuilder
 from dslighting.core.application.task_input_resolver import TaskInputResolver
@@ -79,6 +80,8 @@ class AgentAppService:
             task_id=resolved.task_id,
             run_kwargs=resolved.run_kwargs,
         )
+        if getattr(config.scheduler, "run_id", None) is None:
+            config.scheduler.run_id = f"{self._workflow_name}_{resolved.task_id}_{uuid4().hex[:8]}"
 
         executor = TaskExecutor(config=config, workflow_name=self._workflow_name)
         return await executor.run_with_task_id(

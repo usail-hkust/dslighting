@@ -17,6 +17,7 @@ from .shared import (
     get_workflow_for_benchmark,
     apply_env_overrides,
 )
+from .runtime_logging import log_resolved_runtime_config
 from .validation import (
     ConfigValidator,
     ValidationError,
@@ -68,6 +69,7 @@ __all__ = [
     "get_config_key_for_workflow",
     "get_workflow_for_benchmark",
     "apply_env_overrides",
+    "log_resolved_runtime_config",
     # Validation
     "ConfigValidator",
     "ValidationError",

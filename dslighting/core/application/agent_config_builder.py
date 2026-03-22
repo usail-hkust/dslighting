@@ -5,7 +5,13 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from dslighting.config import DSLightingConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.config import (
+    DSLightingConfig,
+    DataAnalysisConfig,
+    RunConfig,
+    SandboxConfig,
+    WorkflowConfig,
+)
 from dslighting.core.config.llm_resolution import build_llm_config
 from dslighting.error import ConfigurationError
 
@@ -75,6 +81,7 @@ class AgentConfigBuilder:
 
         # Keep legacy precedence: call-time kwargs override init-time kwargs.
         merged = {**self.init_kwargs, **run_kwargs}
+        self._apply_data_analysis_overrides(config, merged)
         self._apply_sandbox_overrides(config, merged)
 
         if self.workflow_name in self._RAG_WORKFLOWS:
@@ -118,6 +125,17 @@ class AgentConfigBuilder:
     _RAG_KEYS = {"enable_rag", "case_dir"}
     _VALID_SANDBOX_BACKENDS = {"local", "e2b", "ds_sandbox"}
     _VALID_DS_SANDBOX_BACKEND_TYPES = {"docker", "local"}
+
+    def _apply_data_analysis_overrides(self, config: DSLightingConfig, merged: Dict[str, Any]) -> None:
+        raw = merged.pop("data_analysis", None)
+        if raw is None:
+            return
+        if not isinstance(raw, dict):
+            raise ConfigurationError(
+                "`data_analysis` must be a dict matching DataAnalysisConfig",
+                error_code="CFG-002",
+            )
+        config.data_analysis = DataAnalysisConfig(**raw)
 
     def _apply_sandbox_overrides(self, config: DSLightingConfig, merged: Dict[str, Any]) -> None:
         backend = merged.pop("sandbox_backend", self.sandbox_backend)

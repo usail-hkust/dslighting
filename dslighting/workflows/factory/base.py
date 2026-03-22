@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any, List, Optional, TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
-from dslighting.config import DSLightingConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.config import DSLightingConfig, DataAnalysisConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.core.config.runtime_logging import log_resolved_runtime_config
 from dslighting.core.data import TaskContext
 from dslighting.core.execution import TaskExecutor
 from dslighting.core.interfaces import WorkflowFactoryInterface
@@ -87,13 +88,11 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             api_base=api_base,
             provider=provider,
             temperature=temperature,
+            data_analysis=agent_init_kwargs.get("data_analysis"),
         )
         self._base_config = config
 
-        logger.debug(f"{self.__class__.__name__} initialized")
-        logger.debug(f"  - Model: {model}")
-        logger.debug(f"  - Timeout: {timeout}s")
-        logger.debug(f"  - Keep workspace: {keep_workspace}")
+        logger.debug("%s initialized", self.__class__.__name__)
         self._last_runner: Optional[DSLightingRunner] = None
 
     def _get_workflow_name(self) -> str:
@@ -306,13 +305,13 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         """
         Run workflow using task_id (similar to DSLighting's run_agent).
 
-        This is the recommended usage - automatically load standard MLE format config from registry.
+        This is the recommended usage - automatically resolve the task layout from registry/data.
 
         Args:
             task_id: Task ID (e.g. "bike-sharing-demand")
             data_dir: Optional data directory path. If not provided, will be looked up from registry
-            task_loader: Optional TaskLoader. If not provided, uses MLETaskLoader
-            output_path: Optional output file path. If not provided, uses default from task_loader
+            task_loader: Deprecated legacy parameter. Shared runner path ignores it.
+            output_path: Optional output file path. If not provided, uses the task resolver default
             **agent_kwargs: Parameters passed to create_agent() (e.g. max_iterations)
 
         Example:
@@ -322,7 +321,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             >>> await factory.run_with_task_id("bike-sharing-demand", output_path="my_submission.csv")
         """
         if task_loader is not None:
-            logger.warning("`task_loader` is ignored; shared runner path always uses MLETaskLoader.")
+            logger.warning("`task_loader` is ignored; shared runner path always uses TaskResolver.")
 
         config = self._build_config(task_id=task_id, run_kwargs=agent_kwargs)
         executor = TaskExecutor(config=config, workflow_name=self._get_workflow_name())
@@ -344,6 +343,12 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         config.sandbox = SandboxConfig(timeout=self.timeout)
 
         merged = {**self._agent_init_kwargs, **run_kwargs}
+        raw_data_analysis = merged.pop("data_analysis", None)
+        if raw_data_analysis is not None:
+            if not isinstance(raw_data_analysis, dict):
+                raise ValueError("`data_analysis` must be a dict matching DataAnalysisConfig.")
+            config.data_analysis = DataAnalysisConfig(**raw_data_analysis)
+
         search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
         if self._get_workflow_name() != "autokaggle":
             search_keys.add("enforce_no_plotting")
@@ -361,4 +366,10 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         if merged:
             config.run.parameters.update(merged)
 
+        log_resolved_runtime_config(
+            logger,
+            config=config,
+            source=self.__class__.__name__,
+            task_id=task_id,
+        )
         return config

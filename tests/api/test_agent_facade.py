@@ -12,6 +12,18 @@ def test_agent_invalid_workflow_raises_cfg_002() -> None:
     assert exc.value.error_code == "CFG-002"
 
 
+def test_agent_rejects_conflicting_api_key_and_api_keys() -> None:
+    with pytest.raises(ConfigurationError, match="Only one of `api_key` or `api_keys`"):
+        Agent(workflow="aide", api_key="k1", api_keys=["k2"])
+
+
+def test_agent_keeps_api_keys_on_app_service() -> None:
+    agent = Agent(workflow="aide", model="gpt-4o", api_keys=["k1", "k2"])
+    service = agent._create_app_service()
+
+    assert service._config_builder.api_keys == ["k1", "k2"]
+
+
 @pytest.mark.asyncio
 async def test_agent_async_run_delegates_to_app_service(monkeypatch) -> None:
     captured = {}

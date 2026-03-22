@@ -13,6 +13,7 @@ from typing_extensions import ClassVar
 
 from dslighting.config import (
     DSLightingConfig,
+    DataAnalysisConfig,
     LLMConfig,
     RunConfig,
     WorkflowConfig,
@@ -79,6 +80,7 @@ class ConfigBuilder:
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
+        data_analysis: Optional[Dict[str, Any]] = None,
         max_iterations: int = None,
         num_drafts: int = None,
         workspace_dir: str = None,
@@ -124,6 +126,7 @@ class ConfigBuilder:
             api_base=api_base,
             provider=provider,
             temperature=temperature,
+            data_analysis=data_analysis,
             max_iterations=max_iterations,
             num_drafts=num_drafts,
             workspace_dir=workspace_dir,
@@ -161,6 +164,7 @@ class ConfigBuilder:
                 os.getenv(ENV_DSLIGHTING_WORKSPACE_DIR)
 
         return config
+
     def _build_user_config(
         self,
         workflow: str = None,
@@ -170,6 +174,7 @@ class ConfigBuilder:
         api_base: str = None,
         provider: str = None,
         temperature: float = None,
+        data_analysis: Optional[Dict[str, Any]] = None,
         max_iterations: int = None,
         num_drafts: int = None,
         workspace_dir: str = None,
@@ -248,6 +253,14 @@ class ConfigBuilder:
         if temperature is not None:
             config.setdefault("llm", {})["temperature"] = temperature
 
+        if data_analysis is not None:
+            if not isinstance(data_analysis, dict):
+                raise ConfigurationError(
+                    "`data_analysis` must be a dictionary matching DataAnalysisConfig",
+                    error_code="CFG-002",
+                )
+            config.setdefault("data_analysis", {}).update(data_analysis)
+
         if max_iterations is not None:
             config.setdefault("agent", {}).setdefault("search", {})["max_iterations"] = max_iterations
             config.setdefault("run", {})["total_steps"] = max_iterations
@@ -311,6 +324,10 @@ class ConfigBuilder:
         sandbox_dict = config_dict.get("sandbox", {})
         sandbox_config = SandboxConfig(**sandbox_dict)
 
+        # Extract data-analysis config
+        data_analysis_dict = config_dict.get("data_analysis", {})
+        data_analysis_config = DataAnalysisConfig(**data_analysis_dict)
+
         # Extract scheduler config
         scheduler_dict = config_dict.get("scheduler", {})
         scheduler_config = SchedulerConfig(**scheduler_dict)
@@ -322,6 +339,7 @@ class ConfigBuilder:
             run=run_config,
             agent=agent_config,
             sandbox=sandbox_config,
+            data_analysis=data_analysis_config,
             scheduler=scheduler_config,
         )
 
@@ -420,6 +438,10 @@ class ConfigBuilder:
             "max_debug_depth": (int, "max_debug_depth"),
             "max_attempts_per_phase": (int, "max_attempts_per_phase"),
             "enforce_no_plotting": (_coerce_bool, "enforce_no_plotting"),
+            "enabled": (_coerce_bool, "enabled"),
+            "cache_enabled": (_coerce_bool, "cache_enabled"),
+            "cache_max_entries": (int, "cache_max_entries"),
+            "cache_debug_metrics": (_coerce_bool, "cache_debug_metrics"),
         }
 
         coerced = config_dict.copy()
@@ -438,6 +460,10 @@ class ConfigBuilder:
                 sections.append(search_config)
             if isinstance(autokaggle_config, dict):
                 sections.append(autokaggle_config)
+
+        data_analysis_config = coerced.get("data_analysis", {})
+        if isinstance(data_analysis_config, dict):
+            sections.append(data_analysis_config)
 
         for section in sections:
             for key, (coercer, _) in type_mappings.items():

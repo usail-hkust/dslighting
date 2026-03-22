@@ -258,8 +258,7 @@ Please begin the first round of analysis."""
             llm_response = ""
 
             while True:
-                # LLMService.call() only supports single prompts, so use the underlying multi-turn helper.
-                response = await self.llm_service._make_llm_call_with_retries(  # type: ignore[attr-defined]
+                response = await self.llm_service.call_messages(
                     messages=self._build_llm_messages(conversation_history),
                     max_retries=self.llm_service.config.max_retries,
                 )
