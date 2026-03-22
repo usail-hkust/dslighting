@@ -209,6 +209,20 @@ class MLETaskContractLoader:
             return None
         return self.resolve_callable_ref(task_dir, str(grade_ref), mode)
 
+    @staticmethod
+    def resolve_api_version(config: dict[str, Any]) -> Optional[str]:
+        evaluator_cfg = config.get("evaluator") or {}
+        grader_cfg = config.get("grader") or {}
+        candidates = [
+            evaluator_cfg.get("api_version"),
+            grader_cfg.get("api_version"),
+        ]
+        for candidate in candidates:
+            value = str(candidate or "").strip()
+            if value:
+                return value
+        return None
+
     def resolve_validate_fn(self, task_dir: Path, config: dict[str, Any], mode: str) -> Optional[Callable[..., None]]:
         evaluator_cfg = config.get("evaluator") or {}
         validate_ref = evaluator_cfg.get("validate_fn")
@@ -281,12 +295,14 @@ class MLETaskContractLoader:
 
         prepared_config = dict(config)
         prepared_grader = dict(prepared_config.get("grader") or {})
+        api_version = self.resolve_api_version(prepared_config)
+        # api_version is evaluation metadata, not a Grader constructor argument.
+        prepared_grader.pop("api_version", None)
         grade_fn_ref = self.resolve_grade_fn(task_dir, prepared_config, mode)
         if grade_fn_ref:
             prepared_grader["grade_fn"] = grade_fn_ref
         prepared_config["grader"] = prepared_grader
         validate_fn = self.resolve_validate_fn(task_dir, prepared_config, mode)
-        api_version = str(((prepared_config.get("evaluator") or {}).get("api_version") or "")).strip() or None
 
         dataset_paths = self.resolve_dataset_paths(task_dir, data_root, prepared_config, mode)
         preparer_fn = self.resolve_preparer(task_dir, prepared_config, mode)
