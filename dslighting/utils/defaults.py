@@ -142,6 +142,13 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "cache_max_entries": DEFAULT_CACHE_MAX_ENTRIES,
         "cache_debug_metrics": False,
         "analyzer_version": None,
+        "profile": "balanced",
+        "max_artifacts": 12,
+        "max_report_chars": 14000,
+        "document_preview_lines": 12,
+        "enable_document_inspection": True,
+        "enable_database_inspection": True,
+        "tabular_tolerant_fallback": True,
     },
     "scheduler": {
         "max_concurrency": None,

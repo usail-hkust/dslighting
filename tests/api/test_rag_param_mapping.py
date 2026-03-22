@@ -11,6 +11,7 @@ def _builder(workflow_name: str) -> AgentConfigBuilder:
         workflow_name=workflow_name,
         model="gpt-4o",
         api_key=None,
+        api_keys=None,
         api_base=None,
         provider=None,
         temperature=None,

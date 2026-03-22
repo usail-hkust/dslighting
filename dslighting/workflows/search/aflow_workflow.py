@@ -42,7 +42,7 @@ class AFlowWorkflow:
         self.llm_service: LLMService = services["llm"]
         self.workspace = services["workspace"]
         self.sandbox_service = services["sandbox"]
-        self.data_analyzer = services.get("data_analyzer")
+        self.data_perception = services.get("data_perception")
         self.experience = Experience(self.workspace)
         self.benchmark = benchmark
         
@@ -258,8 +258,8 @@ class AFlowWorkflow:
 
         # 1. Perform static analysis only ONCE.
         base_report = ""
-        if self.data_analyzer is not None:
-            base_report = self.data_analyzer.analyze_data(
+        if self.data_perception is not None:
+            base_report = self.data_perception.analyze_data(
                 data_dir,
                 task_type="kaggle",
                 task_id=competition_id,
@@ -271,8 +271,8 @@ class AFlowWorkflow:
             temp_output_path = self.workspace.get_path("artifacts") / temp_output_filename
 
             try:
-                if self.data_analyzer is not None:
-                    io_instructions = self.data_analyzer.generate_io_instructions(
+                if self.data_perception is not None:
+                    io_instructions = self.data_perception.generate_io_instructions(
                         temp_output_path.name,
                         optimization_context=False,
                     )

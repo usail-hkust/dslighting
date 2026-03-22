@@ -42,6 +42,7 @@ def log_resolved_runtime_config(
     if data_analysis is not None:
         logger.debug("  - Data analyzer enabled: %s", getattr(data_analysis, "enabled", True))
         logger.debug("  - Data analyzer cache: %s", getattr(data_analysis, "cache_enabled", True))
+        logger.debug("  - Data report budget: %s", getattr(data_analysis, "max_report_chars", None))
 
     run = getattr(config, "run", None)
     if run is not None:

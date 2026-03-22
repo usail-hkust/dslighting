@@ -1,6 +1,5 @@
-"""Data analyzer service for analyzing input directories and generating comprehensive reports."""
+"""Compatibility facade over the core data perception runtime."""
 
-import asyncio
 import hashlib
 import json
 import logging
@@ -9,13 +8,19 @@ import threading
 import time
 import traceback
 from collections import OrderedDict
-from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from dslighting.core.data.introspection.discovery import (
+    generate_file_tree as introspection_generate_file_tree,
+    stable_directory_fingerprint_entries,
+)
+from dslighting.core.data.introspection.cache import DataPerceptionCache
+from dslighting.core.data.introspection.request import DataPerceptionRequest
+from dslighting.core.data.introspection.service import DataPerceptionService
 from dslighting.core.types.task import TaskType
 from dslighting.utils.constants import (
     DEFAULT_MAX_DEPTH,
@@ -23,11 +28,6 @@ from dslighting.utils.constants import (
     DEFAULT_MAX_ITEMS_PER_DIR,
     DEFAULT_CACHE_MAX_ENTRIES,
     FINGERPRINT_MAX_FILES,
-    FINGERPRINT_SCAN_DEPTH,
-    DEEP_DISCOVERY_MAX_DIRS,
-    DEEP_DISCOVERY_MAX_FILES,
-    PER_DIR_LIMIT,
-    MAX_ROWS_PER_FILE,
 )
 from dslighting.utils.submission_contract import (
     build_tag_contract_reminder,
@@ -59,71 +59,13 @@ def generate_file_tree(
         max_items_per_dir: The maximum number of items (files and dirs) to show per directory.
         display_root_name: An optional name to display for the root directory.
     """
-    tree = []
-    start_path = Path(start_path)
-    if not start_path.exists():
-        return f"Directory not found: {start_path}"
-
-
-    base_name = display_root_name if display_root_name is not None else start_path.name
-    file_count = 0
-    global_limit_reached = False
-
-    def _walk(path: Path, prefix: str, depth: int):
-        nonlocal file_count, global_limit_reached
-        
-        if depth > max_depth or global_limit_reached:
-            return
-
-        try:
-            # Avoid listing huge directories fully (e.g., image folders).
-            # We only sample a small number of entries for display.
-            sampled = list(islice(path.iterdir(), max_items_per_dir + 1))
-        except OSError as e:
-            logger.warning(f"Error reading directory {path}: {e}")
-            tree.append(f"{prefix}└── [Error reading directory]")
-            return
-
-        truncated_in_dir = len(sampled) > max_items_per_dir
-        if truncated_in_dir:
-            display_items = sampled[: max(1, max_items_per_dir // 2)]
-        else:
-            display_items = sampled
-        display_items = sorted(display_items, key=lambda p: p.name)
-
-        pointers = ['├── '] * (len(display_items) - 1) + ['└── ']
-        # If we truncated this directory, the last visible item is not the true last item
-        if truncated_in_dir:
-            pointers[-1] = '├── '
-
-        for pointer, sub_path in zip(pointers, display_items):
-            if global_limit_reached:
-                return
-
-            if not sub_path.is_dir():
-                # Check global file limit *before* adding the next file
-                if file_count >= max_files:
-                    global_limit_reached = True
-                    return
-                file_count += 1
-
-            display_name = sub_path.name + ('/' if sub_path.is_dir() else '')
-            tree.append(f"{prefix}{pointer}{display_name}")
-
-            if sub_path.is_dir():
-                extension = '│   ' if pointer == '├── ' else '    '
-                _walk(sub_path, prefix=prefix + extension, depth=depth + 1)
-
-        if truncated_in_dir:
-            tree.append(f"{prefix}└── [... more items truncated ...]")
-
-    tree.append(f"{base_name}/")
-    _walk(start_path, prefix="", depth=1)
-
-    if global_limit_reached:
-        tree.append(f"\n[... Truncated. Total file limit ({max_files}) reached ...]")
-
-    return "\n".join(tree)
+    return introspection_generate_file_tree(
+        start_path,
+        max_depth=max_depth,
+        max_files=max_files,
+        max_items_per_dir=max_items_per_dir,
+        display_root_name=display_root_name,
+    )
 
 
 __all__ = ["DataAnalyzer", "generate_file_tree"]
@@ -131,12 +73,14 @@ __all__ = ["DataAnalyzer", "generate_file_tree"]
 
 class DataAnalyzer:
     """
-    A centralized service for analyzing input data directories and generating
-    a comprehensive textual overview for the Agent.
+    Compatibility facade that preserves the legacy DataAnalyzer API while
+    delegating prompt-oriented data perception to core.data.introspection.
     """
-    CACHE_VERSION = "data_report_v1"
-    DEFAULT_ANALYZER_VERSION = "analyzer_v1"
+    CACHE_VERSION = "data_report_v2"
+    DEFAULT_ANALYZER_VERSION = "analyzer_v2"
     ANALYZER_VERSION_ENV = "DSLIGHTING_DATA_ANALYZER_VERSION"
+    DEFAULT_MAX_ARTIFACTS = 12
+    DEFAULT_DOCUMENT_PREVIEW_LINES = 12
 
     _cache_lock = threading.RLock()
     _memory_cache: "OrderedDict[str, str]" = OrderedDict()
@@ -156,9 +100,23 @@ class DataAnalyzer:
         cache_max_entries: int = DEFAULT_CACHE_MAX_ENTRIES,
         cache_debug_metrics: bool = False,
         analyzer_version: Optional[str] = None,
+        profile: str = "balanced",
+        max_artifacts: int = DEFAULT_MAX_ARTIFACTS,
+        max_report_chars: Optional[int] = 14000,
+        document_preview_lines: int = DEFAULT_DOCUMENT_PREVIEW_LINES,
+        enable_document_inspection: bool = True,
+        enable_database_inspection: bool = True,
+        tabular_tolerant_fallback: bool = True,
     ):
         self.cache_enabled = bool(cache_enabled)
         self.cache_debug_metrics = bool(cache_debug_metrics)
+        self.profile = str(profile or "balanced").strip() or "balanced"
+        self.max_artifacts = max(1, int(max_artifacts))
+        self.max_report_chars = None if max_report_chars is None else max(1000, int(max_report_chars))
+        self.document_preview_lines = max(1, int(document_preview_lines))
+        self.enable_document_inspection = bool(enable_document_inspection)
+        self.enable_database_inspection = bool(enable_database_inspection)
+        self.tabular_tolerant_fallback = bool(tabular_tolerant_fallback)
 
         # Dynamic cache sizing based on available system memory
         if cache_max_entries == DEFAULT_CACHE_MAX_ENTRIES:
@@ -198,8 +156,25 @@ class DataAnalyzer:
         self._instance_cache_misses = 0
         self._instance_cache_write_errors = 0
 
-
         self.cache_dir = self._resolve_cache_dir(cache_dir) if self.cache_enabled else None
+        self._perception_cache = DataPerceptionCache(
+            enabled=self.cache_enabled,
+            cache_dir=self.cache_dir,
+            cache_max_entries=self.cache_max_entries,
+            analyzer_version=self.analyzer_version,
+        )
+
+    @property
+    def cache_hits_memory(self) -> int:
+        return self._instance_cache_hits_memory
+
+    @property
+    def cache_hits_disk(self) -> int:
+        return self._instance_cache_hits_disk
+
+    @property
+    def cache_misses(self) -> int:
+        return self._instance_cache_misses
 
 
     @staticmethod
@@ -217,9 +192,14 @@ class DataAnalyzer:
 
     @classmethod
     def _clear_in_memory_cache_for_tests(cls) -> None:
+        DataPerceptionCache._clear_in_memory_cache_for_tests()
         with cls._cache_lock:
             cls._memory_cache.clear()
             cls._key_locks.clear()
+            cls._global_cache_hits_memory = 0
+            cls._global_cache_hits_disk = 0
+            cls._global_cache_misses = 0
+            cls._global_cache_write_errors = 0
 
     @classmethod
     def get_cache_stats(cls) -> Dict[str, Any]:
@@ -298,10 +278,6 @@ class DataAnalyzer:
         Uses a fingerprint cache file to avoid rescanning unchanged directories.
         Limits scan depth to 3 levels to reduce overhead on large directory trees.
         """
-        entries: List[Tuple[str, int, int]] = []
-        scanned_files = 0
-        truncated = False
-
         # Check for cached fingerprint
         cache_key_path = data_dir / ".dslighting_fingerprint_cache"
         if cache_key_path.exists():
@@ -319,38 +295,11 @@ class DataAnalyzer:
             except (json.JSONDecodeError, OSError, KeyError) as exc:
                 logger.debug("Failed to read fingerprint cache, recomputing: %s", exc)
 
-        # Compute fingerprint with depth limit (first FINGERPRINT_SCAN_DEPTH levels only)
-        max_depth = FINGERPRINT_SCAN_DEPTH
-        for root, dir_names, file_names in os.walk(data_dir):
-            # Calculate depth
-            try:
-                rel_path = Path(root).relative_to(data_dir)
-                depth = len(rel_path.parts) if str(rel_path) != "." else 0
-            except ValueError:
-                depth = 0
-
-            if depth > max_depth:
-                # Skip directories beyond max depth
-                dir_names.clear()  # Don't recurse deeper
-                continue
-
-            dir_names.sort()
-            file_names.sort()
-            for file_name in file_names:
-                scanned_files += 1
-                if scanned_files > FINGERPRINT_MAX_FILES:
-                    truncated = True
-                    break
-
-                file_path = Path(root) / file_name
-                try:
-                    stat = file_path.stat()
-                except OSError:
-                    continue
-                rel_path = file_path.relative_to(data_dir).as_posix()
-                entries.append((rel_path, int(stat.st_size), int(stat.st_mtime_ns)))
-            if truncated:
-                break
+        entries = stable_directory_fingerprint_entries(data_dir)
+        scanned_files = len(entries)
+        truncated = scanned_files > FINGERPRINT_MAX_FILES
+        if truncated:
+            entries = entries[:FINGERPRINT_MAX_FILES]
 
         try:
             root_stat = data_dir.stat()
@@ -385,6 +334,7 @@ class DataAnalyzer:
         submission_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         try:
+            fingerprint = self._compute_directory_fingerprint(data_dir)
             payload = {
                 "version": self.CACHE_VERSION,
                 "analyzer_version": self.analyzer_version,
@@ -392,7 +342,11 @@ class DataAnalyzer:
                 "task_type": self._task_type_key(task_type),
                 "data_dir": str(data_dir.resolve()),
                 "submission_context": self._normalize_submission_context(submission_context),
-                "fingerprint": self._compute_directory_fingerprint(data_dir),
+                "fingerprint": {
+                    "entries": fingerprint.get("entries", []),
+                    "scanned_files": fingerprint.get("scanned_files", 0),
+                    "truncated": fingerprint.get("truncated", False),
+                },
             }
             raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         except Exception as exc:
@@ -403,6 +357,7 @@ class DataAnalyzer:
     def _build_task_cache_key(
         self,
         task_id: Optional[str],
+        data_dir: Path,
         task_type: Optional[TaskType],
         submission_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
@@ -416,6 +371,7 @@ class DataAnalyzer:
             "cache_scope": "task_id",
             "task_type": self._task_type_key(task_type),
             "task_id": normalized_task_id,
+            "analysis_root": str(data_dir.resolve()),
             "submission_context": self._normalize_submission_context(submission_context),
         }
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
@@ -441,6 +397,7 @@ class DataAnalyzer:
             if value is None:
                 return None
             self._memory_cache.move_to_end(cache_key)
+            self._instance_cache_hits_memory += 1
             DataAnalyzer._global_cache_hits_memory += 1 # Increment class-level counter
             return value
 
@@ -466,6 +423,7 @@ class DataAnalyzer:
                 return None
             report = payload.get("report")
             if isinstance(report, str):
+                self._instance_cache_hits_disk += 1
                 DataAnalyzer._global_cache_hits_disk += 1  # Increment class-level counter
                 return report
         except Exception as exc:
@@ -615,6 +573,7 @@ class DataAnalyzer:
         cache_scope = "task_id"
         cache_key = self._build_task_cache_key(
             task_id,
+            data_dir,
             task_type,
             submission_context=normalized_submission_context,
         )
@@ -627,6 +586,7 @@ class DataAnalyzer:
             )
         if not cache_key:
             # If cache key can't be built, treat as a miss and proceed without caching.
+            self._instance_cache_misses += 1
             self._global_cache_misses += 1
             return self._compute_data_report(
                 data_dir,
@@ -656,6 +616,7 @@ class DataAnalyzer:
                 self._log_cache_event("hit(disk)", cache_key, started_at)
                 return cached
 
+            self._instance_cache_misses += 1
             self._global_cache_misses += 1 # Increment class-level counter for a true miss
             report = self._compute_data_report(
                 data_dir,
@@ -680,15 +641,14 @@ class DataAnalyzer:
         task_type: Optional[TaskType] = None,
         submission_context: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Compute a fresh report without reading/writing cache."""
-        report = "\n\n--- COMPREHENSIVE DATA REPORT ---\n\n"
+        """Compute a fresh report via the core.data introspection runtime."""
+        request = self._build_perception_request(
+            data_dir,
+            task_type=task_type,
+            submission_context=submission_context,
+        )
+        report = DataPerceptionService(request, cache=self._perception_cache).build_report()
 
-        # 1. Analyze File Structure (Universal)
-        report += self._analyze_structure(data_dir)
-
-        report += self._analyze_data_schema(data_dir)
-
-        # 3. Task-Specific Analysis
         if task_type == "kaggle":
             submission_analysis = self._analyze_kaggle_submission_format(
                 data_dir,
@@ -696,9 +656,29 @@ class DataAnalyzer:
             )
             if submission_analysis:
                 report += f"## Submission Format Requirements\n{submission_analysis}\n\n"
-        
-        # Remove the call to _generate_io_instructions from here
+
         return report
+
+    def _build_perception_request(
+        self,
+        data_dir: Path,
+        *,
+        task_type: Optional[TaskType],
+        submission_context: Optional[Dict[str, Any]],
+    ) -> DataPerceptionRequest:
+        return DataPerceptionRequest(
+            data_dir=data_dir,
+            task_type=task_type,
+            task_id=None,
+            submission_context=submission_context or {},
+            profile=self.profile,
+            max_artifacts=self.max_artifacts,
+            max_report_chars=self.max_report_chars,
+            document_preview_lines=self.document_preview_lines,
+            enable_document_inspection=self.enable_document_inspection,
+            enable_database_inspection=self.enable_database_inspection,
+            tabular_tolerant_fallback=self.tabular_tolerant_fallback,
+        )
 
     def generate_io_instructions(self, output_filename: str, optimization_context: bool = False) -> str:
         """
@@ -751,15 +731,6 @@ You MUST follow these file system rules precisely. Failure to do so will cause a
 
 **IMPORTANT:** These path requirements are non-negotiable and must be followed exactly.
 """
-
-    def _analyze_structure(self, data_dir: Path) -> str:
-        """Generates the file tree representation."""
-        try:
-            tree_output = generate_file_tree(data_dir, display_root_name=".")
-            return f"## Directory Structure (Current Working Directory)\n```text\n{tree_output}\n```\n\n"
-        except Exception as e:
-            logger.error(f"Failed to generate file tree for {data_dir}: {traceback.format_exc()}")
-            return f"## Directory Structure\nError analyzing structure: {traceback.format_exc()}\n\n"
 
     def _analyze_kaggle_submission_format(
         self,
@@ -939,125 +910,3 @@ Please inspect this file directly and preserve its structure exactly.
         except Exception:
             logger.warning("Could not scan data directory '%s': %s", data_dir, traceback.format_exc())
             return None
-
-    def _analyze_data_schema(self, data_dir: Path) -> str:
-        """
-        Analyzes the schema of potential training and testing files to provide a
-        structured overview of columns, data types, missing values, and cardinality.
-        This helps the agent make better decisions about preprocessing.
-        """
-        report_parts = []
-        # Define supported extensions and keywords for more robust discovery
-        SUPPORTED_EXTENSIONS = ('.csv', '.tsv', '.parquet', '.xlsx')
-        KEYWORDS = ('train', 'test', 'val', 'eval', 'sample', 'submission', 'sub', 'data')
-
-        # Fast path: most prepared competitions keep train/test-like tables at the root.
-        files_to_analyze: List[Path] = []
-        try:
-            root_files = [p for p in data_dir.iterdir() if p.is_file()]
-        except OSError:
-            root_files = []
-
-        for p in root_files:
-            if p.suffix.lower() not in SUPPORTED_EXTENSIONS:
-                continue
-            if any(keyword in p.stem.lower() for keyword in KEYWORDS):
-                files_to_analyze.append(p)
-
-        # Fallback: if still nothing, just take the first few supported files at root
-        if not files_to_analyze and root_files:
-            files_to_analyze = [p for p in root_files if p.suffix.lower() in SUPPORTED_EXTENSIONS][:3]
-
-        # Deep discoveryFallback: bounded recursive search (avoid walking huge image folders).
-        if not files_to_analyze:
-            max_depth = FINGERPRINT_SCAN_DEPTH
-            max_dirs = DEEP_DISCOVERY_MAX_DIRS
-            max_files = DEEP_DISCOVERY_MAX_FILES
-            per_dir_limit = PER_DIR_LIMIT
-
-            queue: List[tuple[Path, int]] = [(data_dir, 0)]
-            visited = 0
-            while queue and visited < max_dirs and len(files_to_analyze) < max_files:
-                current, depth = queue.pop(0)
-                visited += 1
-                if depth > max_depth:
-                    continue
-                try:
-                    sampled = list(islice(current.iterdir(), per_dir_limit + 1))
-                except OSError:
-                    continue
-
-                truncated = len(sampled) > per_dir_limit
-                entries = sampled[:per_dir_limit] if truncated else sampled
-
-                for entry in entries:
-                    if entry.is_dir():
-                        # If this directory is huge, avoid descending further.
-                        if truncated and depth >= 1:
-                            continue
-                        queue.append((entry, depth + 1))
-                        continue
-                    if entry.suffix.lower() not in SUPPORTED_EXTENSIONS:
-                        continue
-                    if not any(keyword in entry.stem.lower() for keyword in KEYWORDS):
-                        continue
-                    files_to_analyze.append(entry)
-                    if len(files_to_analyze) >= max_files:
-                        break
-
-        files_to_analyze = sorted(set(files_to_analyze))
-
-        if not files_to_analyze:
-            return ""
-
-        max_rows = MAX_ROWS_PER_FILE
-        for file_path in files_to_analyze:
-            try:
-                # Dynamically choose the reader based on file extension
-                ext = file_path.suffix.lower()
-                if ext in ['.csv', '.tsv']:
-                    sep = "\t" if ext == ".tsv" else ","
-                    # Try multiple encodings
-                    df = None
-                    for enc in ['utf-8', 'gbk', 'latin1', 'utf-8-sig']:
-                        try:
-                            df = pd.read_csv(file_path, sep=sep, nrows=max_rows, encoding=enc)
-                            break
-                        except (UnicodeDecodeError, Exception):
-                            continue
-                    
-                    if df is None:
-                        raise Exception(f"Failed to read CSV with multiple encodings for {file_path.name}")
-                elif ext == '.parquet':
-                    # Note: This requires 'pyarrow' or 'fastparquet' to be installed
-                    df = pd.read_parquet(file_path).head(max_rows)
-                else:
-                    # Skip unsupported but matched files
-                    continue
-
-                report_parts.append(f"### Analysis of `{file_path.relative_to(data_dir)}`")
-
-                # Create a summary DataFrame
-                summary = pd.DataFrame({
-                    'Data Type': df.dtypes,
-                    'Missing (%)': (df.isnull().sum() * 100 / len(df)).round(2),
-                    'Cardinality': df.nunique(),
-                })
-                
-                sample_values = [col.dropna().head(2).tolist() for _, col in df.items()]
-                summary['Sample Values'] = sample_values
-
-                # Truncate sample values for readability
-                summary['Sample Values'] = summary['Sample Values'].apply(
-                    lambda x: str(x) if len(str(x)) < 40 else str(x)[:37] + '...'
-                )
-
-                report_parts.append(f"```text\n{summary.to_string()}\n```")
-            except Exception as e:
-                logger.warning(f"Could not analyze schema for {file_path.name}: {traceback.format_exc()}")
-                report_parts.append(f"### Analysis of `{file_path.relative_to(data_dir)}`\nCould not be analyzed due to error: {e}")
-
-        if not report_parts:
-            return ""
-
-        return "## Data Schema Analysis\n" + "\n\n".join(report_parts) + "\n\n"

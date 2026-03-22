@@ -14,7 +14,7 @@ from dslighting.benchmark.grading.models import SubmissionArtifactContract
 from dslighting.core.tasks.errors import TaskExecutionSpecError
 from dslighting.core.tasks.models import ResolvedTaskLayout, TaskExecutionSpec
 from dslighting.core.types import TaskDefinition
-from dslighting.services.data_analysis_provider import create_data_analyzer
+from dslighting.services.data_analysis_provider import create_data_perception_runtime
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +33,15 @@ class BaseTaskAdapter(ABC):
             self.temp_dir = tempfile.TemporaryDirectory()
         except Exception as exc:  # pragma: no cover - defensive
             logger.error("Failed to create temporary directory for %s: %s", self.__class__.__name__, exc)
-        self.analyzer = self._create_data_analyzer(config)
+        self.data_perception = self._create_data_perception_runtime(config)
 
     @staticmethod
-    def _create_data_analyzer(config: DSLightingConfig):
+    def _create_data_perception_runtime(config: DSLightingConfig):
         try:
-            return create_data_analyzer(config)
+            return create_data_perception_runtime(config)
         except ModuleNotFoundError as exc:  # pragma: no cover - dependency-gated
             raise ModuleNotFoundError(
-                "DataAnalyzer optional dependencies are missing. "
+                "Data perception optional dependencies are missing. "
                 "Install benchmark/data-analysis dependencies (e.g., numpy/pandas)."
             ) from exc
 
@@ -79,20 +79,20 @@ class BaseTaskAdapter(ABC):
         return None
 
     @staticmethod
-    def build_file_submission_spec(layout: ResolvedTaskLayout, analyzer) -> TaskExecutionSpec:
+    def build_file_submission_spec(layout: ResolvedTaskLayout, perception_runtime) -> TaskExecutionSpec:
         data_report = ""
         io_instructions = (
             "All input data files are located in the current working directory (./).\n"
             f"You MUST save the final submission file to `{layout.output_path.name}` in the current working directory."
         )
-        if analyzer is not None:
-            data_report = analyzer.analyze_data(
+        if perception_runtime is not None:
+            data_report = perception_runtime.analyze_data(
                 layout.agent_visible_dir,
                 task_type=layout.task_type,
                 task_id=layout.task_id,
                 submission_context=layout.submission_context,
             )
-            io_instructions = analyzer.generate_io_instructions(
+            io_instructions = perception_runtime.generate_io_instructions(
                 layout.output_path.name,
                 optimization_context=False,
             )
@@ -163,8 +163,8 @@ class FileSubmissionTaskAdapter(BaseTaskAdapter):
         submission_context = submission_contract.to_payload() if submission_contract else {"output_submission_path": str(output_value)}
         evaluation_contract_ref = TaskEvaluationContractRef.from_payload(payload)
         data_report = ""
-        if self.analyzer is not None:
-            data_report = self.analyzer.analyze_data(
+        if self.data_perception is not None:
+            data_report = self.data_perception.analyze_data(
                 data_dir,
                 task_type="kaggle",
                 task_id=task.task_id,
@@ -172,8 +172,8 @@ class FileSubmissionTaskAdapter(BaseTaskAdapter):
             )
         io_instructions = str(payload.get("io_instructions") or "").strip()
         if not io_instructions:
-            if self.analyzer is not None:
-                io_instructions = self.analyzer.generate_io_instructions(
+            if self.data_perception is not None:
+                io_instructions = self.data_perception.generate_io_instructions(
                     Path(output_value).name,
                     optimization_context=False,
                 )
@@ -222,10 +222,14 @@ class QATaskAdapter(BaseTaskAdapter):
             "Your task is to answer the question found in `problem.txt`. "
             "Write ONLY the final answer into the required output file."
         )
-        data_report = self.analyzer.analyze_data(data_dir, task_type="qa", task_id=task.task_id) if self.analyzer else ""
+        data_report = (
+            self.data_perception.analyze_data(data_dir, task_type="qa", task_id=task.task_id)
+            if self.data_perception
+            else ""
+        )
         io_instructions = (
-            self.analyzer.generate_io_instructions(output_path.name, optimization_context=False)
-            if self.analyzer
+            self.data_perception.generate_io_instructions(output_path.name, optimization_context=False)
+            if self.data_perception
             else f"Write ONLY the final answer into `{output_path.name}`."
         )
         return TaskExecutionSpec(
@@ -270,9 +274,13 @@ class DataScienceTaskAdapter(BaseTaskAdapter):
 
         output_path = (Path(output_dir) / "output.csv") if output_dir else (data_dir / "output.csv")
         description_text = prompt
-        if self.analyzer is not None:
+        if self.data_perception is not None:
             try:
-                data_report = self.analyzer.analyze_data(data_dir, task_type="datasci", task_id=task.task_id)
+                data_report = self.data_perception.analyze_data(
+                    data_dir,
+                    task_type="datasci",
+                    task_id=task.task_id,
+                )
                 description_text = f"{prompt}\n\n{data_report}"
             except Exception as exc:  # pragma: no cover - best effort
                 logger.debug("Data analysis skipped: %s", exc)
@@ -332,7 +340,11 @@ class OpenEndedTaskAdapter(BaseTaskAdapter):
         task_description_section = f"## Task Description\n\n{description}\n"
         if rubric:
             task_description_section += f"\n## Evaluation Criteria\n\n{rubric}\n"
-        data_report = self.analyzer.analyze_data(data_dir, task_type="datasci", task_id=task.task_id) if self.analyzer else ""
+        data_report = (
+            self.data_perception.analyze_data(data_dir, task_type="datasci", task_id=task.task_id)
+            if self.data_perception
+            else ""
+        )
         full_description = task_description_section
         if data_report:
             full_description = f"{full_description}\n\n{data_report}"

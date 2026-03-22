@@ -304,7 +304,8 @@ class AsyncEvaluationRunner:
             }
 
         try:
-            from dslighting.services.data_analyzer import DataAnalyzer
+            from dslighting.config import DSLightingConfig
+            from dslighting.services.data_analysis_provider import create_data_perception_runtime
         except Exception as exc:
             logger.debug("DataAnalyzer warmup unavailable: %s", exc)
             return {
@@ -336,7 +337,15 @@ class AsyncEvaluationRunner:
                 "note": "invalid data_dir",
             }
 
-        analyzer = DataAnalyzer(cache_enabled=True)
+        runtime = create_data_perception_runtime(DSLightingConfig())
+        if runtime is None:
+            return {
+                "enabled": False,
+                "rounds": rounds,
+                "warmed_entries": 0,
+                "elapsed_seconds": 0.0,
+                "note": "data analyzer disabled by config",
+            }
         warmed_entries = 0
         started = time.perf_counter()
 
@@ -356,7 +365,7 @@ class AsyncEvaluationRunner:
                 if not prepared_public.exists():
                     continue
                 try:
-                    analyzer.analyze_data(
+                    runtime.analyze_data(
                         prepared_public, task_type="kaggle", task_id=str(task_id)
                     )
                     warmed_entries += 1

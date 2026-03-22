@@ -98,7 +98,7 @@ def test_file_submission_adapter_builds_single_public_report(tmp_path: Path) -> 
     layout = resolver.resolve(task_id="plain-task", data=task_root)
 
     adapter = FileSubmissionTaskAdapter(DSLightingConfig())
-    spec = adapter.build_file_submission_spec(layout, adapter.analyzer)
+    spec = adapter.build_file_submission_spec(layout, adapter.data_perception)
     adapter.cleanup()
 
     assert spec.agent_visible_dir == task_root / "prepared" / "public"
@@ -114,8 +114,8 @@ def test_file_submission_adapter_respects_disabled_data_analysis(tmp_path: Path)
 
     config = DSLightingConfig.model_validate({"data_analysis": {"enabled": False}})
     adapter = FileSubmissionTaskAdapter(config)
-    spec = adapter.build_file_submission_spec(layout, adapter.analyzer)
+    spec = adapter.build_file_submission_spec(layout, adapter.data_perception)
     adapter.cleanup()
 
-    assert adapter.analyzer is None
+    assert adapter.data_perception is None
     assert "--- COMPREHENSIVE DATA REPORT ---" not in spec.description_text

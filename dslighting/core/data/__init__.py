@@ -26,6 +26,7 @@ from .common import BaseDataLoader, validate_data_source, resolve_path
 # Core data classes - unified DataLoader
 from .dataset import DataLoader, DatasetInfo, load_dataset
 from .context import TaskContext
+from .introspection import DataPerceptionRequest, DataPerceptionService
 from .loader_utils import *
 
 __all__ = [
@@ -38,4 +39,6 @@ __all__ = [
     "DatasetInfo",
     "load_dataset",
     "TaskContext",
+    "DataPerceptionRequest",
+    "DataPerceptionService",
 ]

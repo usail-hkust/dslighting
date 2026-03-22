@@ -64,7 +64,7 @@ class TaskExecutor:
                 registry_dir=registry_dir,
             )
             adapter = FileSubmissionTaskAdapter(self._config)
-            spec = adapter.build_file_submission_spec(layout, adapter.analyzer)
+            spec = adapter.build_file_submission_spec(layout, adapter.data_perception)
             adapter.cleanup()
 
             if task_description:

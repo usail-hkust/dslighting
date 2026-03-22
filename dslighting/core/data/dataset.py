@@ -713,7 +713,7 @@ class DataLoader:
             return f"DataLoader('{self.info.task_id}', task_type='{self.info.task_type}')"
         return f"DataLoader(task_type='{self.info.task_type}')"
 
-    def get_agent_report(self, output_filename: str = None) -> str:
+    def get_agent_report(self, output_filename: str = None, config: Optional["DSLightingConfig"] = None) -> str:
         """
         Get the comprehensive data report that Agent sees.
 
@@ -734,17 +734,19 @@ class DataLoader:
             return "Error: No data directory available"
 
         try:
-            # Import the DataAnalyzer service that Agent uses
-            from dslighting.services.data_analyzer import DataAnalyzer
+            from dslighting.config import DSLightingConfig
+            from dslighting.services.data_analysis_provider import create_data_perception_runtime
 
-            analyzer = DataAnalyzer()
+            runtime = create_data_perception_runtime(config or DSLightingConfig())
+            if runtime is None:
+                return self.show()
 
             # Use the same task type string used by runner/data analyzer.
             task_type = self.info.task_type if self.info.task_type else None
 
             # Generate the full report (data + I/O instructions)
             output_filename = output_filename or "submission.csv"
-            report = analyzer.analyze(
+            report = runtime.analyze(
                 data_dir=self.info.data_dir,
                 output_filename=output_filename,
                 task_type=task_type,
