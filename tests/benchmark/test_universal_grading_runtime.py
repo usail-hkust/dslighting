@@ -11,6 +11,7 @@ from dslighting.benchmark.evaluation import (
     TaskEvaluationService,
 )
 from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
+from dslighting.benchmark.grading.helpers import read_reference_child_csv, read_submission_child_csv
 from dslighting.benchmark.reporting import CompetitionReportBuilder
 
 
@@ -40,6 +41,7 @@ class _FakeCompetition:
         self.leaderboard = tmp_path / "leaderboard.csv"
         self.api_version = None
         self.validate_fn = None
+        self.evaluator_config = {}
 
 
 def _prepare_files(tmp_path: Path) -> Path:
@@ -119,6 +121,78 @@ async def test_submission_grading_service_supports_artifact_v1_contract(tmp_path
         mode="test",
     )
 
+    assert outcome.valid_submission is True
+    assert outcome.score == 1.0
+
+
+@pytest.mark.asyncio
+async def test_submission_grading_service_supports_directory_artifact_contract(tmp_path: Path) -> None:
+    _prepare_files(tmp_path)
+    submission_dir = tmp_path / "submission_bundle"
+    submission_dir.mkdir()
+    (submission_dir / "before.csv").write_text("prediction\n1\n", encoding="utf-8")
+    (submission_dir / "after.csv").write_text("prediction\n1\n", encoding="utf-8")
+    (tmp_path / "prepared" / "private" / "before.csv").write_text("prediction\n1\n", encoding="utf-8")
+    (tmp_path / "prepared" / "private" / "after.csv").write_text("prediction\n1\n", encoding="utf-8")
+    (tmp_path / "prepared" / "public" / "sample_before.csv").write_text("prediction\n0\n", encoding="utf-8")
+    (tmp_path / "prepared" / "public" / "sample_after.csv").write_text("prediction\n0\n", encoding="utf-8")
+
+    def grade(request):
+        before_pred = read_submission_child_csv(request, "before.csv")
+        after_pred = read_submission_child_csv(request, "after.csv")
+        before_gold = read_reference_child_csv(request, "before.csv")
+        after_gold = read_reference_child_csv(request, "after.csv")
+        before_score = float((before_pred["prediction"] == before_gold["prediction"]).mean())
+        after_score = float((after_pred["prediction"] == after_gold["prediction"]).mean())
+        return (before_score + after_score) / 2.0
+
+    competition = _FakeCompetition(tmp_path, grade)
+    competition.api_version = "artifact_v1"
+    competition.evaluator_config = {
+        "submission": {
+            "root_kind": "directory",
+            "root_basename": "submission_bundle",
+            "entries": [
+                {
+                    "relative_path": "before.csv",
+                    "format": "csv",
+                    "sample_path": tmp_path / "prepared" / "public" / "sample_before.csv",
+                },
+                {
+                    "relative_path": "after.csv",
+                    "format": "csv",
+                    "sample_path": tmp_path / "prepared" / "public" / "sample_after.csv",
+                },
+            ],
+        },
+        "references": {
+            "root_kind": "directory",
+            "root_path": tmp_path / "prepared" / "private",
+            "entries": [
+                {"relative_path": "before.csv"},
+                {"relative_path": "after.csv"},
+            ],
+        },
+    }
+    contract, _ = build_task_evaluation_contract(
+        competition=competition,
+        source_id="customx",
+        engine_id="mle",
+        registry_root=tmp_path,
+        data_root=tmp_path.parent,
+        mode="test",
+        output_submission_path=submission_dir,
+        evaluation_mode="artifact_submission",
+    )
+
+    outcome = await TaskEvaluationService().evaluate(
+        submission_path=submission_dir,
+        contract=contract,
+        mode="test",
+    )
+
+    assert contract.grading is not None
+    assert contract.grading.submission.root_kind == "directory"
     assert outcome.valid_submission is True
     assert outcome.score == 1.0
 

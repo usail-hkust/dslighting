@@ -7,6 +7,7 @@ from dslighting.workflows.base import BaseWorkflow
 from dslighting.state.search.journal import JournalState, Node, MetricValue
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.runtime.dag import BaseWorkflowActor, NodeResult, OpNode
+from dslighting.error import LLMServiceError
 from dslighting.services.llm import LLMService
 
 from dslighting.prompts.workflows.aide import create_improve_prompt, create_debug_prompt
@@ -37,10 +38,10 @@ class AIDEWorkflowDagActor(BaseWorkflowActor):
         self.task_id = task_id
         self.workflow = workflow
         self.output_path = output_path
-        self.task_context = {
-            "goal_and_data": description,
-            "io_instructions": io_instructions,
-        }
+        self.task_context = workflow._build_task_context(
+            description=description,
+            io_instructions=io_instructions,
+        )
         self.max_iterations = max(
             1, int(workflow.agent_config.get("search", {}).get("max_iterations", 3))
         )
@@ -170,10 +171,10 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
         self.task_id = task_id
         self.workflow = workflow
         self.output_path = output_path
-        self.task_context = {
-            "goal_and_data": description,
-            "io_instructions": io_instructions,
-        }
+        self.task_context = workflow._build_task_context(
+            description=description,
+            io_instructions=io_instructions,
+        )
         self.max_iterations = max(
             1, int(workflow.agent_config.get("search", {}).get("max_iterations", 3))
         )
@@ -242,7 +243,7 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
                 "callable": self.workflow.review_op,
                 "kwargs": {
                     "prompt_context": {
-                        "task": self.task_context["goal_and_data"],
+                        "task": self.task_context,
                         "code": exec_result.get("code", ""),
                         "output": exec_result.get("stdout", ""),
                     },
@@ -427,6 +428,41 @@ class AIDEWorkflow(BaseWorkflow):
     def _capture_llm_calls_since(self, start_index: int) -> List[Dict[str, Any]]:
         return capture_llm_history(self.llm_service, start_index)
 
+    @staticmethod
+    def _maximize_from_task_context(task_context: Dict[str, Any]) -> bool:
+        lower_is_better = task_context.get("lower_is_better")
+        return False if lower_is_better is True else True
+
+    def _build_task_context(self, *, description: str, io_instructions: str) -> Dict[str, Any]:
+        task_context = {
+            "goal_and_data": description,
+            "io_instructions": io_instructions,
+        }
+        raw_hints = self.agent_config.get("task_context", {}) if isinstance(self.agent_config, dict) else {}
+        if isinstance(raw_hints, dict):
+            metric_name = raw_hints.get("metric_name")
+            if isinstance(metric_name, str) and metric_name.strip():
+                task_context["metric_name"] = metric_name.strip()
+            lower_is_better = raw_hints.get("lower_is_better")
+            if isinstance(lower_is_better, bool):
+                task_context["lower_is_better"] = lower_is_better
+        return task_context
+
+    @staticmethod
+    def _apply_grounded_metric_to_review(
+        review: Any,
+        *,
+        score: float,
+        task_context: Dict[str, Any],
+    ) -> None:
+        review.metric_value = score
+        lower_is_better = task_context.get("lower_is_better")
+        review.lower_is_better = lower_is_better if isinstance(lower_is_better, bool) else None
+
+    @staticmethod
+    def _grounded_review_fallback_summary(*, score: float, error: Exception) -> str:
+        return f"Grounded Score: {score:.4f}. Review unavailable due to LLM failure: {error}"
+
     def build_actor(
         self,
         *,
@@ -517,7 +553,10 @@ class AIDEWorkflow(BaseWorkflow):
                 f"--- Starting {self.__class__.__name__} Solve Step {i + 1}/{max_iterations} ---"
             )
 
-            task_context = {"goal_and_data": description, "io_instructions": io_instructions}
+            task_context = self._build_task_context(
+                description=description,
+                io_instructions=io_instructions,
+            )
 
             await self._execute_search_step(task_context, output_path)
 
@@ -625,7 +664,7 @@ class AIDEWorkflow(BaseWorkflow):
                 self.sandbox_service.workspace.get_path("sandbox_workdir") / output_path.name
             )
 
-            maximize = not task_context.get("lower_is_better", False)
+            maximize = self._maximize_from_task_context(task_context)
 
             if not submission_file_in_sandbox.exists():
                 new_node.is_buggy = True
@@ -650,16 +689,31 @@ class AIDEWorkflow(BaseWorkflow):
                         "task": task_context,
                         "code": new_node.code,
                         "output": new_node.term_out,
+                        "grounded_metric_value": score,
                     }
                     new_node.review_context = review_context
                     review_start = self._llm_history_length()
-                    review = await self.review_op(prompt_context=review_context)
-                    review_calls = self._capture_llm_calls_since(review_start)
-                    if review_calls:
-                        new_node.llm_review = review_calls[-1]
-                    new_node.analysis = (
-                        f"Grounded Score: {score:.4f}. Reviewer Summary: {review.summary}"
-                    )
+                    try:
+                        review = await self.review_op(prompt_context=review_context)
+                    except LLMServiceError as exc:
+                        logger.warning("Grounded review failed after successful grading; preserving grounded score: %s", exc)
+                        review_calls = self._capture_llm_calls_since(review_start)
+                        if review_calls:
+                            new_node.llm_review = review_calls[-1]
+                        new_node.analysis = self._grounded_review_fallback_summary(score=score, error=exc)
+                        review = None
+                    else:
+                        self._apply_grounded_metric_to_review(
+                            review,
+                            score=score,
+                            task_context=task_context,
+                        )
+                        review_calls = self._capture_llm_calls_since(review_start)
+                        if review_calls:
+                            new_node.llm_review = review_calls[-1]
+                        new_node.analysis = (
+                            f"Grounded Score: {score:.4f}. Reviewer Summary: {review.summary}"
+                        )
                 else:
                     new_node.is_buggy = True
                     new_node.metric = MetricValue(value=score, maximize=maximize)
@@ -714,7 +768,16 @@ class AIDEWorkflow(BaseWorkflow):
 
         if expected_output and expected_output.exists():
             try:
-                shutil.copy2(expected_output, final_dir / expected_output.name)
+                target_path = final_dir / expected_output.name
+                if expected_output.is_dir():
+                    if target_path.exists():
+                        if target_path.is_dir():
+                            shutil.rmtree(target_path)
+                        else:
+                            target_path.unlink()
+                    shutil.copytree(expected_output, target_path)
+                else:
+                    shutil.copy2(expected_output, target_path)
             except Exception as copy_error:
                 logger.warning(
                     f"Failed to copy final submission artifact '{expected_output}': {copy_error}"

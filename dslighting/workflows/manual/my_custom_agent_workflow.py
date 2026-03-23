@@ -6,7 +6,7 @@ My Custom Agent Workflow - 内置自定义 Agent
 """
 
 from dslighting.workflows.base import BaseWorkflow
-from dslighting.state.search.journal import JournalState, Node, MetricValue
+from dslighting.state.search.journal import JournalState, Node, MetricValue, maximize_from_lower_is_better
 from dslighting.services.data_analyzer import DataAnalyzer
 from dslighting.prompts.workflows.aide import create_improve_prompt, create_debug_prompt
 from dslighting.prompts.common import create_draft_prompt
@@ -127,6 +127,14 @@ class MyCustomAgentWorkflow(BaseWorkflow):
             "goal_and_data": f"{description}\n\n{data_report}",
             "io_instructions": io_instructions
         }
+        raw_hints = self.agent_config.get("task_context", {}) if isinstance(self.agent_config, dict) else {}
+        if isinstance(raw_hints, dict):
+            metric_name = raw_hints.get("metric_name")
+            if isinstance(metric_name, str) and metric_name.strip():
+                task_context["metric_name"] = metric_name.strip()
+            lower_is_better = raw_hints.get("lower_is_better")
+            if isinstance(lower_is_better, bool):
+                task_context["lower_is_better"] = lower_is_better
 
         # ========== 阶段 2: 迭代搜索 ==========
         logger.info(f"\n{'─'*80}")
@@ -185,15 +193,18 @@ class MyCustomAgentWorkflow(BaseWorkflow):
             if not new_node.is_buggy:
                 logger.info(f"审查代码输出...")
                 review_context = {
-                    "task": description,
+                    "task": task_context,
                     "code": new_node.code,
                     "output": new_node.term_out
                 }
                 review = await self.review_op(prompt_context=review_context)
+                lower_is_better = task_context.get("lower_is_better")
+                if not isinstance(lower_is_better, bool):
+                    lower_is_better = review.lower_is_better if isinstance(review.lower_is_better, bool) else None
                 new_node.analysis = review.summary
                 new_node.metric = MetricValue(
                     value=review.metric_value or 0.0,
-                    maximize=not review.lower_is_better
+                    maximize=maximize_from_lower_is_better(lower_is_better),
                 )
                 new_node.is_buggy = review.is_buggy
                 logger.info(f"✓ 审查完成")

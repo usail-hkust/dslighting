@@ -201,6 +201,7 @@ class AgentConfig(BaseModel):
     search: AgentSearchConfig = Field(default_factory=AgentSearchConfig)
     max_retries: int = 10
     autokaggle: AutoKaggleConfig = Field(default_factory=AutoKaggleConfig)
+    task_context: Dict[str, Any] = Field(default_factory=dict)
 
 
 class OptimizerConfig(BaseModel):

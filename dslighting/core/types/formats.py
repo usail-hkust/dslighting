@@ -39,7 +39,10 @@ class ReviewResult(BaseModel):
     is_buggy: bool = Field(..., description="True if the execution failed or has a clear bug, otherwise False.")
     summary: str = Field(..., description="If buggy, a proposal to fix the bug. If successful, a summary of empirical findings.")
     metric_value: Optional[float] = Field(..., description="A quantitative measure of success based on the task requirements. Null if the task does not define a quantitative metric or if it cannot be determined.")
-    lower_is_better: bool = Field(default=True, description="True if a lower metric is better (e.g., RMSE), False if higher is better (e.g., Accuracy).")
+    lower_is_better: Optional[bool] = Field(
+        default=None,
+        description="True if a lower metric is better (e.g., RMSE), False if higher is better (e.g., Accuracy), null if unknown.",
+    )
 
 class Task(BaseModel):
     """A single task within a larger plan."""

@@ -281,7 +281,7 @@ plan, code = await operator(system_prompt=system_prompt, user_prompt=user_prompt
             ],
             "outputs": "Structured review result",
             "output_type": "ReviewResult",
-            "output_format": "ReviewResult from dslighting.core.types with fields: is_buggy (bool), summary (str), metric_value (Optional[float]), lower_is_better (bool)",
+            "output_format": "ReviewResult from dslighting.core.types with fields: is_buggy (bool), summary (str), metric_value (Optional[float]), lower_is_better (Optional[bool])",
             "async": True,
             "requires_services": ["LLMService"],
             "example": """

@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from dslighting.benchmark.grading.models import (
+    SubmissionArtifactContract,
+    SubmissionEntrySpec,
+    SubmissionValidationSpec,
+)
 from dslighting.services.data_analyzer import DataAnalyzer
 
 
@@ -76,3 +81,41 @@ def test_analyze_data_reports_schema_documents_in_detail_section(tmp_path: Path)
     assert "Detected Tables (2):" in report
     assert "- Country (2 columns)" in report
     assert "- League (3 columns)" in report
+
+
+def test_generate_io_instructions_supports_directory_submission_contract(tmp_path: Path) -> None:
+    contract = SubmissionArtifactContract(
+        sample_submission_path=None,
+        output_submission_path=tmp_path / "submission_bundle_demo",
+        submission_filename="submission_bundle_demo",
+        submission_format="",
+        validation=SubmissionValidationSpec(
+            expected_kind="directory",
+            expected_name="submission_bundle_demo",
+            required_children=("before.csv", "after.csv"),
+        ),
+        entries=(
+            SubmissionEntrySpec(
+                relative_path="before.csv",
+                format="csv",
+                sample_path=tmp_path / "sample_before.csv",
+                description="before epoch matrix",
+            ),
+            SubmissionEntrySpec(
+                relative_path="after.csv",
+                format="csv",
+                sample_path=tmp_path / "sample_after.csv",
+                description="after epoch matrix",
+            ),
+        ),
+    )
+
+    instructions = DataAnalyzer(cache_enabled=False).generate_io_instructions(
+        contract.output_submission_path.name,
+        submission_context=contract.to_payload(),
+    )
+
+    assert "Required output directory name" in instructions
+    assert "`before.csv`" in instructions
+    assert "sample: sample_before.csv" in instructions
+    assert "Missing any required file will make the submission invalid." in instructions

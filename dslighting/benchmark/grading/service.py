@@ -30,12 +30,15 @@ class SubmissionGradingService:
         metadata: Mapping[str, Any] | None = None,
     ) -> GradingRequest:
         artifact_contract = contract.submission.with_output_path(submission_path)
-        kind = "directory" if submission_path.exists() and submission_path.is_dir() else "file"
+        kind = artifact_contract.root_kind
+        if submission_path.exists():
+            kind = "directory" if submission_path.is_dir() else "file"
         artifact = SubmissionArtifact(
             root=submission_path,
             kind=kind,
             format_hint=submission_path.suffix.lower() or artifact_contract.submission_format or None,
             expected_name=artifact_contract.validation.expected_name,
+            entries=artifact_contract.entries,
         )
         context = GradingContext(
             task_id=contract.task_id,

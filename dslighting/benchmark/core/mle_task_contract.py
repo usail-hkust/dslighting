@@ -31,6 +31,7 @@ class MLEStyleCompetition:
     submission_filename: Optional[str] = None
     api_version: Optional[str] = None
     validate_fn: Optional[Callable[..., None]] = None
+    evaluator_config: Optional[dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         assert isinstance(self.id, str), "Competition id must be a string."
@@ -65,6 +66,7 @@ class MLEStyleCompetition:
             submission_filename=data.get("submission_filename"),
             api_version=data.get("api_version"),
             validate_fn=data.get("validate_fn"),
+            evaluator_config=data.get("evaluator_config"),
         )
 
 
@@ -230,6 +232,79 @@ class MLETaskContractLoader:
             return None
         return import_fn(self.resolve_callable_ref(task_dir, str(validate_ref), mode))
 
+    def _resolve_data_reference(self, task_dir: Path, data_root: Path, value: str | Path | None) -> Path | None:
+        if value is None:
+            return None
+        raw = str(value).strip()
+        if not raw:
+            return None
+        candidate = Path(raw)
+        if candidate.is_absolute():
+            return candidate
+        options = [
+            data_root / candidate,
+            task_dir / candidate,
+            self.benchmark_root / candidate,
+            task_dir / candidate.name,
+        ]
+        for option in options:
+            if option.exists():
+                return option.resolve()
+        return (data_root / candidate).resolve()
+
+    def resolve_evaluator_config(
+        self,
+        task_dir: Path,
+        data_root: Path,
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
+        evaluator_cfg = dict(config.get("evaluator") or {})
+        if not evaluator_cfg:
+            return {}
+
+        resolved: dict[str, Any] = {}
+
+        submission_cfg = dict(evaluator_cfg.get("submission") or {})
+        if submission_cfg:
+            entries_payload = []
+            for entry in submission_cfg.get("entries") or ():
+                if not isinstance(entry, dict):
+                    continue
+                entry_payload = dict(entry)
+                sample_path = self._resolve_data_reference(
+                    task_dir,
+                    data_root,
+                    entry_payload.get("sample"),
+                )
+                if sample_path is not None:
+                    entry_payload["sample_path"] = sample_path
+                entry_payload.pop("sample", None)
+                entries_payload.append(entry_payload)
+            resolved["submission"] = {
+                "root_kind": str(submission_cfg.get("root_kind") or "file"),
+                "root_basename": str(submission_cfg.get("root_basename") or "submission").strip() or "submission",
+                "entries": entries_payload,
+            }
+
+        references_cfg = dict(evaluator_cfg.get("references") or {})
+        if references_cfg:
+            entries_payload = []
+            for entry in references_cfg.get("entries") or ():
+                if not isinstance(entry, dict):
+                    continue
+                entries_payload.append(dict(entry))
+            resolved["references"] = {
+                "root_kind": str(references_cfg.get("root_kind") or "directory"),
+                "root_path": self._resolve_data_reference(
+                    task_dir,
+                    data_root,
+                    references_cfg.get("root_path"),
+                ),
+                "entries": entries_payload,
+            }
+
+        return resolved
+
     def resolve_dataset_paths(
         self,
         task_dir: Path,
@@ -303,6 +378,7 @@ class MLETaskContractLoader:
             prepared_grader["grade_fn"] = grade_fn_ref
         prepared_config["grader"] = prepared_grader
         validate_fn = self.resolve_validate_fn(task_dir, prepared_config, mode)
+        evaluator_config = self.resolve_evaluator_config(task_dir, data_root, prepared_config)
 
         dataset_paths = self.resolve_dataset_paths(task_dir, data_root, prepared_config, mode)
         preparer_fn = self.resolve_preparer(task_dir, prepared_config, mode)
@@ -322,4 +398,5 @@ class MLETaskContractLoader:
             "submission_filename": (prepared_config.get("dataset") or {}).get("submission_filename"),
             "api_version": api_version,
             "validate_fn": validate_fn,
+            "evaluator_config": evaluator_config,
         }

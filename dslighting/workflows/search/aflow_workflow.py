@@ -98,6 +98,52 @@ class AFlowWorkflow:
         desc_path = get_module_dir().parent / config["description"]
         return desc_path.read_text()
 
+    def _resolve_submission_contract_context(
+        self,
+        competition_id: str,
+        output_path: Path,
+    ) -> dict[str, Any]:
+        comp_dir = self._resolve_competition_dir(competition_id)
+        config = load_yaml(comp_dir / "config.yaml")
+        evaluator_cfg = dict(config.get("evaluator") or {})
+        submission_cfg = dict(evaluator_cfg.get("submission") or {})
+        if not submission_cfg:
+            return {
+                "output_submission_path": str(output_path),
+                "submission_filename": output_path.name,
+                "submission_format": output_path.suffix.lower(),
+            }
+
+        data_root = self.benchmark.registry.get_data_dir()  # type: ignore[union-attr]
+        entries_payload = []
+        for entry in submission_cfg.get("entries") or ():
+            if not isinstance(entry, dict):
+                continue
+            entry_payload = dict(entry)
+            sample_value = str(entry_payload.get("sample") or "").strip()
+            if sample_value:
+                sample_path = Path(sample_value)
+                if not sample_path.is_absolute():
+                    sample_path = (data_root / sample_path).resolve()
+                entry_payload["sample_path"] = str(sample_path)
+            entry_payload.pop("sample", None)
+            entries_payload.append(entry_payload)
+
+        root_kind = str(submission_cfg.get("root_kind") or "file")
+        contract_payload = {
+            "output_submission_path": str(output_path),
+            "submission_filename": output_path.name,
+            "submission_format": output_path.suffix.lower(),
+            "root_kind": root_kind,
+            "entries": entries_payload,
+        }
+        return {
+            "output_submission_path": str(output_path),
+            "submission_filename": output_path.name,
+            "submission_format": output_path.suffix.lower(),
+            "submission_artifact_contract": contract_payload,
+        }
+
     async def _grade_dabench_without_preparer(self, submission_path: Path, competition_id: str) -> float:
         """Grade a DABench submission using existing prepared answers and local grade.py."""
         competition = self.benchmark.registry.get_competition(competition_id)  # type: ignore[union-attr]
@@ -267,7 +313,26 @@ class AFlowWorkflow:
 
         for i in range(self.validation_runs_per_candidate):
             unique_id = uuid.uuid4().hex[:6]
-            temp_output_filename = f"validation_submission_{i}_{unique_id}.csv"
+            submission_context = self._resolve_submission_contract_context(
+                competition_id,
+                output_path=Path(f"validation_submission_{i}_{unique_id}.csv"),
+            )
+            artifact_payload = submission_context.get("submission_artifact_contract")
+            if isinstance(artifact_payload, dict) and str(artifact_payload.get("root_kind") or "file") == "directory":
+                root_basename = "submission"
+                config = load_yaml(self._resolve_competition_dir(competition_id) / "config.yaml")
+                evaluator_cfg = dict(config.get("evaluator") or {})
+                root_basename = (
+                    str(((evaluator_cfg.get("submission") or {}).get("root_basename")) or "submission").strip()
+                    or "submission"
+                )
+                temp_output_filename = f"{root_basename}_{i}_{unique_id}"
+                submission_context = self._resolve_submission_contract_context(
+                    competition_id,
+                    output_path=Path(temp_output_filename),
+                )
+            else:
+                temp_output_filename = f"validation_submission_{i}_{unique_id}.csv"
             temp_output_path = self.workspace.get_path("artifacts") / temp_output_filename
 
             try:
@@ -275,11 +340,12 @@ class AFlowWorkflow:
                     io_instructions = self.data_perception.generate_io_instructions(
                         temp_output_path.name,
                         optimization_context=False,
+                        submission_context=submission_context,
                     )
                 else:
                     io_instructions = (
                         "All input data files are in the current working directory.\n"
-                        f"Save the final submission file to `{temp_output_path.name}` in the current working directory."
+                        f"Save the final submission artifact to `{temp_output_path.name}` in the current working directory."
                     )
                     
                 # 3. Combine the raw description and cached base report. (IO instructions are passed separately now)
@@ -314,7 +380,15 @@ class AFlowWorkflow:
                 if generated_file.exists():
                     # ... (copy logic)
                     if generated_file.resolve() != temp_output_path.resolve():
-                        shutil.copy(generated_file, temp_output_path)
+                        if generated_file.is_dir():
+                            if temp_output_path.exists():
+                                if temp_output_path.is_dir():
+                                    shutil.rmtree(temp_output_path)
+                                else:
+                                    temp_output_path.unlink()
+                            shutil.copytree(generated_file, temp_output_path)
+                        else:
+                            shutil.copy(generated_file, temp_output_path)
 
                 # Grade without depending on preparers for DABench tasks.
                 if competition_id.startswith("dabench-"):
@@ -330,6 +404,9 @@ class AFlowWorkflow:
             finally:
                 if temp_output_path.exists():
                     with contextlib.suppress(OSError):
-                        temp_output_path.unlink()        
+                        if temp_output_path.is_dir():
+                            shutil.rmtree(temp_output_path)
+                        else:
+                            temp_output_path.unlink()
         return sum(scores) / len(scores) if scores else 0.0
     

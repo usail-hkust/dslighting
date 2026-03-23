@@ -35,6 +35,8 @@ class TaskExecutionSpec:
     io_instructions: str
     agent_visible_dir: Path
     output_path: Path
+    metric_name: str | None = None
+    lower_is_better: bool | None = None
     source_id: str | None = None
     engine_id: str | None = None
     submission_artifact_contract: SubmissionArtifactContract | None = None
@@ -48,6 +50,8 @@ class TaskExecutionSpec:
             "io_instructions": self.io_instructions,
             "agent_visible_dir": str(self.agent_visible_dir),
             "output_path": str(self.output_path),
+            "metric_name": self.metric_name,
+            "lower_is_better": self.lower_is_better,
             "source_id": self.source_id,
             "engine_id": self.engine_id,
             "submission_artifact_contract": (
@@ -72,6 +76,10 @@ class TaskExecutionSpec:
             "output_submission_path": str(self.output_path),
             "execution_spec": self.as_dict(),
         }
+        if self.metric_name:
+            payload["metric_name"] = self.metric_name
+        if self.lower_is_better is not None:
+            payload["lower_is_better"] = self.lower_is_better
         if self.source_id:
             payload["source_id"] = self.source_id
         if self.engine_id:

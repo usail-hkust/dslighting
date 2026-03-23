@@ -187,75 +187,108 @@ class LLMCallExecutor:
         import litellm.exceptions as litellm_exceptions
 
         last_exception: Exception | None = None
-        async with self._service._key_pool.use_key() as api_key:
-            for transport_attempt in range(1, max(1, spec.max_transport_retries) + 1):
-                llm_context = LLMCallContext(
-                    logical_call_id=logical_call_id,
-                    model=self._service.config.model,
-                    provider=self._service.config.provider,
-                    response_mode=spec.response_mode,
-                    semantic_attempt=semantic_attempt,
-                    transport_attempt=transport_attempt,
-                )
-                call_started_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                perf_start = time.perf_counter()
-                await self._emit_request_prepared(llm_context, spec=spec)
-                try:
-                    kwargs = self._service._build_completion_kwargs(
-                        messages=spec.messages,
-                        response_format=spec.response_format,
-                        api_key=api_key,
+        exhausted_keys: set[str] = set()
+        max_key_attempts = max(1, len(self._service.config.get_api_keys()))
+
+        for _ in range(max_key_attempts):
+            api_key = await self._service._key_pool.acquire_key(excluded_keys=exhausted_keys)
+            if api_key is None:
+                break
+
+            rotate_key = False
+            try:
+                for transport_attempt in range(1, max(1, spec.max_transport_retries) + 1):
+                    llm_context = LLMCallContext(
+                        logical_call_id=logical_call_id,
+                        model=self._service.config.model,
+                        provider=self._service.config.provider,
+                        response_mode=spec.response_mode,
+                        semantic_attempt=semantic_attempt,
+                        transport_attempt=transport_attempt,
                     )
-                    self._attach_debug_metadata(kwargs=kwargs, llm_context=llm_context)
-                    await self._emit_request_sent(llm_context, message_count=len(spec.messages))
-
-                    with debug_scope(llm=llm_context):
-                        async with self._service._concurrency_guard():
-                            response = await litellm.acompletion(**kwargs)
-
-                    content = self._extract_content(response)
-                    duration = time.perf_counter() - perf_start
-                    if not content.strip():
-                        raise LLMServiceError("LLM returned an empty response.")
-
-                    await self._emit_response_received(
-                        llm_context,
-                        response=response,
-                        duration=duration,
-                    )
-                    self._service._record_successful_call(
-                        call_id=f"{logical_call_id}:{semantic_attempt}:{transport_attempt}",
-                        call_started_at=call_started_at,
-                        duration=duration,
-                        messages=spec.messages,
-                        response=response,
-                        content=content,
-                        response_format=spec.response_format,
-                    )
-                    return response
-                except Exception as exc:
-                    duration = time.perf_counter() - perf_start
-                    last_exception = exc
-                    if isinstance(exc, litellm_exceptions.RateLimitError):
-                        self._record_rate_limit()
-
-                    if self._is_retryable_transport_error(exc) and transport_attempt < max(1, spec.max_transport_retries):
-                        await self._emit_retry_scheduled(
-                            llm_context,
-                            reason=str(exc),
-                            next_transport_attempt=transport_attempt + 1,
+                    call_started_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    perf_start = time.perf_counter()
+                    await self._emit_request_prepared(llm_context, spec=spec)
+                    try:
+                        kwargs = self._service._build_completion_kwargs(
+                            messages=spec.messages,
+                            response_format=spec.response_format,
+                            api_key=api_key,
                         )
-                        delay = spec.base_delay * (3 ** (transport_attempt - 1)) + (asyncio.get_event_loop().time() % 1)
-                        await asyncio.sleep(delay)
-                        continue
+                        self._attach_debug_metadata(kwargs=kwargs, llm_context=llm_context)
+                        await self._emit_request_sent(llm_context, message_count=len(spec.messages))
 
-                    if not self._service._is_retryable_error(exc):
-                        raise LLMServiceError(f"LLM call failed with non-retryable error: {exc}") from exc
+                        with debug_scope(llm=llm_context):
+                            async with self._service._concurrency_guard():
+                                response = await litellm.acompletion(**kwargs)
 
-                    raise LLMServiceError(
-                        f"LLM call failed after {spec.max_transport_retries} transport attempts. Last error: {exc}"
-                    ) from exc
+                        content = self._extract_content(response)
+                        duration = time.perf_counter() - perf_start
+                        if not content.strip():
+                            raise LLMServiceError("LLM returned an empty response.")
 
+                        await self._emit_response_received(
+                            llm_context,
+                            response=response,
+                            duration=duration,
+                        )
+                        self._service._record_successful_call(
+                            call_id=f"{logical_call_id}:{semantic_attempt}:{transport_attempt}",
+                            call_started_at=call_started_at,
+                            duration=duration,
+                            messages=spec.messages,
+                            response=response,
+                            content=content,
+                            response_format=spec.response_format,
+                        )
+                        self._service._key_pool.mark_key_success(api_key)
+                        return response
+                    except Exception as exc:
+                        last_exception = exc
+                        if isinstance(exc, litellm_exceptions.RateLimitError):
+                            self._record_rate_limit()
+
+                        action = self._service._classify_error_action(exc)
+                        if self._is_retryable_transport_error(exc) and transport_attempt < max(1, spec.max_transport_retries):
+                            await self._emit_retry_scheduled(
+                                llm_context,
+                                reason=str(exc),
+                                next_transport_attempt=transport_attempt + 1,
+                            )
+                            delay = spec.base_delay * (3 ** (transport_attempt - 1)) + (asyncio.get_event_loop().time() % 1)
+                            await asyncio.sleep(delay)
+                            continue
+
+                        if action == "retry_next_key":
+                            exhausted_keys.add(api_key)
+                            self._service._key_pool.mark_key_failed(
+                                api_key,
+                                reason=type(exc).__name__,
+                                cooldown_seconds=self._service._cooldown_seconds_for_error(exc),
+                            )
+                            rotate_key = True
+                            await self._emit_retry_scheduled(
+                                llm_context,
+                                reason=f"rotate_api_key:{type(exc).__name__}",
+                            )
+                            break
+
+                        if action == "fail_fast":
+                            raise LLMServiceError(f"LLM call failed with non-retryable error: {exc}") from exc
+
+                        raise LLMServiceError(
+                            f"LLM call failed after {spec.max_transport_retries} transport attempts. Last error: {exc}"
+                        ) from exc
+            finally:
+                self._service._key_pool.release_key(api_key)
+
+            if not rotate_key:
+                break
+
+        if exhausted_keys:
+            raise LLMServiceError(
+                f"LLM call failed after exhausting {len(exhausted_keys)} API key(s). Last error: {last_exception}"
+            ) from last_exception
         raise LLMServiceError(
             f"LLM call failed after {spec.max_transport_retries} transport attempts. Last error: {last_exception}"
         ) from last_exception
@@ -272,13 +305,9 @@ class LLMCallExecutor:
         return str(content)
 
     def _is_retryable_transport_error(self, error: Exception) -> bool:
-        from litellm import exceptions as litellm_exceptions
-
         if isinstance(error, LLMServiceError):
             return True
-        if isinstance(error, litellm_exceptions.APIError) and self._service._is_insufficient_balance_error(error):
-            return True
-        return self._service._is_retryable_error(error)
+        return self._service._classify_error_action(error) == "retry_same_key"
 
     def _record_rate_limit(self) -> None:
         try:

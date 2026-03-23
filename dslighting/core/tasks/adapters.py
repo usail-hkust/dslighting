@@ -71,6 +71,10 @@ class BaseTaskAdapter(ABC):
                 io_instructions=str(spec.get("io_instructions") or ""),
                 agent_visible_dir=Path(spec["agent_visible_dir"]),
                 output_path=Path(spec["output_path"]),
+                metric_name=str(spec.get("metric_name") or "").strip() or None,
+                lower_is_better=spec.get("lower_is_better")
+                if isinstance(spec.get("lower_is_better"), bool)
+                else None,
                 source_id=str(spec.get("source_id") or "") or None,
                 engine_id=str(spec.get("engine_id") or "") or None,
                 submission_artifact_contract=submission_contract,
@@ -81,9 +85,14 @@ class BaseTaskAdapter(ABC):
     @staticmethod
     def build_file_submission_spec(layout: ResolvedTaskLayout, perception_runtime) -> TaskExecutionSpec:
         data_report = ""
+        submission_contract = layout.evaluation_contract.grading.submission if layout.evaluation_contract.grading else None
+        if submission_contract is None:
+            raise TaskExecutionSpecError(
+                f"Task '{layout.task_id}' does not have an artifact submission contract."
+            )
         io_instructions = (
             "All input data files are located in the current working directory (./).\n"
-            f"You MUST save the final submission file to `{layout.output_path.name}` in the current working directory."
+            f"You MUST save the final submission artifact to `{layout.output_path.name}` in the current working directory."
         )
         if perception_runtime is not None:
             data_report = perception_runtime.analyze_data(
@@ -95,13 +104,21 @@ class BaseTaskAdapter(ABC):
             io_instructions = perception_runtime.generate_io_instructions(
                 layout.output_path.name,
                 optimization_context=False,
+                submission_context=layout.submission_context,
             )
-        submission_contract = layout.evaluation_contract.grading.submission if layout.evaluation_contract.grading else None
-        if submission_contract is None:
-            raise TaskExecutionSpecError(
-                f"Task '{layout.task_id}' does not have an artifact submission contract."
+        elif submission_contract.root_kind == "directory":
+            required_files = ", ".join(
+                f"`{entry.relative_path}`"
+                for entry in submission_contract.entries
+                if entry.relative_path
+            )
+            io_instructions = (
+                "All input data files are located in the current working directory (./).\n"
+                f"You MUST create the submission directory `{layout.output_path.name}` in the current working directory.\n"
+                f"The directory must contain: {required_files}."
             )
         submission_contract = submission_contract.with_output_path(layout.output_path)
+        lower_is_better = layout.evaluation_contract.evaluation_semantics.objective == "lower_is_better"
         return TaskExecutionSpec(
             task_id=layout.task_id,
             task_type=layout.task_type,
@@ -109,6 +126,8 @@ class BaseTaskAdapter(ABC):
             io_instructions=io_instructions,
             agent_visible_dir=layout.agent_visible_dir,
             output_path=layout.output_path,
+            metric_name="score",
+            lower_is_better=lower_is_better,
             source_id=layout.source_id,
             engine_id=layout.engine_id,
             submission_artifact_contract=submission_contract,
@@ -176,11 +195,23 @@ class FileSubmissionTaskAdapter(BaseTaskAdapter):
                 io_instructions = self.data_perception.generate_io_instructions(
                     Path(output_value).name,
                     optimization_context=False,
+                    submission_context=submission_context,
+                )
+            elif submission_contract is not None and submission_contract.root_kind == "directory":
+                required_files = ", ".join(
+                    f"`{entry.relative_path}`"
+                    for entry in submission_contract.entries
+                    if entry.relative_path
+                )
+                io_instructions = (
+                    "All input data files are in the current working directory.\n"
+                    f"Create the submission directory `{Path(output_value).name}` in the current working directory.\n"
+                    f"The directory must contain: {required_files}."
                 )
             else:
                 io_instructions = (
                     "All input data files are in the current working directory.\n"
-                    f"Save the final submission file to `{Path(output_value).name}` in the current working directory."
+                    f"Save the final submission artifact to `{Path(output_value).name}` in the current working directory."
                 )
         return TaskExecutionSpec(
             task_id=task.task_id,
@@ -189,6 +220,10 @@ class FileSubmissionTaskAdapter(BaseTaskAdapter):
             io_instructions=io_instructions,
             agent_visible_dir=data_dir,
             output_path=Path(str(output_value)),
+            metric_name=str(payload.get("metric_name") or "").strip() or None,
+            lower_is_better=payload.get("lower_is_better")
+            if isinstance(payload.get("lower_is_better"), bool)
+            else None,
             source_id=str(payload.get("source_id") or "") or None,
             engine_id=str(payload.get("engine_id") or "") or None,
             submission_artifact_contract=submission_contract,
@@ -228,7 +263,10 @@ class QATaskAdapter(BaseTaskAdapter):
             else ""
         )
         io_instructions = (
-            self.data_perception.generate_io_instructions(output_path.name, optimization_context=False)
+            self.data_perception.generate_io_instructions(
+                output_path.name,
+                optimization_context=False,
+            )
             if self.data_perception
             else f"Write ONLY the final answer into `{output_path.name}`."
         )

@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from dslighting.benchmark.grading.models import SubmissionArtifactContract, SubmissionEntrySpec
 from dslighting.core.types.task import TaskType
 from dslighting.utils.constants import DEFAULT_CACHE_MAX_ENTRIES
 from dslighting.utils.submission_contract import (
@@ -74,7 +75,11 @@ class DataPerceptionRuntime:
             task_id=task_id,
             submission_context=submission_context,
         )
-        report += self.generate_io_instructions(output_filename, optimization_context)
+        report += self.generate_io_instructions(
+            output_filename,
+            optimization_context,
+            submission_context=submission_context,
+        )
         return report
 
     def analyze_data(
@@ -92,11 +97,19 @@ class DataPerceptionRuntime:
             submission_context=normalized_submission_context,
         )
         report = DataPerceptionService(request, cache=self._cache).build_report()
+        artifact_analysis = self._analyze_submission_artifact_requirements(
+            normalized_submission_context
+        )
+        if artifact_analysis:
+            report += f"## Submission Artifact Requirements\n{artifact_analysis}\n\n"
         if task_type == "kaggle":
-            submission_analysis = self._analyze_kaggle_submission_format(
-                data_dir,
-                submission_context=normalized_submission_context,
-            )
+            contract = self._coerce_submission_artifact_contract(normalized_submission_context)
+            submission_analysis = ""
+            if contract is None or contract.root_kind == "file":
+                submission_analysis = self._analyze_kaggle_submission_format(
+                    data_dir,
+                    submission_context=normalized_submission_context,
+                )
             if submission_analysis:
                 report += f"## Submission Format Requirements\n{submission_analysis}\n\n"
         return report
@@ -124,7 +137,14 @@ class DataPerceptionRuntime:
         )
 
     @staticmethod
-    def generate_io_instructions(output_filename: str, optimization_context: bool = False) -> str:
+    def generate_io_instructions(
+        output_filename: str,
+        optimization_context: bool = False,
+        submission_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        contract = DataPerceptionRuntime._coerce_submission_artifact_contract(submission_context)
+        if contract is not None:
+            output_filename = contract.output_submission_path.name
         output_suffix = Path(output_filename).suffix.lower()
 
         input_instructions = (
@@ -132,6 +152,40 @@ class DataPerceptionRuntime:
             "   - All input files are located in the **current working directory** (./).\n"
             "   - Example: Use `pd.read_csv('train.csv')`."
         )
+
+        if contract is not None and contract.root_kind == "directory":
+            if optimization_context:
+                output_instructions = (
+                    "2. **OUTPUT ARTIFACT (Dynamic Workflow Context):**\n"
+                    "   - Your workflow's `solve` method receives an `output_path` argument.\n"
+                    "   - You MUST create a submission directory using `output_path.name` in the current working directory (./).\n"
+                    "   - All required files must be written inside that directory.\n"
+                )
+            else:
+                output_instructions = (
+                    "2. **OUTPUT ARTIFACT:**\n"
+                    "   - You MUST create exactly one submission directory in the current working directory (./).\n"
+                    f"   - Required output directory name: `{contract.output_submission_path.name}`\n"
+                    "   - Output kind: directory\n"
+                )
+            required_entries = DataPerceptionRuntime._render_directory_entry_lines(contract.entries)
+            return f"""
+--- CRITICAL I/O REQUIREMENTS ---
+
+You MUST follow these file system rules precisely. Failure to do so will cause a fatal error.
+
+{input_instructions}
+
+{output_instructions}
+
+3. **REQUIRED FILES INSIDE THE OUTPUT DIRECTORY:**
+{required_entries}
+
+**IMPORTANT:**
+- Do not place the required files directly in `./`.
+- They must all be created inside the required submission directory.
+- Missing any required file will make the submission invalid.
+"""
 
         if optimization_context:
             example_write = ""
@@ -187,6 +241,16 @@ You MUST follow these file system rules precisely. Failure to do so will cause a
             if value:
                 normalized[key] = value
 
+        raw_output_path = submission_context.get("output_submission_path")
+        if raw_output_path is not None:
+            output_value = str(raw_output_path).strip()
+            if output_value:
+                normalized["output_submission_path"] = output_value
+
+        artifact_payload = submission_context.get("submission_artifact_contract")
+        if isinstance(artifact_payload, dict):
+            normalized["submission_artifact_contract"] = dict(artifact_payload)
+
         normalized_contract = normalize_submission_tag_contract(
             submission_context.get("submission_contract")
         )
@@ -194,6 +258,65 @@ You MUST follow these file system rules precisely. Failure to do so will cause a
             normalized["submission_contract"] = normalized_contract
 
         return normalized
+
+    @staticmethod
+    def _coerce_submission_artifact_contract(
+        submission_context: Optional[Dict[str, Any]],
+    ) -> Optional[SubmissionArtifactContract]:
+        if not isinstance(submission_context, dict):
+            return None
+        try:
+            return SubmissionArtifactContract.from_payload(submission_context)
+        except Exception:
+            logger.warning(
+                "Could not parse submission artifact contract from context: %s",
+                traceback.format_exc(),
+            )
+            return None
+
+    @staticmethod
+    def _format_entry_descriptor(entry: SubmissionEntrySpec) -> str:
+        details: list[str] = []
+        if entry.format:
+            details.append(entry.format)
+        if entry.description:
+            details.append(entry.description)
+        if entry.sample_path is not None:
+            details.append(f"sample: {entry.sample_path.name}")
+        if not details:
+            return ""
+        return " — " + "; ".join(details)
+
+    @classmethod
+    def _render_directory_entry_lines(cls, entries: tuple[SubmissionEntrySpec, ...]) -> str:
+        rendered: list[str] = []
+        for entry in entries:
+            if not entry.relative_path:
+                continue
+            rendered.append(f"   - `{entry.relative_path}`{cls._format_entry_descriptor(entry)}")
+        return "\n".join(rendered) or "   - No required entries were declared."
+
+    @classmethod
+    def _analyze_submission_artifact_requirements(
+        cls,
+        submission_context: Optional[Dict[str, Any]],
+    ) -> str:
+        contract = cls._coerce_submission_artifact_contract(submission_context)
+        if contract is None or (contract.root_kind == "file" and len(contract.entries) <= 1):
+            return ""
+
+        lines = [
+            f"- Root artifact kind: `{contract.root_kind}`",
+            f"- Required output root: `{contract.output_submission_path.name}`",
+        ]
+        if contract.entries:
+            lines.append("")
+            lines.append("### Required Entries")
+            for entry in contract.entries:
+                if not entry.relative_path:
+                    continue
+                lines.append(f"- `{entry.relative_path}`{cls._format_entry_descriptor(entry)}")
+        return "\n".join(lines)
 
     def _analyze_kaggle_submission_format(
         self,

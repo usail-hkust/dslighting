@@ -110,19 +110,47 @@ class RuntimeConfigParser:
     def parse_task_context(self) -> dict[str, Any]:
         """Parse task context from payload for backward compatibility.
 
-        Extracts description and io_instructions from task.payload if present.
+        Extracts description, io_instructions, and metric semantics from task.payload if present.
 
         Returns:
-            A dictionary containing 'description' and 'io_instructions'.
+            A dictionary containing execution context fields.
         """
         payload = self.task.payload
         if not isinstance(payload, dict):
-            return {"description": "", "io_instructions": ""}
+            return {
+                "description": "",
+                "io_instructions": "",
+                "metric_name": None,
+                "lower_is_better": None,
+            }
+
+        execution_spec = payload.get("execution_spec")
+        execution_spec = execution_spec if isinstance(execution_spec, dict) else {}
 
         return {
             "description": payload.get("description", ""),
             "io_instructions": payload.get("io_instructions", ""),
+            "metric_name": payload.get("metric_name", execution_spec.get("metric_name")),
+            "lower_is_better": payload.get(
+                "lower_is_better", execution_spec.get("lower_is_better")
+            ),
         }
+
+    def apply_agent_task_context(self) -> DSLightingConfig:
+        """Copy task-scoped metric semantics into config.agent.task_context."""
+        task_context = self.parse_task_context()
+        merged = dict(getattr(self.task_config.agent, "task_context", {}) or {})
+
+        metric_name = task_context.get("metric_name")
+        if isinstance(metric_name, str) and metric_name.strip():
+            merged["metric_name"] = metric_name.strip()
+
+        lower_is_better = task_context.get("lower_is_better")
+        if isinstance(lower_is_better, bool):
+            merged["lower_is_better"] = lower_is_better
+
+        self.task_config.agent.task_context = merged
+        return self.task_config
 
     def parse_dag_options(self, runtime_hints: dict[str, Any] | None = None) -> "DagRuntimeOptions":
         """Resolve DAG runtime options from configuration and runtime hints.
@@ -630,6 +658,7 @@ class DSLightingRunner:
         config_parser = RuntimeConfigParser(task, task_config)
         runtime_hints = config_parser.parse_runtime_hints()
         task_config = config_parser.update_task_config_from_runtime_hints(runtime_hints)
+        task_config = config_parser.apply_agent_task_context()
 
         dag_runtime_options = config_parser.parse_dag_options(runtime_hints)
         self._configure_llm_runtime_limits(

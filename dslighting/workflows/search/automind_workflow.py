@@ -7,6 +7,7 @@ from dslighting.runtime.dag import BaseWorkflowActor, NodeResult, OpNode
 from dslighting.state.search.journal import Node, MetricValue
 from dslighting.utils.typing import ExecutionResult
 from dslighting.benchmark.core.base import BaseBenchmark
+from dslighting.error import LLMServiceError
 from dslighting.services.vdb import VDBService
 
 from dslighting.prompts.common import create_draft_prompt
@@ -66,10 +67,10 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
         self.task_id = task_id
         self.workflow = workflow
         self.output_path = output_path
-        self.task_context = {
-            "goal_and_data": description,
-            "io_instructions": io_instructions,
-        }
+        self.task_context = workflow._build_task_context(
+            description=description,
+            io_instructions=io_instructions,
+        )
         self.max_iterations = max(
             1, int(workflow.agent_config.get("search", {}).get("max_iterations", 3))
         )
@@ -249,7 +250,7 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
                 "callable": self.workflow.review_op,
                 "kwargs": {
                     "prompt_context": {
-                        "task": self.task_context["goal_and_data"],
+                        "task": self.task_context,
                         "code": exec_result.get("code", ""),
                         "output": exec_result.get("stdout", ""),
                     },
@@ -641,7 +642,7 @@ class AutoMindWorkflow(AIDEWorkflow):
                 self.sandbox_service.workspace.get_path("sandbox_workdir") / output_path.name
             )
 
-            maximize = not task_context.get("lower_is_better", False)
+            maximize = self._maximize_from_task_context(task_context)
 
             if not submission_file_in_sandbox.exists():
                 new_node.is_buggy = True
@@ -661,16 +662,30 @@ class AutoMindWorkflow(AIDEWorkflow):
                     new_node.is_buggy = False
                     new_node.metric = MetricValue(value=score, maximize=maximize)
                     logger.info(f"Grounded validation PASSED. Score: {score:.4f}")
-                    review = await self.review_op(
-                        prompt_context={
-                            "task": task_context,
-                            "code": new_node.code,
-                            "output": new_node.term_out,
-                        }
-                    )
-                    new_node.analysis = (
-                        f"Grounded Score: {score:.4f}. Reviewer Summary: {review.summary}"
-                    )
+                    try:
+                        review = await self.review_op(
+                            prompt_context={
+                                "task": task_context,
+                                "code": new_node.code,
+                                "output": new_node.term_out,
+                                "grounded_metric_value": score,
+                            }
+                        )
+                    except LLMServiceError as exc:
+                        logger.warning("Grounded review failed after successful grading; preserving grounded score: %s", exc)
+                        new_node.analysis = self._grounded_review_fallback_summary(
+                            score=score,
+                            error=exc,
+                        )
+                    else:
+                        self._apply_grounded_metric_to_review(
+                            review,
+                            score=score,
+                            task_context=task_context,
+                        )
+                        new_node.analysis = (
+                            f"Grounded Score: {score:.4f}. Reviewer Summary: {review.summary}"
+                        )
                 else:
                     new_node.is_buggy = True
                     new_node.metric = MetricValue(value=score, maximize=maximize)

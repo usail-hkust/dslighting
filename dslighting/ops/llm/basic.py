@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 from dslighting.core.types import Plan, ReviewResult, Task
 from dslighting.ops.base import Operator
@@ -92,25 +92,57 @@ class LLMBasedReviewOperator(Operator):
         task = prompt_context.get('task', {})
         if isinstance(task, dict):
             task_str = task.get('goal_and_data', str(task))
-            metric_name: str = task.get('metric_name', '')
-            lower_is_better: bool = task.get('lower_is_better', False)
+            metric_name_value = task.get('metric_name')
+            metric_name = metric_name_value.strip() if isinstance(metric_name_value, str) else ""
+            lower_is_better_value = task.get('lower_is_better')
+            lower_is_better = lower_is_better_value if isinstance(lower_is_better_value, bool) else None
         else:
             task_str = str(task)
             metric_name = ''
-            lower_is_better = False
+            lower_is_better = None
 
-        if metric_name:
+        grounded_metric_value: float | None = None
+        grounded_value = prompt_context.get("grounded_metric_value")
+        if isinstance(grounded_value, (int, float)) and not isinstance(grounded_value, bool):
+            grounded_metric_value = float(grounded_value)
+
+        if grounded_metric_value is not None:
+            metric_label = metric_name or "score"
+            metric_hint = (
+                f"\n\nThe authoritative grounded metric for this run is **{metric_label}** with value "
+                f"**{grounded_metric_value}**. Set `metric_value` to this exact numeric value."
+            )
+            if lower_is_better is not None:
+                direction_literal = "true" if lower_is_better else "false"
+                metric_hint += (
+                    f" Set `lower_is_better` to {direction_literal}; do not infer direction from the output."
+                )
+            else:
+                metric_hint += (
+                    " Infer `lower_is_better` only from explicit task evidence or the metric name; "
+                    "if direction cannot be determined reliably, set it to null."
+                )
+        elif metric_name and lower_is_better is not None:
             direction = "lower is better" if lower_is_better else "higher is better"
             metric_hint = (
                 f"\n\nThe primary metric for this task is **{metric_name}** ({direction}). "
                 f"Extract its numeric value from the output as `metric_value`. "
-                f"Only set `metric_value` to null if the code produced no measurable output at all."
+                f"Only set `metric_value` to null if the code produced no measurable output at all. "
+                f"Set `lower_is_better` to {'true' if lower_is_better else 'false'} exactly as specified."
+            )
+        elif metric_name:
+            metric_hint = (
+                f"\n\nThe primary metric for this task is **{metric_name}**. "
+                f"Extract its numeric value from the output as `metric_value`. "
+                "Infer `lower_is_better` from the metric name or explicit task evidence only; "
+                "if direction cannot be determined reliably, set `lower_is_better` to null."
             )
         else:
             metric_hint = (
                 "\n\nIf the output contains any quantitative metric "
                 "(e.g. accuracy, F1, loss, RMSE, score), extract it as `metric_value`. "
-                "Only set `metric_value` to null if there is truly no numeric result."
+                "Only set `metric_value` to null if there is truly no numeric result. "
+                "Set `lower_is_better` only when the task or metric direction is explicit; otherwise set it to null."
             )
 
         prompt = (

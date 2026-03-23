@@ -24,6 +24,15 @@ from dslighting.state.context import truncate_output
 # interface (model_dump, model_validate, etc.) and JournalState does not implement
 # the full State abstract interface (get, set, delete, clear, snapshot, restore).
 
+
+def maximize_from_lower_is_better(lower_is_better: Optional[bool]) -> bool:
+    """Convert lower-is-better semantics into MetricValue.maximize.
+
+    Unknown direction defaults to maximize=True so search behavior remains stable
+    without pretending the metric is minimize-oriented.
+    """
+    return False if lower_is_better is True else True
+
 @total_ordering
 class MetricValue(BaseModel):
     """
@@ -108,8 +117,13 @@ class Node(BaseModel):
         self.analysis = review.summary
         self.is_buggy = review.is_buggy
         ctx = task_context or {}
-        lower_is_better = ctx.get("lower_is_better", review.lower_is_better)
-        self.metric = MetricValue(value=review.metric_value, maximize=not lower_is_better)
+        lower_is_better = ctx.get("lower_is_better")
+        if not isinstance(lower_is_better, bool):
+            lower_is_better = review.lower_is_better if isinstance(review.lower_is_better, bool) else None
+        self.metric = MetricValue(
+            value=review.metric_value,
+            maximize=maximize_from_lower_is_better(lower_is_better),
+        )
 
     model_config = ConfigDict(
         # Note: json_encoders deprecated in Pydantic V2

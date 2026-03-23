@@ -643,7 +643,6 @@ Respond ONLY with the JSON object, no additional text.
             raise ValueError("Problem data must contain 'competition_id'")
 
         # Define unique output path
-        # timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
         unique_id = uuid.uuid4().hex[:6]
         output_filename = f"submission_{competition_id}_{unique_id}.csv"
         output_submission_path = (Path(self.log_path) / output_filename).absolute()
@@ -662,6 +661,28 @@ Respond ONLY with the JSON object, no additional text.
 
         try:
             competition = self._get_registry_for_competition(competition_id).get_competition(competition_id)
+            evaluator_config = getattr(competition, "evaluator_config", None) or {}
+            submission_config = evaluator_config.get("submission") if isinstance(evaluator_config, dict) else {}
+            submission_root_kind = (
+                str(submission_config.get("root_kind") or "file")
+                if isinstance(submission_config, dict)
+                else "file"
+            )
+            submission_root_basename = (
+                str(submission_config.get("root_basename") or "submission").strip() or "submission"
+                if isinstance(submission_config, dict)
+                else "submission"
+            )
+            if submission_root_kind == "directory":
+                output_filename = f"{submission_root_basename}_{competition_id}_{unique_id}"
+                output_submission_path = (Path(self.log_path) / output_filename).absolute()
+            else:
+                submission_filename = getattr(competition, "submission_filename", None)
+                submission_suffix = Path(submission_filename).suffix if submission_filename else ".csv"
+                if submission_suffix and not submission_suffix.startswith("."):
+                    submission_suffix = f".{submission_suffix}"
+                output_filename = f"submission_{competition_id}_{unique_id}{submission_suffix or '.csv'}"
+                output_submission_path = (Path(self.log_path) / output_filename).absolute()
             # Skip prepared check for open-ended tasks
             if mode != "open_ended" and not is_dataset_prepared(competition, grading_only=False):
                 raise ValueError(f"Dataset for '{competition_id}' not prepared in '{self.data_dir}'.")
@@ -721,6 +742,12 @@ Respond ONLY with the JSON object, no additional text.
                 sample_submission_format = (
                     sample_submission_path.suffix.lower() if isinstance(sample_submission_path, Path) else ""
                 )
+                contract = self._build_evaluation_contract(
+                    competition=competition,
+                    competition_id=competition_id,
+                    mode=mode,
+                    output_submission_path=output_submission_path,
+                )
 
                 payload = {
                     "description": competition.description,
@@ -733,6 +760,8 @@ Respond ONLY with the JSON object, no additional text.
                     "submission_filename": sample_submission_name,
                     "submission_format": sample_submission_format,
                 }
+                if contract.grading is not None:
+                    payload.update(contract.grading.submission.to_payload())
 
             task = TaskDefinition(
                 task_id=competition_id,

@@ -20,6 +20,7 @@ from dslighting.core.data.introspection.discovery import (
 )
 from dslighting.core.data.introspection.cache import DataPerceptionCache
 from dslighting.core.data.introspection.request import DataPerceptionRequest
+from dslighting.core.data.introspection.runtime import DataPerceptionRuntime
 from dslighting.core.data.introspection.service import DataPerceptionService
 from dslighting.core.types.task import TaskType
 from dslighting.utils.constants import (
@@ -262,6 +263,16 @@ class DataAnalyzer:
             value = str(raw_value).strip()
             if value:
                 normalized[key] = value
+
+        raw_output_path = submission_context.get("output_submission_path")
+        if raw_output_path is not None:
+            output_value = str(raw_output_path).strip()
+            if output_value:
+                normalized["output_submission_path"] = output_value
+
+        artifact_payload = submission_context.get("submission_artifact_contract")
+        if isinstance(artifact_payload, dict):
+            normalized["submission_artifact_contract"] = dict(artifact_payload)
 
         normalized_contract = normalize_submission_tag_contract(
             submission_context.get("submission_contract")
@@ -541,7 +552,11 @@ class DataAnalyzer:
             task_id=task_id,
             submission_context=submission_context,
         )
-        report += self.generate_io_instructions(output_filename, optimization_context)
+        report += self.generate_io_instructions(
+            output_filename,
+            optimization_context,
+            submission_context=submission_context,
+        )
         return report
 
     def analyze_data(
@@ -648,12 +663,20 @@ class DataAnalyzer:
             submission_context=submission_context,
         )
         report = DataPerceptionService(request, cache=self._perception_cache).build_report()
+        artifact_analysis = DataPerceptionRuntime._analyze_submission_artifact_requirements(
+            submission_context or {}
+        )
+        if artifact_analysis:
+            report += f"## Submission Artifact Requirements\n{artifact_analysis}\n\n"
 
         if task_type == "kaggle":
-            submission_analysis = self._analyze_kaggle_submission_format(
-                data_dir,
-                submission_context=submission_context,
-            )
+            contract = DataPerceptionRuntime._coerce_submission_artifact_contract(submission_context)
+            submission_analysis = ""
+            if contract is None or contract.root_kind == "file":
+                submission_analysis = self._analyze_kaggle_submission_format(
+                    data_dir,
+                    submission_context=submission_context,
+                )
             if submission_analysis:
                 report += f"## Submission Format Requirements\n{submission_analysis}\n\n"
 
@@ -680,57 +703,18 @@ class DataAnalyzer:
             tabular_tolerant_fallback=self.tabular_tolerant_fallback,
         )
 
-    def generate_io_instructions(self, output_filename: str, optimization_context: bool = False) -> str:
-        """
-        Generate standardized I/O instructions reflecting that CWD is the input directory.
-        """
-        output_suffix = Path(output_filename).suffix.lower()
-
-        input_instructions = (
-            "1. **INPUT DATA:**\n"
-            "   - All input files are located in the **current working directory** (./).\n"
-            "   - Example: Use `pd.read_csv('train.csv')`."
+    def generate_io_instructions(
+        self,
+        output_filename: str,
+        optimization_context: bool = False,
+        submission_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Generate standardized I/O instructions reflecting that CWD is the input directory."""
+        return DataPerceptionRuntime.generate_io_instructions(
+            output_filename,
+            optimization_context,
+            submission_context=submission_context,
         )
-
-        if optimization_context:
-            example_write = ""
-            if output_suffix == ".csv":
-                example_write = "   - **Example Write (Conceptual):** `final_df.to_csv(output_path.name, index=False)`"
-            elif output_suffix == ".npy":
-                example_write = "   - **Example Write (Conceptual):** `np.save(output_path.name, preds)`"
-
-            output_instructions = (
-                "2. **OUTPUT FILE (Dynamic Workflow Context):**\n"
-                "   - Your workflow's `solve` method receives an `output_path` argument.\n"
-                "   - You MUST save your final submission file using the filename derived from this argument (e.g., `output_path.name`).\n"
-                "   - The file must be saved in the current working directory (./).\n"
-                + (f"\n{example_write}" if example_write else "")
-            )
-        else:
-            example_write = ""
-            if output_suffix == ".csv":
-                example_write = f"   - **Correct Example:** `submission_df.to_csv('{output_filename}', index=False)`"
-            elif output_suffix == ".npy":
-                example_write = f"   - **Correct Example:** `np.save('{output_filename}', preds)`"
-
-            output_instructions = (
-                f"2. **OUTPUT FILE:**\n"
-                f"   - You MUST save your final submission file to the **current working directory** (./).\n"
-                f"   - The required output filename is: `{output_filename}`\n"
-                + (f"{example_write}\n" if example_write else "")
-            )
-
-        return f"""
---- CRITICAL I/O REQUIREMENTS ---
-
-You MUST follow these file system rules precisely. Failure to do so will cause a fatal error.
-
-{input_instructions}
-
-{output_instructions}
-
-**IMPORTANT:** These path requirements are non-negotiable and must be followed exactly.
-"""
 
     def _analyze_kaggle_submission_format(
         self,

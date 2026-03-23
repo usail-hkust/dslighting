@@ -73,19 +73,7 @@ class TaskExecutor:
                 overridden_output = Path(output)
                 submission_contract = spec.submission_artifact_contract
                 if submission_contract is not None:
-                    submission_contract = replace(
-                        submission_contract,
-                        output_submission_path=overridden_output,
-                        validation=replace(
-                            submission_contract.validation,
-                            expected_name=overridden_output.name
-                            if submission_contract.validation.expected_name
-                            else None,
-                            allowed_suffixes=(overridden_output.suffix.lower(),)
-                            if overridden_output.suffix
-                            else submission_contract.validation.allowed_suffixes,
-                        ),
-                    )
+                    submission_contract = submission_contract.with_output_path(overridden_output)
                 spec = replace(
                     spec,
                     output_path=overridden_output,

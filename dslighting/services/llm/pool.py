@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import time
 import weakref
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any
@@ -80,6 +81,10 @@ class GlobalAPIKeyPool:
 
         # 统计信息
         self.stats: dict[str, int] = {key: 0 for key in keys}
+        self._cooldown_until: dict[str, float] = {key: 0.0 for key in keys}
+        self._failure_counts: dict[str, int] = {key: 0 for key in keys}
+        self._last_error_kind: dict[str, str | None] = {key: None for key in keys}
+        self._health_lock = threading.Lock()
 
         logger.info(
             f"Initialized global API key pool for '{model_name}': "
@@ -148,7 +153,17 @@ class GlobalAPIKeyPool:
         with cls._lock:
             cls._pools.clear()
 
-    async def acquire_key(self) -> str:
+    def _eligible_keys(self, excluded_keys: set[str] | None = None) -> list[str]:
+        excluded = excluded_keys or set()
+        now = time.monotonic()
+        with self._health_lock:
+            return [
+                key
+                for key in self.keys
+                if key not in excluded and self._cooldown_until.get(key, 0.0) <= now
+            ]
+
+    async def acquire_key(self, *, excluded_keys: set[str] | None = None) -> str | None:
         """
         获取一个可用的 API key（阻塞等待）。
 
@@ -162,11 +177,18 @@ class GlobalAPIKeyPool:
 
         # 简单的轮询策略：找到第一个未满的 key
         while True:
+            eligible_keys = self._eligible_keys(excluded_keys)
+            if not eligible_keys:
+                return None
+
             # 尝试所有的 keys
             for i in range(len(self.keys)):
                 with self.index_lock:
                     idx = (self.current_index + i) % len(self.keys)
                     key = self.keys[idx]
+
+                if key not in eligible_keys:
+                    continue
 
                 sem = loop_semaphores[key]
 
@@ -193,6 +215,35 @@ class GlobalAPIKeyPool:
 
             # 所有 keys 都满了，等待一小段时间后重试
             await asyncio.sleep(0.01)
+
+    def mark_key_failed(self, key: str, *, reason: str, cooldown_seconds: float) -> None:
+        """Mark a key as unhealthy for a cooldown window."""
+        if key not in self.stats:
+            return
+        cooldown = max(0.0, float(cooldown_seconds))
+        with self._health_lock:
+            self._failure_counts[key] = self._failure_counts.get(key, 0) + 1
+            self._last_error_kind[key] = reason
+            if cooldown > 0:
+                deadline = time.monotonic() + cooldown
+                self._cooldown_until[key] = max(self._cooldown_until.get(key, 0.0), deadline)
+        logger.warning(
+            "Marked API key %s/%s unhealthy for model '%s' due to %s (cooldown %.1fs)",
+            self.keys.index(key) + 1,
+            len(self.keys),
+            self.model_name,
+            reason,
+            cooldown,
+        )
+
+    def mark_key_success(self, key: str) -> None:
+        """Clear transient failure state for a key after a successful call."""
+        if key not in self.stats:
+            return
+        with self._health_lock:
+            self._failure_counts[key] = 0
+            self._last_error_kind[key] = None
+            self._cooldown_until[key] = 0.0
 
     def release_key(self, key: str) -> None:
         """
@@ -254,6 +305,8 @@ class GlobalAPIKeyPool:
                 result = await call_api(key)
         """
         key = await self.acquire_key()
+        if key is None:
+            raise RuntimeError(f"No healthy API keys available for model '{self.model_name}'")
         try:
             yield key
         finally:

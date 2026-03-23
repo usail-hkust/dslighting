@@ -335,22 +335,41 @@ class LLMService:
         Only network timeouts, rate limits, and temporary service issues should be retried.
         Authentication errors, invalid requests, and other permanent failures should not be retried.
         """
+        return self._classify_error_action(error) != "fail_fast"
+
+    def _classify_error_action(self, error: Exception) -> str:
+        """
+        Classify provider failures into runtime actions.
+
+        Returns one of:
+        - retry_same_key: transient/network/provider issue on the current key
+        - retry_next_key: key-specific auth/quota issue, rotate to another key
+        - fail_fast: malformed request or permanent call failure
+        """
         # Import litellm exceptions locally to avoid import issues
         try:
             import litellm.exceptions as litellm_exceptions
         except ImportError:
             # If litellm exceptions module is not available, be conservative and retry
-            return True
+            return "retry_same_key"
 
-        # Non-retryable errors - fail immediately
-        non_retryable_errors = (
+        if self._is_insufficient_balance_error(error):
+            return "retry_next_key"
+
+        key_specific_errors = (
             litellm_exceptions.AuthenticationError,  # API key issues
+            litellm_exceptions.PermissionDeniedError,  # Key/account level permission issues
+        )
+        if isinstance(error, key_specific_errors):
+            return "retry_next_key"
+
+        fail_fast_errors = (
             litellm_exceptions.InvalidRequestError,  # Request format/parameter issues
-            litellm_exceptions.PermissionDeniedError,  # Insufficient permissions
             litellm_exceptions.NotFoundError,  # Model/endpoint not found
         )
+        if isinstance(error, fail_fast_errors):
+            return "fail_fast"
 
-        # Retryable errors - can be retried
         retryable_errors = (
             litellm_exceptions.RateLimitError,  # Rate limit exceeded
             litellm_exceptions.ServiceUnavailableError,  # Temporary service issues
@@ -358,16 +377,13 @@ class LLMService:
             litellm_exceptions.APIConnectionError,  # Connection issues
             litellm_exceptions.InternalServerError,  # Server-side temporary issues
         )
+        if isinstance(error, retryable_errors):
+            return "retry_same_key"
 
-        # Check for specific error types
-        if isinstance(error, non_retryable_errors):
-            return False
-        elif isinstance(error, retryable_errors):
-            return True
-        else:
-            # For unknown errors, be conservative and retry
-            # This handles generic network errors, etc.
-            return True
+        message = str(error).lower()
+        if "api key is invalid" in message or "invalid api key" in message or "authentication" in message:
+            return "retry_next_key"
+        return "retry_same_key"
 
     def _supports_response_format(self) -> bool:
         """
@@ -394,6 +410,17 @@ class LLMService:
         return (
             "insufficient" in message and "balance" in message
         ) or "insufficient_quota" in message or "insufficient quota" in message
+
+    def _cooldown_seconds_for_error(self, error: Exception) -> float:
+        """Return a conservative cooldown window for a failed key."""
+        if self._is_insufficient_balance_error(error):
+            return 600.0
+        action = self._classify_error_action(error)
+        if action == "retry_next_key":
+            return 1800.0
+        if action == "retry_same_key":
+            return 60.0
+        return 0.0
 
     async def _make_llm_call_with_retries(
         self,

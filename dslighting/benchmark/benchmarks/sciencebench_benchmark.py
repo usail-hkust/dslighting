@@ -265,12 +265,27 @@ class ScienceBenchBenchmark(BaseBenchmark):
 
         try:
             competition = self.registry.get_competition(competition_id)
+            evaluator_config = getattr(competition, "evaluator_config", None) or {}
+            submission_config = evaluator_config.get("submission") if isinstance(evaluator_config, dict) else {}
+            submission_root_kind = (
+                str(submission_config.get("root_kind") or "file")
+                if isinstance(submission_config, dict)
+                else "file"
+            )
+            submission_root_basename = (
+                str(submission_config.get("root_basename") or "submission").strip() or "submission"
+                if isinstance(submission_config, dict)
+                else "submission"
+            )
 
             submission_filename = getattr(competition, "submission_filename", None)
-            submission_suffix = Path(submission_filename).suffix if submission_filename else ".csv"
-            if submission_suffix and not submission_suffix.startswith("."):
-                submission_suffix = f".{submission_suffix}"
-            output_filename = f"submission_{competition_id}_{unique_id}{submission_suffix}"
+            if submission_root_kind == "directory":
+                output_filename = f"{submission_root_basename}_{competition_id}_{unique_id}"
+            else:
+                submission_suffix = Path(submission_filename).suffix if submission_filename else ".csv"
+                if submission_suffix and not submission_suffix.startswith("."):
+                    submission_suffix = f".{submission_suffix}"
+                output_filename = f"submission_{competition_id}_{unique_id}{submission_suffix}"
             output_submission_path = (Path(self.log_path) / output_filename).absolute()
 
             if not is_dataset_prepared(competition, grading_only=False):
@@ -286,6 +301,10 @@ class ScienceBenchBenchmark(BaseBenchmark):
                 if preferred_submission_name
                 else (sample_submission_path.suffix.lower() if isinstance(sample_submission_path, Path) else "")
             )
+            contract = self._build_evaluation_contract(
+                competition=competition,
+                output_submission_path=output_submission_path,
+            )
 
             task = TaskDefinition(
                 task_id=competition_id,
@@ -300,6 +319,11 @@ class ScienceBenchBenchmark(BaseBenchmark):
                     ),
                     "submission_filename": preferred_submission_name,
                     "submission_format": submission_format,
+                    **(
+                        contract.grading.submission.to_payload()
+                        if contract.grading is not None
+                        else {}
+                    ),
                 },
             )
 

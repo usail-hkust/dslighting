@@ -87,6 +87,36 @@ class TaskResolver:
         with open(config_path, "r", encoding="utf-8") as handle:
             return yaml.safe_load(handle) or {}
 
+    @staticmethod
+    def _resolve_output_path(task_id: str, competition: Any) -> Path:
+        evaluator_config = getattr(competition, "evaluator_config", None) or {}
+        submission_config = evaluator_config.get("submission") if isinstance(evaluator_config, dict) else {}
+        root_kind = (
+            str(submission_config.get("root_kind") or "file")
+            if isinstance(submission_config, dict)
+            else "file"
+        )
+        root_basename = (
+            str(submission_config.get("root_basename") or "submission").strip() or "submission"
+            if isinstance(submission_config, dict)
+            else "submission"
+        )
+        unique_suffix = uuid.uuid4().hex[:6]
+        sample_submission_path = getattr(competition, "sample_submission", None)
+        preferred_submission_name = getattr(competition, "submission_filename", None)
+
+        if root_kind == "directory":
+            return Path(f"{root_basename}_{task_id}_{unique_suffix}")
+
+        suffix = (
+            Path(preferred_submission_name).suffix
+            if preferred_submission_name
+            else (sample_submission_path.suffix if isinstance(sample_submission_path, Path) else ".csv")
+        )
+        if suffix and not suffix.startswith("."):
+            suffix = f".{suffix}"
+        return Path(f"submission_{task_id}_{unique_suffix}{suffix or '.csv'}")
+
     def resolve(
         self,
         *,
@@ -132,26 +162,12 @@ class TaskResolver:
 
         preferred_submission_name = getattr(competition, "submission_filename", None)
         sample_submission_path = getattr(competition, "sample_submission", None)
-        suffix = (
-            Path(preferred_submission_name).suffix
-            if preferred_submission_name
-            else (sample_submission_path.suffix if isinstance(sample_submission_path, Path) else ".csv")
-        )
-        if suffix and not suffix.startswith("."):
-            suffix = f".{suffix}"
-        output_filename = f"submission_{task_id}_{uuid.uuid4().hex[:6]}{suffix or '.csv'}"
-        output_path = Path(output_filename)
+        output_path = self._resolve_output_path(task_id, competition)
 
         submission_filename = preferred_submission_name or (
             sample_submission_path.name if isinstance(sample_submission_path, Path) else ""
         )
-        submission_format = (suffix or "").lower()
-        submission_context = {
-            "sample_submission_path": str(sample_submission_path) if isinstance(sample_submission_path, Path) else "",
-            "submission_filename": submission_filename,
-            "submission_format": submission_format,
-            "output_submission_path": str(output_path),
-        }
+        submission_format = output_path.suffix.lower()
         evaluation_contract, evaluation_contract_ref = build_task_evaluation_contract(
             competition=competition,
             source_id=resolved_source.descriptor.source_id,
@@ -162,6 +178,14 @@ class TaskResolver:
             output_submission_path=output_path,
             evaluation_mode="judge_based" if task_type == "open_ended" else "artifact_submission",
         )
+        submission_context = {
+            "sample_submission_path": str(sample_submission_path) if isinstance(sample_submission_path, Path) else "",
+            "submission_filename": submission_filename,
+            "submission_format": submission_format,
+            "output_submission_path": str(output_path),
+        }
+        if evaluation_contract.grading is not None:
+            submission_context.update(evaluation_contract.grading.submission.to_payload())
 
         return ResolvedTaskLayout(
             task_id=task_id,
