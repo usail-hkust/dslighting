@@ -1,18 +1,18 @@
-"""DABench-specific benchmark wrapper."""
+"""Compatibility wrapper for the shared competition-style benchmark engine."""
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
+from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
 from dslighting.benchmark.core.config_loader import BaseBenchmarkConfigLoader
 from dslighting.benchmark.vendor.dabench.registry import Registry as DABenchRegistry
 
 
-class DABenchmark(MLEBenchmark):
+class DABenchmark(MLEStyleBenchmark):
     """
     Dedicated benchmark class for DABench tasks.
 
-    This is a thin wrapper around ``MLEBenchmark`` that:
+    This is a thin wrapper around ``MLEStyleBenchmark`` that:
     1. Restricts competition IDs to ``dabench-*``.
     2. Defaults to filtering only DABench entries from config when no explicit
        competitions are passed.

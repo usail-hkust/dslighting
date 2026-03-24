@@ -1,0 +1,3 @@
+# Data Wrangling 042
+
+From the `fortune500` dataset, calculate the profits for each sector using the columns `sector` and `pct80`. Save these calculations. Additionally, find the first occurrence date for each tag in the `stackoverflow` dataset using the columns `tag` and `mindate`, and save these dates.

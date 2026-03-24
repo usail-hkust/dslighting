@@ -1,0 +1,3 @@
+# Data Wrangling 070
+
+Group and adjust player heights (set heights below 165 to 165, and heights above 195 to 195). For each adjusted height group, calculate the number of players, average rating, potential, and weight. Save the results.

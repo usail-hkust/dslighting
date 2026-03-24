@@ -1,0 +1,14 @@
+id: dacode-data-sa-049
+name: data-sa-049
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-sa-049/prepared/private/answer.json
+  sample_submission: dacode-data-sa-049/prepared/public/sample_submission.json
+grader:
+  name: compare_text
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

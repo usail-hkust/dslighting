@@ -1,0 +1,62 @@
+from pathlib import Path
+import shutil, pandas as pd
+import json
+
+GOLD_FILES = ['result.json']
+SKIP_FILES = {'README.md'}
+
+def prepare(raw: Path, public: Path, private: Path):
+    public.mkdir(parents=True, exist_ok=True)
+    private.mkdir(parents=True, exist_ok=True)
+    gold_set = set(GOLD_FILES)
+    skip_set = set(SKIP_FILES)
+
+    for f in raw.iterdir():
+        if f.name not in gold_set and f.name not in skip_set:
+            shutil.copy2(f, public / f.name)
+
+    for g in GOLD_FILES:
+        if (raw / g).exists():
+            with open(raw / g) as f:
+                data = json.load(f)
+
+            def flatten(d, parent_key=''):
+                items = []
+                for k, v in d.items():
+                    new_key = f"{parent_key}_{k}" if parent_key else k
+                    if isinstance(v, dict):
+                        items.extend(flatten(v, new_key).items())
+                    elif isinstance(v, list):
+                        if len(v) == 1:
+                            items.append((new_key, v[0]))
+                        else:
+                            items.append((new_key, json.dumps(v)))
+                    else:
+                        items.append((new_key, v))
+                return dict(items)
+
+            # Handle list-at-top-level format (di-text-007)
+            if isinstance(data, list):
+                flat = {}
+                for i, item in enumerate(data):
+                    if isinstance(item, dict) and "answer" in item:
+                        key = f"answer_{i}"
+                        v = item["answer"]
+                        if isinstance(v, list):
+                            if len(v) == 1:
+                                flat[key] = v[0]
+                            else:
+                                flat[key] = json.dumps(v)
+                        else:
+                            flat[key] = v
+                    else:
+                        flat[f"item_{i}"] = str(item)
+            else:
+                flat = flatten(data)
+            df = pd.DataFrame([flat])
+            df.to_csv(private / "answer.csv", index=False)
+
+            # sample_submission.csv: 使用 placeholder
+            sample_flat = {k: 'placeholder' for k in flat.keys()}
+            sample_df = pd.DataFrame([sample_flat])
+            sample_df.to_csv(public / "sample_submission.csv", index=False)

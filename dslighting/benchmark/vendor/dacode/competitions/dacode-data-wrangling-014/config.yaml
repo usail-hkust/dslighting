@@ -1,0 +1,14 @@
+id: dacode-data-wrangling-014
+name: data-wrangling-014
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-014/prepared/private/cleaned_parking_violation.db
+  sample_submission: dacode-data-wrangling-014/prepared/public/parking_violation.db
+  submission_filename: cleaned_parking_violation.db
+grader:
+  name: compare_db
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+preparer: file:prepare.py:prepare

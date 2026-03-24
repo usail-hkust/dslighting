@@ -1,0 +1,37 @@
+id: dacode-data-wrangling-029
+name: data-wrangling-029
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-029/prepared/private/sample_cleaned_cycle.csv
+  sample_submission: dacode-data-wrangling-029/prepared/public/sample_cleaned_cycle.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+    - relative_path: sample_cleaned_cycle.csv
+      format: csv
+      sample: dacode-data-wrangling-029/prepared/public/sample_cleaned_cycle.csv
+      description: cleaned cycling activities
+    - relative_path: sample_cleaned_run.csv
+      format: csv
+      sample: dacode-data-wrangling-029/prepared/public/sample_cleaned_run.csv
+      description: cleaned running activities
+    - relative_path: sample_cleaned_walk.csv
+      format: csv
+      sample: dacode-data-wrangling-029/prepared/public/sample_cleaned_walk.csv
+      description: cleaned walking activities
+  references:
+    root_kind: directory
+    root_path: dacode-data-wrangling-029/prepared/private
+    entries:
+    - relative_path: sample_cleaned_cycle.csv
+    - relative_path: sample_cleaned_run.csv
+    - relative_path: sample_cleaned_walk.csv

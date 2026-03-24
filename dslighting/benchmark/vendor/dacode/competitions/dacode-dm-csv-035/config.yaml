@@ -1,0 +1,13 @@
+id: dacode-dm-csv-035
+name: dm-csv-035
+competition_type: code
+awards_medals: false
+description: description.md
+task_type: kaggle
+dataset:
+  answers: dacode-dm-csv-035/prepared/private/answer.csv
+  sample_submission: dacode-dm-csv-035/prepared/public/sample_submission.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

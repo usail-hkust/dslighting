@@ -1,0 +1,5 @@
+# di-text-024
+
+You are working on a project for an economic research institute. Your task is to analyze the data to determine the average salaries for Full-Time employees, Contractors, Freelancers, and Part-Time workers, rounded to the nearest integer.
+
+Output fields: Full-Time employees, Contractors, Freelancers, Part-Time workers

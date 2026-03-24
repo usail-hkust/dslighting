@@ -1,0 +1,5 @@
+# di-text-042
+
+Examine the data from 2020 to 2022 to find the specific month and year when the cost was at its highest. Additionally, determine when the cost started rising in 2021 and reached its first peak. Use the format "Jun 2021" for your answers.
+
+Output fields: Lowest price, Peak

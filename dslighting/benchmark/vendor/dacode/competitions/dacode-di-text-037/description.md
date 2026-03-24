@@ -1,0 +1,5 @@
+# di-text-037
+
+For the given dataset, analyze which distance category—["short distanced", "middle distanced", "long distanced"]—is most frequently associated with Uber trips. Report your results.
+
+Output fields: most number of distanced trip

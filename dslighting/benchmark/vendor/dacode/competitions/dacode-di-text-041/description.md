@@ -1,0 +1,5 @@
+# di-text-041
+
+Determine if there are outliers in the student study duration and scores data, responding with "Yes" or "No". Also, identify if there is a strong linear relationship between study duration and scores, responding with "Yes" or "No".
+
+Output fields: outlier, linear relation

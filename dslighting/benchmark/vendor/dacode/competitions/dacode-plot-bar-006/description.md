@@ -1,0 +1,145 @@
+# plot-bar-006
+
+Plot a bar chart for a clearer visual representation of each team's performance over the specified period. , adhering to the settings specified in 'plot.yaml'
+
+## Output Requirements
+
+Your final output must be a submission directory.
+
+The exact directory name will be provided at runtime in the CRITICAL I/O REQUIREMENTS section.
+
+Inside that directory, you must create exactly these three files:
+
+- `result.png` - the final rendered plot image
+- `plot.json` - structured plot metadata
+- `result.npy` - numeric plot payload extracted from the figure
+
+---
+
+## Dataset Background
+
+## About Dataset
+
+### Context
+
+This dataset was created to provide a comprehensive and easy-to-read list of international football matches, which was not readily available. The collection includes detailed results for various matches for reference and analysis.
+
+### Content
+
+This dataset contains **47,126** results of international football matches from the first official match in 1872 up to 2024. The matches range from FIFA World Cup to FIFI Wild Cup to regular friendly matches. The dataset strictly includes men's full internationals and excludes Olympic Games or matches involving a nation's B-team, U-23, or league select teams.
+
+`results.csv` includes the following columns:
+
+* `date` - Date of the match
+* `home_team` - Name of the home team
+* `away_team` - Name of the away team
+* `home_score` - Full-time home team score, including extra time but excluding penalty shootouts
+* `away_score` - Full-time away team score, including extra time but excluding penalty shootouts
+* `tournament` - Name of the tournament
+* `city` - City where the match was played
+* `country` - Country where the match was played
+* `neutral` - TRUE/FALSE indicating whether the match was played at a neutral venue
+
+`shootouts.csv` includes the following columns:
+
+* `date` - Date of the match
+* `home_team` - Name of the home team
+* `away_team` - Name of the away team
+* `winner` - Winner of the penalty shootout
+* `first_shooter` - Team that went first in the shootout
+
+`goalscorers.csv` includes the following columns:
+
+* `date` - Date of the match
+* `home_team` - Name of the home team
+* `away_team` - Name of the away team
+* `team` - Name of the team scoring the goal
+* `scorer` - Name of the player scoring the goal
+* `own_goal` - Indicates if the goal was an own-goal
+* `penalty` - Indicates if the goal was a penalty
+
+Note on team and country names: The current name of the team is used for home and away teams. For instance, the team known as Ireland in 1882 is referred to as Northern Ireland in this dataset because the current team of Northern Ireland is the successor of the 1882 Ireland team. This allows easier tracking of teams' histories and statistics.
+
+For country names, the name at the time of the match is used. For example, when Ghana played in Accra, Gold Coast in the 1950s, it is considered a home match for Ghana, even though the country name at that time was Gold Coast. This is indicated by the `neutral` column, which states FALSE for those matches, meaning they were not at a neutral venue.
+
+---
+
+## Chart Format Specification
+
+The following formatting requirements are specified in `plot.yaml` (the file is available in your workspace):
+
+```yaml
+color: "#87ceeb"
+figsize: [12, 8]
+graph_title: "Best Teams from 2000 to 2023"
+x_label: "Football Team"
+y_label: "Overall Score"
+xtick_labels: ["Mexico", "Iraq", "Japan", "Bahrain", "Brazil", "Saudi Arabia", "Argentina", "South Korea", "El Salvador", "Qatar"]
+```
+
+Your chart output **must** match these values exactly.
+
+---
+
+## Output File Format Details
+
+### `plot.json` — Required Keys
+
+Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+
+```json
+{
+  "type":         "<chart type: bar | line | pie | scatter>",
+  "color":        ["<hex color per bar/slice/line, e.g. "#1f77b4">"],
+  "figsize":      [<width_float>, <height_float>],
+  "graph_title":  "<plot title string>",
+  "legend_title": "<legend title or empty string "">",
+  "labels":       ["<series labels — often empty list []>"],
+  "x_label":      "<x-axis label string>",
+  "y_label":      "<y-axis label string>",
+  "xtick_labels": ["<x-axis tick labels as strings>"],
+  "ytick_labels": ["<y-axis tick labels as strings>"]
+}
+```
+
+Extract these values directly from your matplotlib figure **after** rendering:
+
+```python
+import matplotlib
+import matplotlib.pyplot as plt
+import json, numpy as np
+
+fig, ax = plt.subplots(figsize=(...))
+# --- your plotting code here ---
+fig.savefig(f"{output_dir}/result.png")
+
+# Extract plot metadata
+plot_meta = {
+    "type": "bar",          # set to: bar | line | pie | scatter
+    "color": [
+        matplotlib.colors.to_hex(p.get_facecolor())
+        for p in ax.patches  # use ax.lines / ax.collections for line/scatter
+    ],
+    "figsize":      list(fig.get_size_inches()),
+    "graph_title":  ax.get_title(),
+    "legend_title": (
+        ax.get_legend().get_title().get_text()
+        if ax.get_legend() else ""
+    ),
+    "labels":       [],
+    "x_label":      ax.get_xlabel(),
+    "y_label":      ax.get_ylabel(),
+    "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
+    "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
+}
+with open(f"{output_dir}/plot.json", "w") as f:
+    json.dump(plot_meta, f)
+```
+
+### `result.npy` — Required Shape
+
+Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
+
+```python
+np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+```

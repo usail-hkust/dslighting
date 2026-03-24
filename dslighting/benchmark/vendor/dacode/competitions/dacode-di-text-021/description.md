@@ -1,0 +1,5 @@
+# di-text-021
+
+As a data scientist for a restaurant chain, examine the data to identify the city with the highest concentration of restaurants.
+
+Output fields: City, State, Number of Restaurants

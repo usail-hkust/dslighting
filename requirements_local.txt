@@ -55,6 +55,7 @@ opencv-python
 optuna
 optuna-integration
 pandas
+openpyxl
 pdf2image
 peft
 pillow

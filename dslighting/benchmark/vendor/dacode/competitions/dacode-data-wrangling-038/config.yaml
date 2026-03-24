@@ -1,0 +1,14 @@
+id: dacode-data-wrangling-038
+name: data-wrangling-038
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-038/prepared/private/database.db
+  sample_submission: dacode-data-wrangling-038/prepared/public/database.db
+  submission_filename: database.db
+grader:
+  name: compare_db
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+preparer: file:prepare.py:prepare

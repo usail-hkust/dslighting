@@ -1,0 +1,3 @@
+# di-text-009
+
+Could you please analyze the dataset to calculate the correlations between different features? Determine if the common criticism of "The World Happiness Report" having a high focus on GDP and strongly correlated features like family and life expectancy is valid.

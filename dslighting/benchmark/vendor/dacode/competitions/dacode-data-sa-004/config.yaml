@@ -1,0 +1,12 @@
+id: dacode-data-sa-004
+name: data-sa-004
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-sa-004/prepared/private/answer.csv
+  sample_submission: dacode-data-sa-004/prepared/public/sample_submission.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

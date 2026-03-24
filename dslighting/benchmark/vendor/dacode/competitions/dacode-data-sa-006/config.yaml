@@ -1,0 +1,37 @@
+id: dacode-data-sa-006
+name: data-sa-006
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-sa-006/prepared/private/before_covariance.csv
+  sample_submission: dacode-data-sa-006/prepared/public/sample_before_covariance.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+      - relative_path: before_covariance.csv
+        format: csv
+        sample: dacode-data-sa-006/prepared/public/sample_before_covariance.csv
+        description: covariance matrix for the before epoch
+      - relative_path: during_covariance.csv
+        format: csv
+        sample: dacode-data-sa-006/prepared/public/sample_during_covariance.csv
+        description: covariance matrix for the during epoch
+      - relative_path: after_covariance.csv
+        format: csv
+        sample: dacode-data-sa-006/prepared/public/sample_after_covariance.csv
+        description: covariance matrix for the after epoch
+  references:
+    root_kind: directory
+    root_path: dacode-data-sa-006/prepared/private
+    entries:
+      - relative_path: before_covariance.csv
+      - relative_path: during_covariance.csv
+      - relative_path: after_covariance.csv
+preparer: file:prepare.py:prepare

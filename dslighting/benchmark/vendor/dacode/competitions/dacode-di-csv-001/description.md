@@ -1,0 +1,3 @@
+# di-csv-001
+
+Retrieve the year-to-date performance of the Magnificent 7 stocks by calculating the percentage change in their prices from the beginning of the current year to the most recent available data.

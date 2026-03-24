@@ -1,0 +1,3 @@
+# Data Wrangling 022
+
+Transform the airquality DataFrame from a wide to long format. Then, generate a pivot table with 'Month' and 'Day' as indexes, with different air quality metrics as columns and their readings as values. Save the result.

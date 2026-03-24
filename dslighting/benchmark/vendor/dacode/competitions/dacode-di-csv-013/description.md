@@ -1,0 +1,3 @@
+# di-csv-013
+
+Count the number of title belts for each promotion and gender combination, including ECW (Male), NXT (Female and Male), WCW (Female and Male), WWE (Female and Male), and WWF (Female and Male).

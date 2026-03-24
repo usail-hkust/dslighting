@@ -1,0 +1,4 @@
+After completing Statistical Thinking in Python (Part 1), you have the probabilistic mindset and foundational hacker stats skills to dive into data sets and extract useful information from them. In this course, you will do just that, expanding and honing your hacker stats toolbox to perform the two key tasks in statistical inference, parameter estimation and hypothesis testing. You will work with real data sets as you learn, culminating with analysis of measurements of the beaks of the Darwin's famous finches. You will emerge from this course with new knowledge and lots of practice under your belt, ready to attack your own inference problems out in the world.
+
+## Task Instructions
+Determine if Frog D and Frog E have similar impact forces. Compute the corresponding p-value and save the result in the format of sample_result.csv to a file named result.csv. (Set the random seed to 42)

@@ -1,0 +1,14 @@
+id: dacode-data-wrangling-047
+name: data-wrangling-047
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-047/prepared/private/wwe.db
+  sample_submission: dacode-data-wrangling-047/prepared/public/wwe.db
+  submission_filename: wwe.db
+grader:
+  name: compare_db
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+preparer: file:prepare.py:prepare

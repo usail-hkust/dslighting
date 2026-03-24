@@ -1,0 +1,5 @@
+# di-text-014
+
+You are a data analyst at a music streaming company. Your task is to determine whether the statement "as the energy of a track increases, the amount of acoustic instruments increase" is accurate. Additionally, analyze the correlation between the energy and acousticness of a track. Respond with "Y" if the statement is true, otherwise respond with "N". For the correlation, respond with "Positive" if it is positive, otherwise respond with "Negative".
+
+Output fields: answer, relationship

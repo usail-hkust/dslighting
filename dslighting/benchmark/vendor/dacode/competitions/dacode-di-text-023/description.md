@@ -1,0 +1,5 @@
+# di-text-023
+
+You are a data analyst for a human resources consulting firm. Your task is to analyze the data to determine the average salaries for Experienced professionals, Seniors, Mid-Level employees, and Entry-Level positions, rounded to the nearest integer.
+
+Output fields: Experienced professionals, Seniors, Mid-Level employees, Entry-Level positions

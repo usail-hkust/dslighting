@@ -1,0 +1,6 @@
+- Ensure all data uses consistent units and formatting, standardizing the weight class to use kilograms (kg) as the unit.
+- For the `Weight Class`, treat "Open" as a special weight category.
+
+### Handling Duplicate Records
+- Check for identical records, which may indicate data entry errors.
+- For athletes with the same name, if the lift type is the same, this could be a duplicate record.

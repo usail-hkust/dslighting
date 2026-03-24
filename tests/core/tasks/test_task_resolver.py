@@ -75,6 +75,75 @@ def _create_colocated_task(tmp_path: Path, source_id: str, task_id: str) -> Path
     return task_root
 
 
+def _create_json_task(tmp_path: Path, source_id: str, task_id: str) -> Path:
+    registry_root = tmp_path / source_id
+    task_root = registry_root / task_id
+    public_dir = task_root / "prepared" / "public"
+    private_dir = task_root / "prepared" / "private"
+    raw_dir = task_root / "raw"
+
+    task_root.mkdir(parents=True)
+    public_dir.mkdir(parents=True)
+    private_dir.mkdir(parents=True)
+    raw_dir.mkdir(parents=True)
+
+    (task_root / "description.md").write_text("Synthetic json task", encoding="utf-8")
+    (task_root / "prepare.py").write_text(
+        "def prepare(raw, public, private):\n    return public\n",
+        encoding="utf-8",
+    )
+    (task_root / "grade.py").write_text(
+        "import json\n"
+        "def grade(request):\n"
+        "    pred = json.loads(request.submission.root.read_text())\n"
+        "    gold = json.loads(request.references.answers_path.read_text())\n"
+        "    return 1.0 if pred == gold else 0.0\n",
+        encoding="utf-8",
+    )
+    (task_root / "leaderboard.csv").write_text("score\n1.0\n", encoding="utf-8")
+    (task_root / "checksums.yaml").write_text("{}", encoding="utf-8")
+    (public_dir / "sample_submission.json").write_text('{"answer":"placeholder"}\n', encoding="utf-8")
+    (private_dir / "answer.json").write_text('{"answer":"gold"}\n', encoding="utf-8")
+    (raw_dir / "source.csv").write_text("feature\n2\n", encoding="utf-8")
+
+    (task_root / "config.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "id": task_id,
+                "name": "Synthetic json task",
+                "competition_type": "tabular",
+                "description": "description.md",
+                "preparer": "file:prepare.py:prepare",
+                "grader": {
+                    "name": "JsonGrader",
+                    "grade_fn": "file:grade.py:grade",
+                },
+                "dataset": {
+                    "answers": f"{task_id}/prepared/private/answer.json",
+                    "sample_submission": f"{task_id}/prepared/public/sample_submission.json",
+                },
+                "evaluator": {
+                    "api_version": "artifact_v1",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (registry_root / "benchmark.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "source_id": source_id,
+                "contract_id": "mle_task_contract/v1",
+                "engine_id": "mle",
+                "registry_root": ".",
+            }
+        ),
+        encoding="utf-8",
+    )
+    return task_root
+
+
 def _create_multi_artifact_task(tmp_path: Path, source_id: str, task_id: str) -> Path:
     registry_root = tmp_path / source_id
     task_root = registry_root / task_id
@@ -257,3 +326,15 @@ def test_task_resolver_builds_directory_submission_contract(tmp_path: Path) -> N
     assert "`before.csv`" in spec.io_instructions
     assert "`after.csv`" in spec.io_instructions
     assert "## Submission Artifact Requirements" in spec.description_text
+
+
+def test_task_resolver_uses_sample_submission_suffix_for_json_tasks(tmp_path: Path) -> None:
+    task_root = _create_json_task(tmp_path, "customx", "json-task")
+    resolver = TaskResolver()
+
+    layout = resolver.resolve(task_id="json-task", data=task_root)
+
+    assert layout.sample_submission_path == task_root / "prepared" / "public" / "sample_submission.json"
+    assert layout.output_path.suffix == ".json"
+    assert layout.evaluation_contract.grading is not None
+    assert layout.evaluation_contract.grading.submission.output_submission_path.suffix == ".json"

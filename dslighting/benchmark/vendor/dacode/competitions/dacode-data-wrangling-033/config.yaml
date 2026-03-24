@@ -1,0 +1,14 @@
+id: dacode-data-wrangling-033
+name: data-wrangling-033
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-033/prepared/private/travel.sqlite
+  sample_submission: dacode-data-wrangling-033/prepared/public/travel.sqlite
+  submission_filename: travel.sqlite
+grader:
+  name: compare_db
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+preparer: file:prepare.py:prepare

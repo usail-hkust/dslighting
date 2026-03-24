@@ -1,0 +1,5 @@
+# di-text-025
+
+As a data scientist for a global consultancy, examine the salary data to find the average data science salaries in Illinois (IL), Puerto Rico (PR), the United States (US), Russia (RU), and Canada (CA). Round the results to the nearest integer.
+
+Output fields: Illinois (IL), Puerto Rico (PR), United States (US), Russia (RU), Canada (CA)

@@ -1,0 +1,12 @@
+id: dacode-ml-cluster-020
+name: ml-cluster-020
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-ml-cluster-020/prepared/private/answer.csv
+  sample_submission: dacode-ml-cluster-020/prepared/public/sample_submission.csv
+grader:
+  name: compare_ml
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

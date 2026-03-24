@@ -1,0 +1,3 @@
+# Data Wrangling 065
+
+Compile the rental count and total revenue for each movie category from the database. Calculate the number of rentals and total payment for each category, ensuring the results are sorted by rental count in descending order. Format the data and save the results.

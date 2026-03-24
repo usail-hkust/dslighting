@@ -12,6 +12,11 @@ except ImportError:
     MLELiteBenchmark = None
 
 try:
+    from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
+except ImportError:
+    MLEStyleBenchmark = None
+
+try:
     from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
 except ImportError:
     MLEBenchmark = None
@@ -30,6 +35,7 @@ __all__ = [
     "CustomBenchmark",
     "DABenchmark",
     "MLELiteBenchmark",
+    "MLEStyleBenchmark",
     "MLEBenchmark",
     "ScienceBenchBenchmark",
     "DataSciBenchmark",

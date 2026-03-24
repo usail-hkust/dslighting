@@ -1,0 +1,3 @@
+# Data Wrangling 016
+
+Manage missing data in the NYC_Open_Data_Parking_Violations dataset by either dropping or replacing it. Drop rows if necessary, and drop columns only if most entries are empty. Replace missing values with the mean, mode, or other appropriate methods. Save the cleaned data.

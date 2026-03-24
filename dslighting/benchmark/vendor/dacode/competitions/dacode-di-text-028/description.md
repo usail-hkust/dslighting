@@ -1,0 +1,5 @@
+# di-text-028
+
+You are working on a project for a national cancer research center. Your task is to analyze the provided data to determine the rough estimate of the average number of cancer cases cured/recovered annually and the chance of recovery from all-cause cancer in any given year in the US.
+
+Output fields: Average cases cured/recovered in a year, Chance of recovery from all-cause cancer in any given year

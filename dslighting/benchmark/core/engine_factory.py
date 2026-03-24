@@ -47,10 +47,10 @@ class BenchmarkEngineFactory:
     ):
         resolved_log_path = log_path or f"runs/benchmarks/{name}"
         if source.engine_id == "mle":
-            from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
+            from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
 
             registry = self.catalog.build_registry(source, data_root=Path(data_dir))
-            return MLEBenchmark(
+            return MLEStyleBenchmark(
                 name=name,
                 file_path=None,
                 log_path=resolved_log_path,

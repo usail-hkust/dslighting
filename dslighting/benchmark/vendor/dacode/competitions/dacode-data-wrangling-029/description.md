@@ -1,0 +1,3 @@
+# Data Wrangling 029
+
+Remove the following columns: 'Friend's Tagged', 'Route Name', 'GPX File', 'Activity Id', 'Calories Burned', and 'Notes'. Replace "Other" activity type with "Unicycling" and perform mean imputation for missing heart rate values within each activity type. Save the cleaned data as three files: `sample_cleaned_cycle.csv`, `sample_cleaned_run.csv`, and `sample_cleaned_walk.csv`.

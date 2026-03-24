@@ -1,0 +1,1 @@
+For the numerical missing values, use the average value of all products for the same manufacturer to fill in the gaps.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import math
 import pytest
 import yaml
 
@@ -224,6 +225,39 @@ def test_competition_report_builder_uses_shared_semantics(tmp_path: Path) -> Non
     assert report.gold_medal is True
     assert report.valid_submission is True
     assert report.is_lower_better is False
+
+
+def test_competition_report_builder_tolerates_empty_leaderboard(tmp_path: Path) -> None:
+    leaderboard = tmp_path / "leaderboard.csv"
+    leaderboard.write_text("", encoding="utf-8")
+    builder = CompetitionReportBuilder()
+
+    from dslighting.benchmark.evaluation.models import EvaluationOutcome, EvaluationSemantics
+
+    report = builder.build(
+        outcome=EvaluationOutcome(
+            score=0.95,
+            submission_exists=True,
+            valid_submission=True,
+            error_kind="none",
+            error_message=None,
+            diagnostics={},
+        ),
+        semantics=EvaluationSemantics(
+            objective="higher_is_better",
+            leaderboard_path=leaderboard,
+        ),
+        competition_id="demo-task",
+        submission_path=tmp_path / "submission.csv",
+    )
+
+    assert math.isnan(report.gold_threshold)
+    assert math.isnan(report.silver_threshold)
+    assert math.isnan(report.bronze_threshold)
+    assert math.isnan(report.median_threshold)
+    assert report.any_medal is False
+    assert report.gold_medal is False
+    assert report.valid_submission is True
 
 
 def test_evaluation_contract_resolver_hydrates_from_contract_ref(tmp_path: Path) -> None:

@@ -1,0 +1,5 @@
+# di-text-029
+
+You are tasked with analyzing economic data for a government advisory body. Your objective is to identify strong positive and negative correlations (absolute value > 0.5) between economic indicators. Replace missing values with np.nan. Report the correlated variable pairs in the format ["Indicator 1", "Indicator 2"].
+
+Output fields: Strong Positive Correlation (>=0.5), Strong Negative Correlation (<=-0.5)

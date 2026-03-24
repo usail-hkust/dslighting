@@ -1,0 +1,4 @@
+Be careful that the hypothesis we are testing is not that the beak depths come from the same distribution. For that we could use a permutation test. The hypothesis is that the means are equal. To perform this hypothesis test, we need to shift the two data sets so that they have the same mean and then use bootstrap sampling to compute the difference of means.
+
+## Task Instructions
+It is observed that the beaks of G. scandens birds on Daphne Major appear to have become deeper. Assuming that the means of two groups of data are the same, you need to calculate the probability of observing the difference in means as per the instructions in tips.md. Under the null hypothesis that the means of the two groups are equal, calculate the probability (p-value) of observing the actual difference in means or a more extreme value.Write the calculated results in the format specified in sample_result.csv into the result.csv file.

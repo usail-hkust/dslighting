@@ -1,0 +1,61 @@
+### Schema for the Cleaned Laptop Dataset
+
+#### 1. `Title` (string)
+- **Description:** The title of the laptop listing.
+- **Example:** "Apple MacBook Pro 16-inch, M1 Pro Chip, 16GB RAM, 512GB SSD"
+
+#### 2. `Brand` (string)
+- **Description:** The brand of the laptop.
+- **Possible Values:** Derived from the first word in the title when missing.
+- **Example:** "Apple", "Dell", "HP", "Lenovo", "Asus", "Acer", "Samsung", etc.
+
+#### 3. `CPU_Model` (string)
+- **Description:** The model of the CPU.
+- **Possible Values:** Extracted from the title using a pattern matching Intel Core i-series, Ryzen, Radeon R-series, Exynos series.
+- **Example:** "Intel i7", "Core i5", "Ryzen 7", "Radeon R5", "Exynos 9"
+
+#### 4. `Screen_Size` (float)
+- **Description:** The screen size of the laptop in inches.
+- **Possible Values:** Extracted from the title using a regular expression.
+- **Example:** 13.3, 15.6, 17.3
+
+#### 5. `Ram(Gb)` (integer)
+- **Description:** The amount of RAM installed in the laptop in gigabytes.
+- **Possible Values:** Extracted from the title.
+- **Example:** 4, 8, 16, 32
+
+#### 6. `Rating` (float)
+- **Description:** The rating given to the laptop.
+- **Possible Values:** Filled with 0 for missing values.
+- **Example:** 4.5, 3.2, 0
+
+#### 7. `Disk_Size_GB` (integer or float)
+- **Description:** The storage capacity of the laptop in gigabytes.
+- **Possible Values:** Converted from TB to GB or left as GB.
+- **Example:** 256, 512, 1024, 128000 (for 128 TB)
+
+#### 8. `Price` (string)
+- **Description:** The original price of the laptop in US dollars.
+- **Example:** "$1,299.99"
+
+#### 9. `Price_INR` (integer or float)
+- **Description:** The price of the laptop converted to Indian Rupees (INR).
+- **Possible Values:** Converted from USD to INR using an exchange rate of 83.00.
+- **Example:** 107069.70
+
+#### 10. `Cpu_Type` (string)
+- **Description:** The simplified category of the CPU model.
+- **Possible Values:** Derived from the `CPU_Model` using a categorization function.
+- **Example:** "i9", "i7", "i5", "Ryzen", "Celeron", "i3", "Other"
+
+### Notes:
+- The `Title` column remains as a string, which contains the full description of the laptop.
+- The `Brand` column is derived from the `Title` column when missing, typically taking the first word.
+- The `CPU_Model` column is filled with CPU models extracted from the `Title` column using a regular expression.
+- The `Screen_Size` column is cleaned by removing any trailing characters and keeping the numeric value.
+- The `Ram` column is transformed into `Ram(Gb)` by extracting the numeric value and converting it to an integer.
+- The `Disk_Size_GB` column is created by converting the disk size from TB to GB or leaving it as GB.
+- The `Price` column remains as a string, while the `Price_INR` column is added to represent the price in INR.
+- The `Cpu_Type` column categorizes the CPU models into simplified categories.
+
+The final DataFrame `lap` is then saved.

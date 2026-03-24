@@ -1,0 +1,36 @@
+### Extended Operation Document: Data Cleaning Instructions for Car Database
+
+#### Objective
+This document provides expanded instructions for cleaning specific fields in the `cars_df` DataFrame, focusing on further standardization of the 'Steering Type' field to ensure data consistency for subsequent analysis.
+
+#### Precautions
+- **Backup Importance**: Always create a backup of your data before making changes to prevent irreversible data loss.
+- **Detailed Verification**: After implementing the cleaning steps, thoroughly check the modifications to ensure data integrity is maintained.
+
+#### Cleaning Instructions
+
+1. **Normalization of 'Value Configuration' Field**
+   - **Purpose**: Consolidate entries related to the 'DOHC' engine type under a standardized descriptor and clean out unrelated or incorrect entries.
+   - **Specific Actions**:
+     - Simplify all variations of 'dohc' to 'dohc'.
+     - Replace entries such as 'undefined', 'mpfi', and 'vtec' with 'NaN' to indicate non-applicable or missing data.
+
+2. **Cleaning 'Turbo Charger' Field**
+   - **Purpose**: Standardize entries indicating the presence of a turbocharger.
+   - **Specific Actions**:
+     - Replace terms like 'twin' and 'turbo' with 'yes' to confirm the presence of turbocharging capabilities consistently.
+
+3. **Standardization of 'Steering Type' Field**
+   - **Purpose**: To unify the terminology used for describing steering mechanisms within the dataset, enhancing clarity and reducing confusion.
+   - **Specific Actions**:
+     - Replace all variations that imply powered steering mechanisms, such as 'electrical', 'electric', 'electronic', 'epas', 'mt', and 'motor', with 'power'.
+     - Convert terms indicating hydraulic steering systems to 'manual'.
+
+#### Post-Cleanup Validation
+- **Comprehensive Review**: Re-examine the updated fields to ensure that all data transformations have been applied correctly.
+- **Consistency Check**: Confirm that the data across the cleaned fields remains consistent and accurate, reflecting the intended standardization.
+
+#### Additional Notes
+- **Ongoing Monitoring**: As cleaning progresses, monitor the data for additional discrepancies that might benefit from similar standardization.
+- **Consultation with Experts**: If uncertainties arise, especially with automotive terminologies, seek insights from industry experts to ensure accurate representation in the dataset.
+

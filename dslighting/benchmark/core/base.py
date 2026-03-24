@@ -27,6 +27,7 @@ import pandas as pd
 
 from dslighting.benchmark.core.abstract_base import AbstractBenchmark, AbstractTaskEvaluator
 from dslighting.benchmark.core.async_runner import AsyncEvaluationRunner
+from dslighting.benchmark.core.preflight import run_preflight_checks
 from dslighting.benchmark.core.scheduler_core import (
     BenchmarkRuntimeScheduler,
     RuntimeAssignment,
@@ -121,6 +122,7 @@ class BaseBenchmark(AbstractBenchmark):
             **kwargs: Additional keyword arguments.
         """
         super().__init__(name, file_path, log_path, **kwargs)
+        run_preflight_checks()
         self._runner = AsyncEvaluationRunner(self)
 
     def _load_problems(self) -> List[Dict[str, Any]]:

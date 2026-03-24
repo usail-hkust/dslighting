@@ -1,0 +1,12 @@
+id: dacode-di-csv-002
+name: di-csv-002
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-di-csv-002/prepared/private/answer.csv
+  sample_submission: dacode-di-csv-002/prepared/public/sample_submission.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

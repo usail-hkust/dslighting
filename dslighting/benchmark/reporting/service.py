@@ -24,7 +24,10 @@ class CompetitionReportBuilder:
     def _thresholds_from_leaderboard(leaderboard_path: Path | None) -> _Thresholds | None:
         if leaderboard_path is None or not leaderboard_path.exists():
             return None
-        leaderboard = pd.read_csv(leaderboard_path)
+        try:
+            leaderboard = pd.read_csv(leaderboard_path)
+        except pd.errors.EmptyDataError:
+            return None
         if "score" not in leaderboard.columns or leaderboard.empty:
             return None
         scores = leaderboard["score"]

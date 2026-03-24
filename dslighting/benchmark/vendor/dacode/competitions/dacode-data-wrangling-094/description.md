@@ -1,0 +1,3 @@
+# Data Wrangling 094
+
+Prepare a summary showing the ten busiest start times for charging sessions, broken down by day and hour, specifically for shared users. Include the total session count for each period. Populate the data.

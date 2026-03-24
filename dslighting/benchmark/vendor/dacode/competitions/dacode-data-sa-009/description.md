@@ -1,0 +1,6 @@
+Quantitative Risk Management is crucial across the banking, insurance, and asset management industries. Financial risk analysts, regulators, and actuaries need to quantitatively balance rewards against risk exposure.
+
+This course covers financial portfolio risk management, focusing on the 2007—2008 financial crisis and its impact on investment banks like Goldman Sachs and J.P. Morgan. It includes using Python to calculate and mitigate risk exposure using Value at Risk (VaR) and Conditional Value at Risk (CVaR) measures. Additionally, it covers risk estimation techniques such as Monte Carlo simulation and the application of advanced technologies like neural networks for real-time portfolio rebalancing.
+
+## Task Instructions
+You are tasked with determining the 99% Conditional Value at Risk (CVaR) for our portfolio using historical data from the years 2008 and 2009. Use a Student's t-distribution to perform this analysis. Ensure that your findings are recorded in `result.csv`.

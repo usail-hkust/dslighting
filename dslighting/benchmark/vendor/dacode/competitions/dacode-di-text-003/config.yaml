@@ -1,0 +1,14 @@
+id: dacode-di-text-003
+name: di-text-003
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-di-text-003/prepared/private/answer.json
+  sample_submission: dacode-di-text-003/prepared/public/sample_submission.json
+grader:
+  name: compare_text
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

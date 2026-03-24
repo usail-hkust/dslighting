@@ -1,0 +1,6 @@
+# di-text-013
+
+You are working on a project for a music analytics company. Verify the statement "more energetic tracks tend to be more loud" using the given dataset. Additionally, assess the correlation between loudness and energy levels of tracks. Answer with "Y" if the statement is true, otherwise "N". For the correlation, respond with "Positive" if it is positive or "Negative" if it is negative.
+
+
+

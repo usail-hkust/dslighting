@@ -1,0 +1,3 @@
+# Data Wrangling 080
+
+Extract and load the data from the compressed database file. Filter the records to include only those for matches in Spain. Sort these records by date and select the top 10 entries. Save the filtered and sorted data.

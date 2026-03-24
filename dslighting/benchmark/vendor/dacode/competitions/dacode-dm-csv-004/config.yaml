@@ -1,0 +1,32 @@
+id: dacode-dm-csv-004
+name: dm-csv-004
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-dm-csv-004/prepared/private/allGames.csv
+  sample_submission: dacode-dm-csv-004/prepared/public/sample_allGames.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+    - relative_path: allEvents.csv
+      format: csv
+      sample: dacode-dm-csv-004/prepared/public/sample_allEvents.csv
+      description: event totals for each Olympics edition
+    - relative_path: allGames.csv
+      format: csv
+      sample: dacode-dm-csv-004/prepared/public/sample_allGames.csv
+      description: total number of games for each season
+  references:
+    root_kind: directory
+    root_path: dacode-dm-csv-004/prepared/private
+    entries:
+    - relative_path: allEvents.csv
+    - relative_path: allGames.csv
+preparer: file:prepare.py:prepare

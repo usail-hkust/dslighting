@@ -14,6 +14,7 @@ try:
     from dslighting.benchmark import (
         DABenchmark,
         DataSciBenchmark,
+        MLEStyleBenchmark,
         MLEBenchmark,
         ScienceBenchBenchmark,
     )
@@ -27,6 +28,7 @@ try:
         "BaseBenchmarkEvaluator",
         "KaggleEvaluator",
         "DABenchmark",
+        "MLEStyleBenchmark",
         "MLEBenchmark",
         "ScienceBenchBenchmark",
         "DataSciBenchmark",

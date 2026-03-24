@@ -1,0 +1,15 @@
+## About Dataset
+
+The "Movie Database: Ratings, Budgets, and Box Office Earnings" is a robust SQL dataset that provides a wealth of information for movie enthusiasts, analysts, and researchers. This dataset includes essential details such as movie names, rating timelines, unique movie IDs, production budgets, viewer votes, movie types, and worldwide as well as domestic box office earnings.
+
+****Key Features:****
+
+ **Rating Timeline** : Explore the ratings of movies over time, allowing you to analyze how audience perceptions change.
+
+ **Budget and Box Office Data** : Gain insights into the financial aspects of the movies, including production budgets and their box office performance, both domestically and globally.
+
+ **Movie Classification** : Understand the genres or types of movies available in the dataset, enabling you to segment and analyze different film categories.
+
+ **Comprehensive Information** : With movie IDs, you can easily link and query data, ensuring comprehensive and accurate analysis.
+
+This dataset is invaluable for a wide range of applications, including movie industry analysis, trend forecasting, and understanding the financial dynamics of the film industry. Whether you're a data scientist, movie critic, or just a movie enthusiast, this dataset provides a treasure trove of information for your research and exploration.

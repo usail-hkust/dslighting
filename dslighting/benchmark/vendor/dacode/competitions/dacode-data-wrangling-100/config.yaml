@@ -1,0 +1,12 @@
+id: dacode-data-wrangling-100
+name: data-wrangling-100
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-wrangling-100/prepared/private/answer.csv
+  sample_submission: dacode-data-wrangling-100/prepared/public/sample_submission.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

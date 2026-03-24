@@ -1,9 +1,9 @@
-"""DA-Code benchmark wrapper — converted DA-Code tasks via DACode registry."""
+"""Compatibility wrapper for DACode over the shared competition-style engine."""
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
+from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
 from dslighting.benchmark.vendor.dacode.registry import Registry as DACodeRegistry
 from dslighting.benchmark.vendor.dacode.registry import registry as DEFAULT_DACODE_REGISTRY
 
@@ -28,7 +28,7 @@ _DACODE_SEGMENTS = frozenset({
 })
 
 
-class DACodeBenchmark(MLEBenchmark):
+class DACodeBenchmark(MLEStyleBenchmark):
     """
     Benchmark class for DA-Code tasks converted to DABench format.
 

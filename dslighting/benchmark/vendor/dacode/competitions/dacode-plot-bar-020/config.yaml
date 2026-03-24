@@ -1,0 +1,41 @@
+id: dacode-plot-bar-020
+name: plot-bar-020
+competition_type: code
+awards_medals: false
+description: description.md
+
+dataset:
+  answers: dacode-plot-bar-020/prepared/private/result.png
+  sample_submission: dacode-plot-bar-020/prepared/public/sample_result.png
+
+grader:
+  name: compare_plot
+  grade_fn: file:grade.py:grade
+
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+      - relative_path: result.png
+        format: png
+        sample: dacode-plot-bar-020/prepared/public/sample_result.png
+        description: final rendered plot image
+      - relative_path: plot.json
+        format: json
+        sample: dacode-plot-bar-020/prepared/public/sample_plot.json
+        description: structured plot metadata
+      - relative_path: result.npy
+        format: npy
+        sample: dacode-plot-bar-020/prepared/public/sample_result.npy
+        description: numeric plot payload extracted from the figure
+  references:
+    root_kind: directory
+    root_path: dacode-plot-bar-020/prepared/private
+    entries:
+      - relative_path: result.png
+      - relative_path: plot.json
+      - relative_path: result.npy
+
+preparer: file:prepare.py:prepare

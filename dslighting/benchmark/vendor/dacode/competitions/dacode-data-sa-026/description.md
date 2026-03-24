@@ -1,0 +1,22 @@
+
+## About Dataset
+
+This dataset comprises reviews of the top 10 rated airlines in 2023, sourced from various sources. It covers aspects such as seat comfort, staff service, food and beverages, inflight entertainment, value for money, and overall rating. The dataset is suitable for tasks such as sentiment analysis and customer satisfaction analysis.
+
+**List of Airlines**
+
+1. Singapore Airlines
+2. Qatar Airways
+3. All Nippon Airways
+4. Emirates
+5. Japan Airlines
+6. Turkish Airlines
+7. Air France
+8. Cathay Pacific Airways
+9. EVA Air
+10. Korean Air
+
+This dataset is provided under the MIT License.
+
+## Task Instructions
+Calculate the Pearson correlation matrix for the columns 'Overall Rating', 'Seat Comfort', 'Staff Service', and 'Food & Beverages' in the Airline Reviews Dataset. Before computing, convert these columns to numeric data types and remove any rows with missing values in these columns. Save the resulting correlation matrix to a file named result.csv, ensuring it follows the same format as the provided sample_result.csv

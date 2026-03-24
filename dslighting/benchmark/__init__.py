@@ -30,6 +30,7 @@ from dslighting.benchmark.evaluators import BaseBenchmarkEvaluator, KaggleEvalua
 try:
     from dslighting.benchmark.benchmarks.mle_lite_benchmark import MLELiteBenchmark
     from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
+    from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
     from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
     from dslighting.benchmark.benchmarks.sciencebench_benchmark import ScienceBenchBenchmark
     from dslighting.benchmark.benchmarks.datasci_benchmark import DataSciBenchmark
@@ -43,6 +44,7 @@ try:
         "BaseBenchmarkEvaluator",
         "KaggleEvaluator",
         "DABenchmark",
+        "MLEStyleBenchmark",
         "MLEBenchmark",
         "ScienceBenchBenchmark",
         "DataSciBenchmark",

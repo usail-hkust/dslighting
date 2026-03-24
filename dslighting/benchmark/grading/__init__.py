@@ -19,6 +19,7 @@ from dslighting.benchmark.grading.models import (
     SubmissionValidationSpec,
     TaskGradingContract,
 )
+from dslighting.benchmark.grading.plot_artifact import grade_plot_submission
 from dslighting.benchmark.grading.service import SubmissionGradingService
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "read_submission_csv",
     "require_submission_dir",
     "require_submission_file",
+    "grade_plot_submission",
 ]

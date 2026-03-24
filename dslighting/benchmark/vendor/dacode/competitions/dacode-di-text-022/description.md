@@ -1,0 +1,5 @@
+# di-text-022
+
+As a data scientist for a financial services company, you need to examine the salary data to determine the patterns of change from 2020 to 2021, 2021 to 2022, and 2022 to 2023. Select the appropriate description from these options: "Similar pattern of progress", "Not much change", "Continual changes".
+
+Output fields: 2020-2021, 2021-2022, 2022-2023

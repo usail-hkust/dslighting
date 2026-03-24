@@ -1,0 +1,6 @@
+# di-text-019
+
+You are working on a project for a sports analytics firm. Your task is to determine the number of wins and losses Chennai Super Kings have had in Mumbai Stadium by analyzing the provided data.
+
+Output fields: Wins, Losses
+

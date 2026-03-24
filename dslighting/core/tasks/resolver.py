@@ -10,6 +10,7 @@ from dslighting.benchmark.core.source_catalog import get_benchmark_source_catalo
 from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
 from dslighting.core.tasks.errors import TaskLayoutResolutionError
 from dslighting.core.tasks.models import ResolvedTaskLayout
+from dslighting.core.tasks.output_artifact import resolve_output_artifact_path_for_competition
 
 
 class TaskResolver:
@@ -87,36 +88,6 @@ class TaskResolver:
         with open(config_path, "r", encoding="utf-8") as handle:
             return yaml.safe_load(handle) or {}
 
-    @staticmethod
-    def _resolve_output_path(task_id: str, competition: Any) -> Path:
-        evaluator_config = getattr(competition, "evaluator_config", None) or {}
-        submission_config = evaluator_config.get("submission") if isinstance(evaluator_config, dict) else {}
-        root_kind = (
-            str(submission_config.get("root_kind") or "file")
-            if isinstance(submission_config, dict)
-            else "file"
-        )
-        root_basename = (
-            str(submission_config.get("root_basename") or "submission").strip() or "submission"
-            if isinstance(submission_config, dict)
-            else "submission"
-        )
-        unique_suffix = uuid.uuid4().hex[:6]
-        sample_submission_path = getattr(competition, "sample_submission", None)
-        preferred_submission_name = getattr(competition, "submission_filename", None)
-
-        if root_kind == "directory":
-            return Path(f"{root_basename}_{task_id}_{unique_suffix}")
-
-        suffix = (
-            Path(preferred_submission_name).suffix
-            if preferred_submission_name
-            else (sample_submission_path.suffix if isinstance(sample_submission_path, Path) else ".csv")
-        )
-        if suffix and not suffix.startswith("."):
-            suffix = f".{suffix}"
-        return Path(f"submission_{task_id}_{unique_suffix}{suffix or '.csv'}")
-
     def resolve(
         self,
         *,
@@ -162,7 +133,11 @@ class TaskResolver:
 
         preferred_submission_name = getattr(competition, "submission_filename", None)
         sample_submission_path = getattr(competition, "sample_submission", None)
-        output_path = self._resolve_output_path(task_id, competition)
+        output_path = resolve_output_artifact_path_for_competition(
+            task_id=task_id,
+            competition=competition,
+            unique_suffix=uuid.uuid4().hex[:6],
+        )
 
         submission_filename = preferred_submission_name or (
             sample_submission_path.name if isinstance(sample_submission_path, Path) else ""

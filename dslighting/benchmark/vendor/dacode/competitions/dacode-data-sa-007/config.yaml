@@ -1,0 +1,32 @@
+id: dacode-data-sa-007
+name: data-sa-007
+competition_type: code
+awards_medals: false
+description: description.md
+dataset:
+  answers: dacode-data-sa-007/prepared/private/sample_covariance_matrix.csv
+  sample_submission: dacode-data-sa-007/prepared/public/sample_sample_covariance_matrix.csv
+grader:
+  name: compare_csv
+  grade_fn: file:grade.py:grade
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+      - relative_path: sample_covariance_matrix.csv
+        format: csv
+        sample: dacode-data-sa-007/prepared/public/sample_sample_covariance_matrix.csv
+        description: annualized sample covariance matrix from daily percentage price changes
+      - relative_path: efficient_covariance_matrix.csv
+        format: csv
+        sample: dacode-data-sa-007/prepared/public/sample_efficient_covariance_matrix.csv
+        description: annualized Ledoit-Wolf efficient covariance matrix
+  references:
+    root_kind: directory
+    root_path: dacode-data-sa-007/prepared/private
+    entries:
+      - relative_path: sample_covariance_matrix.csv
+      - relative_path: efficient_covariance_matrix.csv
+preparer: file:prepare.py:prepare
