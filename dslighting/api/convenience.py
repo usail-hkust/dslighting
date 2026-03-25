@@ -306,11 +306,6 @@ def run_agent(
         if "registry_dir" not in run_kwargs and resolved_registry:
             run_kwargs["registry_dir"] = str(resolved_registry)
 
-        if "task" not in run_kwargs:
-            task_description = _resolve_task_description(task_id, resolved_registry)
-            if task_description:
-                run_kwargs["task"] = task_description
-
         if data is None:
             data = _resolve_task_data_path(task_id)
 
