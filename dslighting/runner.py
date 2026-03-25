@@ -843,7 +843,28 @@ class DSLightingRunner:
         """
         sandbox_workdir = workspace_service.get_path("sandbox_workdir")
         generated_file = sandbox_workdir / output_path.name
-        if generated_file.exists():
+
+        def _is_valid(p: Path) -> bool:
+            """A path is valid if it exists and, for directories, is non-empty."""
+            return p.exists() and (not p.is_dir() or any(p.iterdir()))
+
+        if not _is_valid(generated_file):
+            # Fallback: agent may have used a different hash suffix, or created an empty
+            # directory in an earlier iteration before failing. Search for
+            # submission_{task_id}_*{suffix} and prefer non-empty results.
+            stem = output_path.stem  # e.g. "submission_dacode-ml-binary-023_6fd2a7"
+            parts = stem.rsplit("_", 1)
+            if len(parts) == 2:
+                pattern = f"{parts[0]}_*{output_path.suffix}"
+                candidates = [c for c in sorted(sandbox_workdir.glob(pattern)) if _is_valid(c)]
+                if candidates:
+                    generated_file = candidates[0]
+                    logger.warning(
+                        f"Submission hash mismatch: expected '{output_path.name}', "
+                        f"found '{generated_file.name}' via fallback glob."
+                    )
+
+        if _is_valid(generated_file):
             # Only copy if output_path is an absolute path
             # If it's a relative path (just filename), keep it in workspace/sandbox
             if output_path.is_absolute():
