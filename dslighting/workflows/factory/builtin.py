@@ -116,7 +116,7 @@ class AIDEWorkflowFactory(BaseWorkflowFactory):
         workspace_base = None
         if config.workflow and config.workflow.params:
             workspace_base = config.workflow.params.get("workspace_base_dir")
-        workspace = WorkspaceService(run_name=config.run.name, base_dir=workspace_base)
+        workspace = WorkspaceService(run_name=config.run.run_name, base_dir=workspace_base)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
         state = JournalState()
@@ -145,7 +145,7 @@ class AutoMindWorkflowFactory(BaseWorkflowFactory):
         return "automind"
 
     def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AutoMindWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -182,7 +182,7 @@ class DSAgentWorkflowFactory(BaseWorkflowFactory):
         return "dsagent"
 
     def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> DSAgentWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -218,7 +218,7 @@ class DataInterpreterWorkflowFactory(BaseWorkflowFactory):
     def create_workflow(
         self, config: Any, benchmark: Optional[BaseBenchmark] = None
     ) -> DataInterpreterWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -245,7 +245,7 @@ class AutoKaggleWorkflowFactory(BaseWorkflowFactory):
         return "autokaggle"
 
     def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AutoKaggleWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -270,7 +270,7 @@ class DeepAnalyzeWorkflowFactory(BaseWorkflowFactory):
         config: Any,
         benchmark: Optional[BaseBenchmark] = None,
     ) -> DeepAnalyzeWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -297,7 +297,7 @@ class MyCustomAgentWorkflowFactory(BaseWorkflowFactory):
         config: Any,
         benchmark: Optional[BaseBenchmark] = None,
     ) -> MyCustomAgentWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
@@ -330,7 +330,7 @@ class AFlowWorkflowFactory(BaseWorkflowFactory):
         workspace_base = None
         if config.workflow and config.workflow.params:
             workspace_base = config.workflow.params.get("workspace_base_dir")
-        workspace = WorkspaceService(run_name=config.run.name, base_dir=workspace_base)
+        workspace = WorkspaceService(run_name=config.run.run_name, base_dir=workspace_base)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
         data_perception = create_data_perception_runtime(config)
@@ -376,7 +376,7 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
         raise NotImplementedError("DynamicWorkflowFactory is runner-only and does not support create_agent().")
 
     def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> BaseWorkflow:
-        workspace = WorkspaceService(run_name=config.run.name)
+        workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
         services = {

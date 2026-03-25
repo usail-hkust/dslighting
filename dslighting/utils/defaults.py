@@ -47,7 +47,7 @@ DEFAULT_SANDBOX_TIMEOUT = 6 * 3600  # 6 hours
 # Workspace Defaults
 # ============================================================================
 
-DEFAULT_WORKSPACE_DIR = "./runs/dslighting"
+DEFAULT_WORKSPACE_DIR = "./runs/dslighting_workspace"
 DEFAULT_KEEP_WORKSPACE_ON_FAILURE = True
 DEFAULT_KEEP_ALL_WORKSPACES = False
 
@@ -126,7 +126,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "params": {}
     },
     "run": {
-        "name": "dslighting_run",  # Use "dslighting_run" to let DSLightingRunner auto-generate: dslighting_run_{task_id}_{uid}
+        "run_name": "dslighting_run",  # Default sentinel; DSLightingRunner always generates two-layer workspace: <run_name>/<task_id>_<uid>/
         "total_steps": DEFAULT_MAX_ITERATIONS,
         "keep_all_workspaces": DEFAULT_KEEP_ALL_WORKSPACES,
         "keep_workspace_on_failure": DEFAULT_KEEP_WORKSPACE_ON_FAILURE,

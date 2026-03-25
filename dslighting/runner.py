@@ -53,6 +53,7 @@ from dslighting.error import (
     WorkspaceError,
 )
 from dslighting.utils.constants import UNIQUE_SUFFIX_LENGTH, CODE_FILENAME_ZERO_PADDING
+from dslighting.utils.defaults import DEFAULT_WORKSPACE_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -643,16 +644,23 @@ class DSLightingRunner:
         Returns:
             A configured DSLightingConfig instance ready for execution.
         """
-        # If a specific run name is provided in config, use it. Otherwise, generate one.
-        if self.config.run.name and self.config.run.name != "dslighting_run":
-            task_run_name = self.config.run.name
-        else:
-            safe_task_id = "".join(c if c.isalnum() else "_" for c in task.task_id)
-            unique_suffix = uuid.uuid4().hex[:UNIQUE_SUFFIX_LENGTH]
-            task_run_name = f"{self.config.run.name}_{safe_task_id}_{unique_suffix}"
+        # Two-layer workspace: <session_run_name>/<task_id>_<uid>/
+        # session_run_name comes from config.run.run_name (set by user or auto-generated as "agent_<workflow>")
+        session_run_name = self.config.run.run_name
+        safe_task_id = "".join(c if c.isalnum() else "_" for c in task.task_id)
+        unique_suffix = uuid.uuid4().hex[:UNIQUE_SUFFIX_LENGTH]
+        task_run_name = f"{safe_task_id}_{unique_suffix}"
 
         task_config = self.config.model_copy(deep=True)
-        task_config.run.name = task_run_name
+        task_config.run.run_name = task_run_name
+
+        # Inject session directory into workspace_base_dir so WorkspaceService sees:
+        #   <base_dir>/<session_run_name>/<task_run_name>/
+        if task_config.workflow is None:
+            from dslighting.config import WorkflowConfig
+            task_config.workflow = WorkflowConfig(name="aide", params={})
+        workspace_base = task_config.workflow.params.get("workspace_base_dir") or DEFAULT_WORKSPACE_DIR
+        task_config.workflow.params["workspace_base_dir"] = str(Path(workspace_base) / session_run_name)
 
         # Use RuntimeConfigParser to extract and apply runtime configuration
         config_parser = RuntimeConfigParser(task, task_config)
@@ -1514,7 +1522,7 @@ class DSLightingRunner:
             A dictionary containing all serialized run metadata.
         """
         metadata = {
-            "run_name": task_config.run.name,
+            "run_name": task_config.run.run_name,
             "workspace_dir": str(run_context["workspace_dir"]) if run_context["workspace_dir"] else None,
             "workflow": task_config.workflow.name if task_config.workflow else None,
             "parameters": run_context["filtered_parameters"],

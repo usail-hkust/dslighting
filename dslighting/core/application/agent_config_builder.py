@@ -70,7 +70,7 @@ class AgentConfigBuilder:
 
         config = DSLightingConfig(
             run=RunConfig(
-                name=f"agent_{self.workflow_name}_{task_id}",
+                run_name=f"agent_{self.workflow_name}",
                 keep_all_workspaces=self.keep_workspace,
                 keep_workspace_on_failure=self.keep_workspace,
             ),

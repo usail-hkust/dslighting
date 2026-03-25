@@ -102,7 +102,7 @@ class DagRuntimeConfig(BaseModel):
 class RunConfig(BaseModel):
     """Settings for a specific execution run."""
 
-    name: str = "dslighting_run"
+    run_name: str = "dslighting_run"
     total_steps: int = 4
     keep_all_workspaces: bool = Field(
         False, description="If True, do not delete any workspace after execution."

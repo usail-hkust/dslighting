@@ -269,7 +269,7 @@ class ConfigBuilder:
             config.setdefault("agent", {}).setdefault("search", {})["num_drafts"] = num_drafts
 
         if run_name is not None:
-            config.setdefault("run", {})["name"] = run_name
+            config.setdefault("run", {})["run_name"] = run_name
 
         if workspace_dir is not None:
             config.setdefault("workflow", {}).setdefault("params", {})["workspace_base_dir"] = workspace_dir
