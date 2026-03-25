@@ -1,22 +1,18 @@
 # plot-scatter-001
 
-You are tasked with analyzing the Netflix dataset. Identify the countries with the most titles in each genre and plot the results in a scatter graph. Follow the format specified in plot.yaml and
+Analyze the Netflix dataset (`netflix.csv`). For each genre, find the title(s) with the **highest IMDb score** in that genre. If multiple titles tie for the maximum score in a genre, include **all of them**. Plot each selected title as a scatter point (x = sequential index, y = IMDb score), colored by genre.
+
+**Important:** Compute the actual values from the data. Do NOT use hardcoded or synthetic values.
 
 ## Output Requirements
 
 You must create a **submission directory** containing exactly three files:
 
 - `result.png` - The final rendered plot image
-- `plot.json` - Structured plot metadata  
+- `plot.json` - Structured plot metadata
 - `result.npy` - Numeric plot payload extracted from the figure
 
 The exact directory name will be provided at runtime in the CRITICAL I/O REQUIREMENTS section.
-
-Inside that directory, you must create exactly these three files:
-
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
 
 ---
 
@@ -26,13 +22,13 @@ Inside that directory, you must create exactly these three files:
 
 Here's a brief description of each column:
 
-1. **Title:** The title of the movie or TV show.
-2. **Genre:** The category or type of content, indicating its theme or style.
-3. **Premiere:** The date when the movie or TV show was first released or premiered.
-4. **Runtime:** The duration of the movie or TV show in minutes.
-5. **IMDb Score:** The rating of the movie or TV show on the IMDb (Internet Movie Database) platform, representing its overall quality as rated by users.
-6. **Language:** The language in which the movie or TV show is primarily spoken or produced.
-7. **Year:** The year when the movie or TV show was released or premiered.
+1. **title:** The title of the movie or TV show.
+2. **genre:** The category or type of content, indicating its theme or style.
+3. **premiere:** The date when the movie or TV show was first released or premiered.
+4. **runtime:** The duration of the movie or TV show in minutes.
+5. **imdb_score:** The rating of the movie or TV show on the IMDb (Internet Movie Database) platform.
+6. **language:** The language in which the movie or TV show is primarily spoken or produced.
+7. **year:** The year when the movie or TV show was released or premiered.
 
 ---
 
@@ -59,10 +55,10 @@ Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plo
 ```json
 {
   "type":         "<chart type: bar | line | pie | scatter>",
-  "color":        ["<hex color per bar/slice/line, e.g. "#1f77b4">"],
+  "color":        ["<hex color per bar/slice/line, e.g. \"#1f77b4\">"],
   "figsize":      [<width_float>, <height_float>],
   "graph_title":  "<plot title string>",
-  "legend_title": "<legend title or empty string "">",
+  "legend_title": "<legend title or empty string \"\">",
   "labels":       ["<series labels — often empty list []>"],
   "x_label":      "<x-axis label string>",
   "y_label":      "<y-axis label string>",
@@ -71,7 +67,7 @@ Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plo
 }
 ```
 
-Extract these values directly from your matplotlib figure **after** rendering:
+For scatter plots, extract colors and labels from `ax.collections` (one entry per `ax.scatter()` call = one per genre):
 
 ```python
 import matplotlib
@@ -84,10 +80,10 @@ fig.savefig(f"{output_dir}/result.png")
 
 # Extract plot metadata
 plot_meta = {
-    "type": "bar",          # set to: bar | line | pie | scatter
+    "type": "scatter",
     "color": [
-        matplotlib.colors.to_hex(p.get_facecolor())
-        for p in ax.patches  # use ax.lines / ax.collections for line/scatter
+        matplotlib.colors.to_hex(c.get_facecolor()[0])
+        for c in ax.collections
     ],
     "figsize":      list(fig.get_size_inches()),
     "graph_title":  ax.get_title(),
@@ -95,7 +91,7 @@ plot_meta = {
         ax.get_legend().get_title().get_text()
         if ax.get_legend() else ""
     ),
-    "labels":       [],
+    "labels":       [c.get_label() for c in ax.collections],
     "x_label":      ax.get_xlabel(),
     "y_label":      ax.get_ylabel(),
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
@@ -107,8 +103,13 @@ with open(f"{output_dir}/plot.json", "w") as f:
 
 ### `result.npy` — Required Shape
 
-Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
+For scatter plots, save the **x and y coordinate pairs** as a **2D array with shape `(N, 2)`**, where N = number of scatter points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+# x_values: sequential indices (0, 1, 2, ..., N-1) — the scatter point positions on x-axis
+# y_values: the corresponding y-axis values (IMDb scores)
+x_values = np.arange(len(best))        # shape (N,)
+y_values = best['imdb_score'].values   # shape (N,)
+data_values = np.column_stack([x_values, y_values])  # shape: (N, 2)
+np.save(f"{output_dir}/result.npy", data_values)
 ```

@@ -16,6 +16,7 @@ from dslighting.benchmark.grading.models import (
 )
 from dslighting.benchmark.grading.plot_artifact import (
     compare_color_field,
+    compare_numpy,
     compare_plot_key,
     grade_plot_submission,
 )
@@ -96,6 +97,18 @@ def test_compare_plot_key_handles_unknown_color_strings_without_crashing() -> No
     result = {"color": ["viridis"]}
     gold = {"color": ["#87ceeb", "#1f77b4"]}
     assert compare_plot_key("color", result, gold) is False
+
+
+def test_compare_numpy_accepts_1d_submission_against_single_row_gold() -> None:
+    result = np.array([1.0, 2.0, 3.0])
+    gold = np.array([[1.0, 2.0, 3.0]])
+    assert compare_numpy(result, gold) is True
+
+
+def test_compare_numpy_still_accepts_1d_submission_against_single_column_gold() -> None:
+    result = np.array([1.0, 2.0, 3.0])
+    gold = np.array([[1.0], [2.0], [3.0]])
+    assert compare_numpy(result, gold) is True
 
 
 def test_grade_plot_submission_uses_npy_and_json_fallback(tmp_path: Path) -> None:

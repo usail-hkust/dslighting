@@ -85,16 +85,35 @@ def scale_to_percentage(arr: np.ndarray) -> np.ndarray:
 
 
 def compare_numpy(result_np: np.ndarray, gold_np: np.ndarray, tol: float = 1e-2, allow_scale: bool = True) -> bool:
-    if result_np.ndim == 1:
+    if result_np.ndim == 1 and gold_np.ndim == 2:
+        if gold_np.shape[0] == 1:
+            result_np = result_np.reshape(1, -1)
+        elif gold_np.shape[1] == 1:
+            result_np = result_np.reshape(-1, 1)
+        else:
+            result_np = result_np.reshape(-1, 1)
+    elif result_np.ndim == 1:
         result_np = result_np.reshape(-1, 1)
-    if gold_np.ndim == 1:
+
+    if gold_np.ndim == 1 and result_np.ndim == 2:
+        if result_np.shape[0] == 1:
+            gold_np = gold_np.reshape(1, -1)
+        elif result_np.shape[1] == 1:
+            gold_np = gold_np.reshape(-1, 1)
+        else:
+            gold_np = gold_np.reshape(-1, 1)
+    elif gold_np.ndim == 1:
         gold_np = gold_np.reshape(-1, 1)
 
     if result_np.shape != gold_np.shape:
         return False
 
-    result_sorted = np.sort(result_np, axis=0).reshape(result_np.shape)
-    gold_sorted = np.sort(gold_np, axis=0).reshape(gold_np.shape)
+    # For single-row (1, N) arrays, sort along axis=1 (the values axis).
+    # axis=0 sort is a no-op for 1 row, making order matter unintentionally.
+    # For multi-row arrays (e.g. scatter (N, 2)), sort along axis=0 as before.
+    sort_axis = 1 if result_np.shape[0] == 1 else 0
+    result_sorted = np.sort(result_np, axis=sort_axis).reshape(result_np.shape)
+    gold_sorted = np.sort(gold_np, axis=sort_axis).reshape(gold_np.shape)
 
     if np.allclose(result_sorted, gold_sorted, atol=tol, equal_nan=True):
         return True

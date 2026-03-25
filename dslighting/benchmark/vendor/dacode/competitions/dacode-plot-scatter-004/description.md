@@ -107,8 +107,11 @@ with open(f"{output_dir}/plot.json", "w") as f:
 
 ### `result.npy` — Required Shape
 
-Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
+For scatter plots, save the **x and y coordinate pairs** as a **2D array with shape `(N, 2)`**, where N = number of scatter points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+# x_values: sequential indices (0, 1, 2, ..., N-1) — the scatter point positions on x-axis
+# y_values: the corresponding y-axis values (e.g., IMDb scores)
+data_values = np.column_stack([x_values, y_values])  # shape: (N, 2)
+np.save(f"{output_dir}/result.npy", data_values)
 ```
