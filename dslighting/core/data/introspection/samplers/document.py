@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from ..models import ArtifactDescriptor, ArtifactSummary
+from .json_document import JsonDocumentInspector, render_json_inspection
 
 
 class DocumentSampler:
@@ -12,13 +13,14 @@ class DocumentSampler:
 
     def __init__(self, *, preview_lines: int = 12) -> None:
         self.preview_lines = max(1, int(preview_lines))
+        self._json_inspector = JsonDocumentInspector(preview_lines=self.preview_lines)
 
     def summarize(self, descriptor: ArtifactDescriptor) -> ArtifactSummary:
         text, encoding = self._read_text_document(descriptor)
         lowered = text.lower()
 
         if descriptor.suffix.lower() in {".json", ".jsonl"}:
-            detail_lines = self._summarize_json_document(text)
+            detail_lines = self._summarize_json_document(text, suffix=descriptor.suffix.lower())
         elif "## table:" in lowered or "# database schema" in lowered:
             detail_lines = self._summarize_schema_document(text)
         else:
@@ -72,23 +74,9 @@ class DocumentSampler:
             summary.extend(preview_lines)
         return summary
 
-    def _summarize_json_document(self, text: str) -> list[str]:
-        parsed = json.loads(text)
-        summary = ["Kind: json document"]
-        if isinstance(parsed, dict):
-            keys = list(parsed.keys())
-            summary.append(f"Top-level keys ({len(keys)}): {keys[:12]}")
-        elif isinstance(parsed, list):
-            summary.append(f"Top-level type: list (length={len(parsed)})")
-            if parsed:
-                summary.append(f"First item type: {type(parsed[0]).__name__}")
-        else:
-            summary.append(f"Top-level type: {type(parsed).__name__}")
-        preview_lines = text.splitlines()[: self.preview_lines]
-        if preview_lines:
-            summary.append("Preview:")
-            summary.extend(preview_lines)
-        return summary
+    def _summarize_json_document(self, text: str, *, suffix: str) -> list[str]:
+        inspection = self._json_inspector.inspect(text=text, suffix=suffix)
+        return render_json_inspection(inspection)
 
     def _summarize_generic_document(self, text: str) -> list[str]:
         lines = [line.rstrip() for line in text.splitlines()]
