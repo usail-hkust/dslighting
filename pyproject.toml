@@ -35,7 +35,7 @@ dependencies = [
     # DSAT framework dependencies (required)
     "openai>=1.0.0",
     "anthropic>=0.34.0",
-    "litellm>=1.80.0",
+    "litellm>=1.80.0,!=1.82.8",
     "rich>=13.0.0",
     "transformers>=4.30.0",  # Required for VDBService (RAG)
     "torch>=2.0.0",  # Required for VDBService (RAG)
@@ -67,7 +67,7 @@ minimal = [
     "python-dotenv>=1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.34.0",
-    "litellm>=1.80.0",
+    "litellm>=1.80.0,!=1.82.8",
     "rich>=13.0.0",
     "transformers>=4.30.0",
     "torch>=2.0.0",
