@@ -20,27 +20,14 @@ EXPECTED_FILES = ('bio_ecg_plot.png', 'bio_rsp_plot.png')
 THRESHOLD = 60.0
 
 
-def _build_rubric_prompt(rubric: dict) -> str:
+def _build_rubric_supplement(rubric: dict) -> str:
     sections = []
     for key in ("modeling_or_analysis_or_visualization", "output_formatting"):
         for item in rubric.get(key, []):
             desc = item.get("description", "")
             if desc:
                 sections.append(f"- {desc}")
-    criteria_text = "\n".join(sections) if sections else "- Matches the gold reference plot."
-    return (
-        "You are evaluating two scientific visualization plots.\n"
-        "The FIRST image is the predicted plot. The SECOND image is the gold reference.\n\n"
-        f"Task-specific criteria:\n{criteria_text}\n\n"
-        "Answer strictly in JSON with exactly these 4 boolean fields:\n"
-        "{\n"
-        "  \"same_type\": true/false,\n"
-        "  \"correct_axes\": true/false,\n"
-        "  \"correct_pattern\": true/false,\n"
-        "  \"correct_style\": true/false\n"
-        "}\n"
-        "Output only the JSON object, nothing else."
-    )
+    return "\n".join(sections) if sections else "Matches the gold reference plot."
 
 
 def grade(request: GradingRequest) -> float:
@@ -63,11 +50,11 @@ def grade(request: GradingRequest) -> float:
         print(f"Missing gold images: {', '.join(missing)}")
         return 0.0
 
-    prompt: str | None = None
+    rubric_supplement: str | None = None
     if rubric_path.exists():
         try:
             rubric = json.loads(rubric_path.read_text())
-            prompt = _build_rubric_prompt(rubric)
+            rubric_supplement = _build_rubric_supplement(rubric)
         except Exception as exc:
             print(f"[grade] Could not load rubric ({exc}); using default prompt.")
 
@@ -80,7 +67,7 @@ def grade(request: GradingRequest) -> float:
             print(f"Submission file not found: {pred_path}")
             return 0.0
         pred_img = Image.open(pred_path).convert("RGB")
-        result = judge_image(pred_img, gold_img, threshold=THRESHOLD, prompt=prompt)
+        result = judge_image(pred_img, gold_img, threshold=THRESHOLD, rubric_supplement=rubric_supplement)
         if result < 1.0:
             print(f"Image {filename!r} did not pass threshold {THRESHOLD}")
             return 0.0

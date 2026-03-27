@@ -23,8 +23,8 @@ EXPECTED_FILENAME = 'EOG_analyze_pred.png'
 THRESHOLD = 60.0
 
 
-def _build_rubric_prompt(rubric: dict) -> str:
-    """Build a VLM evaluation prompt from the scoring rubric."""
+def _build_rubric_supplement(rubric: dict) -> str:
+    """Build a task-specific rubric supplement for the shared image judge."""
     sections = []
     for key in ("modeling_or_analysis_or_visualization", "output_formatting"):
         items = rubric.get(key, [])
@@ -32,20 +32,7 @@ def _build_rubric_prompt(rubric: dict) -> str:
             desc = item.get("description", "")
             if desc:
                 sections.append(f"- {desc}")
-    criteria_text = "\n".join(sections) if sections else "- Matches the gold reference plot."
-    return (
-        "You are evaluating two scientific visualization plots.\n"
-        "The FIRST image is the predicted plot. The SECOND image is the gold reference.\n\n"
-        f"Task-specific criteria:\n{criteria_text}\n\n"
-        "Answer strictly in JSON with exactly these 4 boolean fields:\n"
-        "{\n"
-        "  \"same_type\": true/false,        // correct chart / plot type\n"
-        "  \"correct_axes\": true/false,     // axis labels and represented variables match\n"
-        "  \"correct_pattern\": true/false,  // data trends and relative magnitudes are correct\n"
-        "  \"correct_style\": true/false     // colors, legend, and layout are correct\n"
-        "}\n"
-        "Output only the JSON object, nothing else."
-    )
+    return "\n".join(sections) if sections else "Matches the gold reference plot."
 
 
 def grade(request: GradingRequest) -> float:
@@ -85,12 +72,12 @@ def grade(request: GradingRequest) -> float:
     pred_img = Image.open(pred_path).convert("RGB")
 
     # Build rubric-informed VLM prompt
-    prompt: str | None = None
+    rubric_supplement: str | None = None
     if rubric_path.exists():
         try:
             rubric = json.loads(rubric_path.read_text())
-            prompt = _build_rubric_prompt(rubric)
+            rubric_supplement = _build_rubric_supplement(rubric)
         except Exception as exc:
             print(f"[grade] Could not load rubric ({exc}); using default prompt.")
 
-    return judge_image(pred_img, gold_img, threshold=THRESHOLD, prompt=prompt)
+    return judge_image(pred_img, gold_img, threshold=THRESHOLD, rubric_supplement=rubric_supplement)
