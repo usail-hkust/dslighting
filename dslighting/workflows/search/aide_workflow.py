@@ -669,7 +669,11 @@ class AIDEWorkflow(BaseWorkflow):
             if not submission_file_in_sandbox.exists():
                 new_node.is_buggy = True
                 new_node.analysis = (
-                    "Code executed without error, but failed to produce the required output file."
+                    f"Code executed without error, but the required output file was not found. "
+                    f"You MUST save the output as `{output_path.name}` in the current working "
+                    f"directory. Do NOT use a different filename or hash suffix. "
+                    f"Check that your code ends with exactly: "
+                    f"`df.to_csv('{output_path.name}', index=False)` (or equivalent)."
                 )
                 new_node.metric = MetricValue(value=0.0, maximize=maximize)
             elif self.benchmark and hasattr(self.benchmark, "grade"):

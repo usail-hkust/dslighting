@@ -104,6 +104,7 @@ def create_task_definition(
     # payload directly without legacy field assumptions.
     if task_type == "kaggle":
         if data_dir:
+            payload["agent_visible_data_dir"] = str(data_dir)
             payload["public_data_dir"] = str(data_dir)
         payload["output_submission_path"] = str(resolved_output)
     elif task_type == "qa":
