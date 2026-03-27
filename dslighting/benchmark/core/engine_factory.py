@@ -61,15 +61,5 @@ class BenchmarkEngineFactory:
                 eval_fn=eval_fn,
                 registry=registry,
             )
-        if source.engine_id == "sciencebench":
-            from dslighting.benchmark.benchmarks.sciencebench_benchmark import ScienceBenchBenchmark
-
-            return ScienceBenchBenchmark(
-                name=name,
-                file_path=None,
-                log_path=resolved_log_path,
-                data_dir=str(data_dir),
-                competitions=competitions,
-            )
 
         raise BenchmarkError(f"Unsupported benchmark engine: {source.engine_id}")

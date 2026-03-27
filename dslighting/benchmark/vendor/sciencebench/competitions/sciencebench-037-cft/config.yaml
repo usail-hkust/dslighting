@@ -1,17 +1,15 @@
 id: sciencebench-037-cft
-name: "ScienceBench - cft.py"
+name: ScienceBench - cft.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-037-cft/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-037-cft/prepared/private/answer.json
   sample_submission: sciencebench-037-cft/prepared/public/sample_submission.json
-
 grader:
   name: rmse
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-037-cft.prepare:prepare

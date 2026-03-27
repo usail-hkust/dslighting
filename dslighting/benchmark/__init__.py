@@ -32,7 +32,6 @@ try:
     from dslighting.benchmark.benchmarks.da_benchmark import DABenchmark
     from dslighting.benchmark.benchmarks.mle_style_benchmark import MLEStyleBenchmark
     from dslighting.benchmark.benchmarks.mle_benchmark import MLEBenchmark
-    from dslighting.benchmark.benchmarks.sciencebench_benchmark import ScienceBenchBenchmark
     from dslighting.benchmark.benchmarks.datasci_benchmark import DataSciBenchmark
 
     __all__ = [
@@ -46,7 +45,6 @@ try:
         "DABenchmark",
         "MLEStyleBenchmark",
         "MLEBenchmark",
-        "ScienceBenchBenchmark",
         "DataSciBenchmark",
     ]
 

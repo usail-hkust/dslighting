@@ -1,17 +1,15 @@
 id: sciencebench-063-bio-interval-analyze
-name: "ScienceBench - bio_interval_analyze.py"
+name: ScienceBench - bio_interval_analyze.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-063-bio-interval-analyze/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-063-bio-interval-analyze/prepared/private/answer.csv
   sample_submission: sciencebench-063-bio-interval-analyze/prepared/public/sample_submission.csv
-
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-063-bio-interval-analyze.prepare:prepare

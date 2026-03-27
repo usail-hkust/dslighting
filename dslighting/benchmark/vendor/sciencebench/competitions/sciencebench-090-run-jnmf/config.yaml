@@ -1,17 +1,16 @@
 id: sciencebench-090-run-jnmf
-name: "ScienceBench - run_jnmf.py"
+name: ScienceBench - run_jnmf.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-090-run-jnmf/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-090-run-jnmf/prepared/private/answer.npy
   sample_submission: sciencebench-090-run-jnmf/prepared/public/sample_submission
-
+  gold_submission: sciencebench-090-run-jnmf/prepared/private/answer.npy
 grader:
   name: accuracy
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-090-run-jnmf.prepare:prepare

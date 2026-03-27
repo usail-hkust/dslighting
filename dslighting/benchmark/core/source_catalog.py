@@ -371,12 +371,6 @@ class BenchmarkSourceCatalog:
             registry = MLEStyleRegistry(descriptor=descriptor, data_dir=Path(data_root), mode=mode)
             registry.set_mode(mode)
             return registry
-        if descriptor.source_id == "sciencebench":
-            from dslighting.benchmark.vendor.sciencebench.registry import Registry as ScienceBenchRegistry
-
-            registry = ScienceBenchRegistry().set_data_dir(Path(data_root))
-            registry.set_mode(mode)
-            return registry
         raise BenchmarkError(f"Unsupported benchmark source contract: {descriptor.contract_id}")
 
     def build_benchmark(

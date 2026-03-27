@@ -1,17 +1,15 @@
 id: sciencebench-067-cogsci-pattern-high-sim
-name: "ScienceBench - CogSci_pattern_high_sim.py"
+name: ScienceBench - CogSci_pattern_high_sim.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-067-cogsci-pattern-high-sim/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-067-cogsci-pattern-high-sim/prepared/private/answer.csv
   sample_submission: sciencebench-067-cogsci-pattern-high-sim/prepared/public/sample_submission.csv
-
 grader:
   name: accuracy
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-067-cogsci-pattern-high-sim.prepare:prepare

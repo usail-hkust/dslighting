@@ -1,17 +1,15 @@
 id: sciencebench-102-refractive-index-prediction
-name: "ScienceBench - refractive_index_prediction"
+name: ScienceBench - refractive_index_prediction
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-102-refractive-index-prediction/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-102-refractive-index-prediction/prepared/private/answer.csv
   sample_submission: sciencebench-102-refractive-index-prediction/prepared/public/sample_submission.csv
-
 grader:
   name: mae
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-102-refractive-index-prediction.prepare:prepare

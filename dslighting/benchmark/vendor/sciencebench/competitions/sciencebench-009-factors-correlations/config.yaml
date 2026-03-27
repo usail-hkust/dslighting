@@ -1,19 +1,17 @@
 id: sciencebench-009-factors-correlations
-name: "ScienceBench - FACTORS_correlations.py"
+name: ScienceBench - FACTORS_correlations.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-009-factors-correlations/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-009-factors-correlations/prepared/private/answer.csv
-  sample_submission: sciencebench-009-factors-correlations/prepared/public/sample_submission.csv
-
+  answers: sciencebench-009-factors-correlations/prepared/private/result.png
+  sample_submission: sciencebench-009-factors-correlations/prepared/public/sample_submission.png
+  gold_submission: sciencebench-009-factors-correlations/prepared/private/result.png
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
-  api_version: artifact_v1
-
 submission_filename: sample_submission.png
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-009-factors-correlations.prepare:prepare
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

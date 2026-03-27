@@ -1,0 +1,1 @@
+"""Bundled ScienceBench competition definitions."""

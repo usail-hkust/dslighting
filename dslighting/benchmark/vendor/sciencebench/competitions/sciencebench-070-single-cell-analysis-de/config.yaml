@@ -1,19 +1,17 @@
 id: sciencebench-070-single-cell-analysis-de
-name: "ScienceBench - single_cell_analysis_de.py"
+name: ScienceBench - single_cell_analysis_de.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-070-single-cell-analysis-de/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-070-single-cell-analysis-de/prepared/private/answer.csv
-  sample_submission: sciencebench-070-single-cell-analysis-de/prepared/public/sample_submission.csv
-
+  answers: sciencebench-070-single-cell-analysis-de/prepared/private/result.png
+  sample_submission: sciencebench-070-single-cell-analysis-de/prepared/public/sample_submission.png
+  gold_submission: sciencebench-070-single-cell-analysis-de/prepared/private/result.png
 submission_filename: sample_submission.png
-
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-070-single-cell-analysis-de.prepare:prepare

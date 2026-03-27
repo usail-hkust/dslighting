@@ -1,17 +1,15 @@
 id: sciencebench-026-ligand-fingerprint
-name: "ScienceBench - ligand_fingerprint.py"
+name: ScienceBench - ligand_fingerprint.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-026-ligand-fingerprint/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-026-ligand-fingerprint/prepared/private/answer.csv
   sample_submission: sciencebench-026-ligand-fingerprint/prepared/public/sample_submission.csv
-
 grader:
   name: rmse
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-026-ligand-fingerprint.prepare:prepare

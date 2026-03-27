@@ -1,17 +1,15 @@
 id: sciencebench-002-mat-feature-select
-name: "ScienceBench - mat_feature_select.py"
+name: ScienceBench - mat_feature_select.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-002-mat-feature-select/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-002-mat-feature-select/prepared/private/answer.csv
   sample_submission: sciencebench-002-mat-feature-select/prepared/public/sample_submission.csv
-
 grader:
   name: exact_match
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-002-mat-feature-select.prepare:prepare

@@ -1,19 +1,17 @@
 id: sciencebench-004-elk-new
-name: "ScienceBench - elk_new.py"
+name: ScienceBench - elk_new.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-004-elk-new/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-004-elk-new/prepared/private/answer.csv
-  sample_submission: sciencebench-004-elk-new/prepared/public/sample_submission.csv
-
+  answers: sciencebench-004-elk-new/prepared/private/result.png
+  sample_submission: sciencebench-004-elk-new/prepared/public/sample_submission.png
+  gold_submission: sciencebench-004-elk-new/prepared/private/result.png
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
-  api_version: artifact_v1
-
 submission_filename: sample_submission.png
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-004-elk-new.prepare:prepare
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

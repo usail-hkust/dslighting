@@ -1,19 +1,17 @@
 id: sciencebench-052-aquatic-toxicity-qsar-vis
-name: "ScienceBench - aquatic_toxicity_qsar_vis.py"
+name: ScienceBench - aquatic_toxicity_qsar_vis.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-052-aquatic-toxicity-qsar-vis/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-052-aquatic-toxicity-qsar-vis/prepared/private/answer.csv
-  sample_submission: sciencebench-052-aquatic-toxicity-qsar-vis/prepared/public/sample_submission.csv
-
+  answers: sciencebench-052-aquatic-toxicity-qsar-vis/prepared/private/result.png
+  sample_submission: sciencebench-052-aquatic-toxicity-qsar-vis/prepared/public/sample_submission.png
+  gold_submission: sciencebench-052-aquatic-toxicity-qsar-vis/prepared/private/result.png
 submission_filename: sample_submission.png
-
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-052-aquatic-toxicity-qsar-vis.prepare:prepare

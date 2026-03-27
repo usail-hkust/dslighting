@@ -1,19 +1,17 @@
 id: sciencebench-091-jnmf-plot-patterns
-name: "ScienceBench - jnmf_plot_patterns.py"
+name: ScienceBench - jnmf_plot_patterns.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-091-jnmf-plot-patterns/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-091-jnmf-plot-patterns/prepared/private/answer.csv
-  sample_submission: sciencebench-091-jnmf-plot-patterns/prepared/public/sample_submission.csv
-
+  answers: sciencebench-091-jnmf-plot-patterns/prepared/private/result.png
+  sample_submission: sciencebench-091-jnmf-plot-patterns/prepared/public/sample_submission.png
+  gold_submission: sciencebench-091-jnmf-plot-patterns/prepared/private/result.png
 submission_filename: sample_submission.png
-
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-091-jnmf-plot-patterns.prepare:prepare

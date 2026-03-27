@@ -1,17 +1,15 @@
 id: sciencebench-092-h-importances
-name: "ScienceBench - h_importances.py"
+name: ScienceBench - h_importances.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-092-h-importances/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-092-h-importances/prepared/private/answer.json
   sample_submission: sciencebench-092-h-importances/prepared/public/sample_submission.json
-
 grader:
   name: exact_match
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-092-h-importances.prepare:prepare

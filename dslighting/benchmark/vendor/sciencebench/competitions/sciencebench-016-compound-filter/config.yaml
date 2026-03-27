@@ -1,19 +1,16 @@
 id: sciencebench-016-compound-filter
-name: "ScienceBench - compound_filter.py"
+name: ScienceBench - compound_filter.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-016-compound-filter/description.md
-
+description: description.md
 dataset:
   answers: sciencebench-016-compound-filter/prepared/private/answer.csv
   sample_submission: sciencebench-016-compound-filter/prepared/public/sample_submission.txt
-
 grader:
   name: overlap
   grade_fn: file:grade.py:grade
-  api_version: artifact_v1
-
 submission_filename: filtered_compounds.txt
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-016-compound-filter.prepare:prepare
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

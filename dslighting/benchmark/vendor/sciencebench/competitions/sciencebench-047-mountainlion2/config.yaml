@@ -1,19 +1,17 @@
 id: sciencebench-047-mountainlion2
-name: "ScienceBench - mountainLion2.py"
+name: ScienceBench - mountainLion2.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-047-mountainlion2/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-047-mountainlion2/prepared/private/answer.csv
-  sample_submission: sciencebench-047-mountainlion2/prepared/public/sample_submission.csv
-
+  answers: sciencebench-047-mountainlion2/prepared/private/result.png
+  sample_submission: sciencebench-047-mountainlion2/prepared/public/sample_submission.png
+  gold_submission: sciencebench-047-mountainlion2/prepared/private/result.png
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
-  api_version: artifact_v1
-
 submission_filename: sample_submission.png
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-047-mountainlion2.prepare:prepare
+preparer: file:prepare.py:prepare
+evaluator:
+  api_version: artifact_v1

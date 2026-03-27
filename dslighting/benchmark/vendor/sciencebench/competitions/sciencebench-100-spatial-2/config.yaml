@@ -1,19 +1,17 @@
 id: sciencebench-100-spatial-2
-name: "ScienceBench - spatial_2.py"
+name: ScienceBench - spatial_2.py
 competition_type: code
 awards_medals: false
 prizes: null
-description: benchmarks/sciencebench/competitions/sciencebench-100-spatial-2/description.md
-
+description: description.md
 dataset:
-  answers: sciencebench-100-spatial-2/prepared/private/answer.csv
-  sample_submission: sciencebench-100-spatial-2/prepared/public/sample_submission.csv
-
+  answers: sciencebench-100-spatial-2/prepared/private/result.png
+  sample_submission: sciencebench-100-spatial-2/prepared/public/sample_submission.png
+  gold_submission: sciencebench-100-spatial-2/prepared/private/result.png
 submission_filename: sample_submission.png
-
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare
+evaluator:
   api_version: artifact_v1
-
-preparer: benchmarks.sciencebench.competitions.sciencebench-100-spatial-2.prepare:prepare
