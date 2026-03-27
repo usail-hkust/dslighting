@@ -3,33 +3,33 @@
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
-TARGET_COL = "formation_energy"
+PRED_FILENAME = "formation_energy_prediction_pred.txt"
+GOLD_FILENAME = "formation_energy_prediction_gold.txt"
+THRESHOLD = 0.1
 
 
-def grade(submission, answers) -> float:
-    """
-    Return the actual evaluation metric (MSE; lower is better).
+def grade(request: GradingRequest) -> float:
+    submission_path = request.submission.root
+    if submission_path.is_file():
+        pred_path = submission_path
+    else:
+        pred_path = submission_path / PRED_FILENAME
+    gold_path = request.references.private_dir / GOLD_FILENAME
 
-    `submission` and `answers` are pandas DataFrames loaded from CSV.
-    """
-    if not isinstance(submission, pd.DataFrame) or not isinstance(answers, pd.DataFrame):
-        raise InvalidSubmissionError("Submission/answers must be CSV tables.")
-    if TARGET_COL not in submission.columns:
-        raise InvalidSubmissionError(f"Missing required column: {TARGET_COL}")
-    if TARGET_COL not in answers.columns:
-        raise InvalidSubmissionError(f"Answers missing required column: {TARGET_COL}")
+    if not pred_path.exists():
+        print(f"Prediction file not found: {pred_path}")
+        return 0.0
 
-    pred = pd.to_numeric(submission[TARGET_COL], errors="coerce").to_numpy(dtype=float)
-    gold = pd.to_numeric(answers[TARGET_COL], errors="coerce").to_numpy(dtype=float)
+    pred = np.loadtxt(pred_path)
+    gold = np.loadtxt(gold_path)
 
     if pred.shape != gold.shape:
-        raise InvalidSubmissionError(f"Shape mismatch: {pred.shape} vs {gold.shape}")
-    if np.isnan(pred).any():
-        raise InvalidSubmissionError("Submission contains non-numeric values.")
+        print(f"Shape mismatch: {pred.shape} vs {gold.shape}")
+        return 0.0
 
     mse = float(np.mean((pred - gold) ** 2))
-    return mse
+    print(f"MSE: {mse}")
+    return 1.0 if mse <= THRESHOLD else 0.0

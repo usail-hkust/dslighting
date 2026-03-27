@@ -1,0 +1,19 @@
+id: sciencebench-059-nvc-heatmap
+name: "ScienceBench - nvc_heatmap.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-059-nvc-heatmap/description.md
+
+dataset:
+  answers: sciencebench-059-nvc-heatmap/prepared/private/answer.csv
+  sample_submission: sciencebench-059-nvc-heatmap/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-059-nvc-heatmap.prepare:prepare

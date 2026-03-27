@@ -1,0 +1,19 @@
+id: sciencebench-012-davis-dti
+name: "ScienceBench - davis_dti.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-012-davis-dti/description.md
+
+dataset:
+  answers: sciencebench-012-davis-dti/prepared/private/answer.csv
+  sample_submission: sciencebench-012-davis-dti/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: pred_results/davis_dti_repurposing.txt
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-012-davis-dti.prepare:prepare

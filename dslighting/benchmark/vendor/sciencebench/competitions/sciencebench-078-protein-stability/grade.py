@@ -1,46 +1,40 @@
-"""
-Grading function for ScienceBench task 78 (protein stability prediction).
-"""
+"""Grading function for ScienceBench task 78 (protein stability prediction)."""
 
 from __future__ import annotations
 
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
-REQUIRED_COLUMNS = {"test_data_id", "deltaTm"}
+THRESHOLD = 11.0
+PRED_FILENAME = "pucci-proteins_test_pred.csv"
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
-    """
-    Return the actual evaluation metric (MAE; lower is better).
+def grade(request: GradingRequest) -> float:
+    submission_path = request.submission.root
+    if submission_path.is_file():
+        pred_path = submission_path
+    else:
+        pred_path = submission_path / PRED_FILENAME
 
-    Both submission and answers must have columns: test_data_id, deltaTm.
-    """
-    if submission is None or submission.empty:
-        raise InvalidSubmissionError("Submission is empty.")
-    if answers is None or answers.empty:
-        raise InvalidSubmissionError("Answer data is empty.")
+    if not pred_path.exists():
+        print(f"Submission file not found: {pred_path}")
+        return 0.0
 
-    if not REQUIRED_COLUMNS.issubset(submission.columns):
-        raise InvalidSubmissionError(f"Submission missing columns: {REQUIRED_COLUMNS - set(submission.columns)}")
-    if not REQUIRED_COLUMNS.issubset(answers.columns):
-        raise InvalidSubmissionError(f"Answers missing columns: {REQUIRED_COLUMNS - set(answers.columns)}")
+    gold_path = request.references.private_dir / "answer.csv"
 
-    merged = pd.merge(
-        answers[["test_data_id", "deltaTm"]],
-        submission[["test_data_id", "deltaTm"]],
-        on="test_data_id",
-        how="inner",
-        suffixes=("_true", "_pred"),
-    )
-    if len(merged) != len(answers):
-        raise InvalidSubmissionError(
-            f"Row alignment mismatch: merged={len(merged)} answers={len(answers)}. "
-            "Ensure you predict for every test_data_id exactly once."
-        )
+    pred_df = pd.read_csv(pred_path)
+    gold_df = pd.read_csv(gold_path)
 
-    metric = mean_absolute_error(merged["deltaTm_true"], merged["deltaTm_pred"])
-    print(f"MAE: {metric}")
-    return float(metric)
+    if "deltaTm" not in pred_df.columns or "deltaTm" not in gold_df.columns:
+        raise ValueError("Both prediction and gold CSVs must contain a 'deltaTm' column.")
+
+    if len(pred_df) != len(gold_df):
+        print(f"Row count mismatch: submission {len(pred_df)} vs gold {len(gold_df)}")
+        return 0.0
+
+    metric = mean_absolute_error(gold_df["deltaTm"], pred_df["deltaTm"])
+    print(f"Mean absolute error: {metric}")
+
+    return 1.0 if metric <= THRESHOLD else 0.0

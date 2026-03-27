@@ -30,14 +30,14 @@ def prepare(raw: Path, public: Path, private: Path):
     print(f"Public directory: {public}")
     print(f"Private directory: {private}")
 
-    # Check if raw data exists
+    # 检查原始数据是否存在
     if not raw.exists():
         print(f"\n⚠ Warning: Raw data directory not found: {raw}")
         print("Creating placeholder files...")
         create_placeholder_files(public, private)
         return
 
-    # Copy all data files to public
+    # 复制所有数据文件到 public
     print(f"\nCopying data files to public directory...")
     file_count = 0
     for file in raw.rglob('*'):
@@ -54,8 +54,8 @@ def prepare(raw: Path, public: Path, private: Path):
         print(f"  ... and {file_count - 10} more files")
     print(f"  Total files copied: {file_count}")
 
-    # Create sample_submission file
-    # CSV output format
+    # 创建 sample_submission 文件
+    # CSV 输出格式
     sample_submission = pd.DataFrame({
         "id": [0, 1, 2],
         "value": [0.0, 0.0, 0.0]
@@ -63,7 +63,7 @@ def prepare(raw: Path, public: Path, private: Path):
     sample_submission.to_csv(public / "sample_submission.csv", index=False)
     print("Created sample_submission.csv")
 
-    # Create answer file (placeholder)
+    # 创建答案文件（placeholder）
     answer = pd.DataFrame({
         "id": [0, 1, 2],
         "value": [0.0, 0.0, 0.0]
@@ -77,7 +77,7 @@ def prepare(raw: Path, public: Path, private: Path):
 
 
 def create_placeholder_files(public: Path, private: Path):
-    """Create placeholder files"""
+    """创建占位符文件"""
     # Public
     pd.DataFrame({"info": ["Data not available"]}).to_csv(
         public / "sample_submission.csv", index=False

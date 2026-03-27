@@ -3,14 +3,15 @@ name: "ScienceBench - MD_RF.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-040-md-rf/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-040-md-rf/description.md
 
 dataset:
   answers: sciencebench-040-md-rf/prepared/private/answer.csv
   sample_submission: sciencebench-040-md-rf/prepared/public/sample_submission.csv
 
 grader:
-  name: f1
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-040-md-rf/grade.py:grade
+  name: accuracy
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-040-md-rf/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-040-md-rf.prepare:prepare

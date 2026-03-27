@@ -20,7 +20,7 @@ Train a synthetic feasibility surrogate model using the provided Tox21 train/tes
 
 ## Submission Format
 
-Submit a `.npy` file containing a 1D NumPy array of predicted scores. The array must align with the order of molecules in `test_mols.pkl`.
+Save the predicted scores as a NumPy array aligned with the order of molecules in `test_mols.pkl`.
 
 ## Evaluation
 

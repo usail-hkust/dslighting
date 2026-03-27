@@ -3,7 +3,7 @@ name: "ScienceBench - deforestation.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-021-deforestation/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-021-deforestation/description.md
 
 dataset:
   answers: sciencebench-021-deforestation/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: relative_error
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-021-deforestation/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-021-deforestation/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-021-deforestation.prepare:prepare

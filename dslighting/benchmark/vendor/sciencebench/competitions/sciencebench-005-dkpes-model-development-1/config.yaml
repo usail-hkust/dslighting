@@ -3,7 +3,7 @@ name: "ScienceBench - dkpes_model_development_1.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-005-dkpes-model-development-1/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-005-dkpes-model-development-1/description.md
 
 dataset:
   answers: sciencebench-005-dkpes-model-development-1/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: rmse
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-005-dkpes-model-development-1/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-005-dkpes-model-development-1/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-005-dkpes-model-development-1.prepare:prepare

@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
 MAE_THRESHOLD = 30.0
 
@@ -36,17 +36,19 @@ def _extract_vectors(submission: pd.DataFrame, answers: pd.DataFrame) -> Tuple[n
     return preds.astype(float), labels.astype(float)
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
+def grade(request: GradingRequest) -> float:
     """
-    Return the actual evaluation metric (MAE; lower is better).
+    Grade submission using mean absolute error with a pass/fail threshold.
 
     Returns:
-        MAE (float)
+        1.0 if MAE <= threshold else 0.0
     """
+    submission_path = request.submission.root
+    answers_path = request.references.private_dir / "answer.csv"
+
+    submission = pd.read_csv(submission_path)
+    answers = pd.read_csv(answers_path)
+
     preds, labels = _extract_vectors(submission, answers)
-    if preds.size == 0 or labels.size == 0:
-        raise InvalidSubmissionError("Empty predictions or labels.")
     mae = mean_absolute_error(labels, preds)
-    print(f"MAE: {mae}")
-    print(f"Pass threshold ({MAE_THRESHOLD}): {mae <= MAE_THRESHOLD}")
-    return float(mae)
+    return float(mae <= MAE_THRESHOLD)

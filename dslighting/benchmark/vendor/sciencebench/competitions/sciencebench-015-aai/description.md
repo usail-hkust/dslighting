@@ -23,7 +23,7 @@ Train a model on the ames dataset to predict a drug's toxicity. Save the test se
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
+Save predictions with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 

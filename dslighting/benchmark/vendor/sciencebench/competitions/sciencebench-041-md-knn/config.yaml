@@ -1,0 +1,36 @@
+id: sciencebench-041-md-knn
+name: "ScienceBench - MD_KNN.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-041-md-knn/description.md
+
+dataset:
+  answers: sciencebench-041-md-knn/prepared/private/answer.csv
+  sample_submission: sciencebench-041-md-knn/prepared/public
+
+evaluator:
+  api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: pred_results
+    entries:
+      - relative_path: MD_all_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_all_KNN.csv
+        description: Predicted DILI labels for all split
+      - relative_path: MD_MCNC_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_MCNC_KNN.csv
+        description: Predicted DILI labels for MCNC split
+      - relative_path: MD_MCLCNC_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_MCLCNC_KNN.csv
+        description: Predicted DILI labels for MCLCNC split
+  references:
+    root_kind: directory
+    root_path: sciencebench-041-md-knn/prepared/private
+    entries:
+      - relative_path: answer.csv
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-041-md-knn.prepare:prepare

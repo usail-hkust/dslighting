@@ -1,0 +1,19 @@
+id: sciencebench-023-deforestation-predict
+name: "ScienceBench - deforestation_predict.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-023-deforestation-predict/description.md
+
+dataset:
+  answers: sciencebench-023-deforestation-predict/prepared/private/answer.csv
+  sample_submission: sciencebench-023-deforestation-predict/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-023-deforestation-predict.prepare:prepare

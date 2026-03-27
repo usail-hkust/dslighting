@@ -1,0 +1,19 @@
+id: sciencebench-083-urbanheat
+name: "ScienceBench - UrbanHeat.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-083-urbanheat/description.md
+
+dataset:
+  answers: sciencebench-083-urbanheat/prepared/private/answer.csv
+  sample_submission: sciencebench-083-urbanheat/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-083-urbanheat.prepare:prepare

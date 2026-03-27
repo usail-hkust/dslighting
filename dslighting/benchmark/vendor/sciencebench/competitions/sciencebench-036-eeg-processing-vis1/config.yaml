@@ -1,0 +1,17 @@
+id: sciencebench-036-eeg-processing-vis1
+name: "ScienceBench - EEG Processing and Visualization"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-036-eeg-processing-vis1/description.md
+
+dataset:
+  answers: sciencebench-036-eeg-processing-vis1/prepared/private/biopsykit_eeg_processing_vis1_gold.png
+  sample_submission: sciencebench-036-eeg-processing-vis1/prepared/public/sample_submission.png
+
+grader:
+  name: visual_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-036-eeg-processing-vis1.prepare:prepare

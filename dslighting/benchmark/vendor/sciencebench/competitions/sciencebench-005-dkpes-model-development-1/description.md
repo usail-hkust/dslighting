@@ -22,7 +22,7 @@ ZINC01532179,0.686,0,0,0,0,0,0,1,3,0,0,1,DKPES_CSD_MMMF_1_16,0.965,0.633,0.332,1
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template (`index`, `Signal-inhibition`). Ensure numeric columns retain their dtype and identifiers remain aligned.
+Save predictions with the same header and column order as the template (`index`, `Signal-inhibition`). Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 

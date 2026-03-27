@@ -9,7 +9,7 @@
 
 ## Task
 
-Train a multitask model on the Clintox dataset to predict a drug's toxicity and FDA approval status. Save the test set predictions, including the SMILES representation of drugs and the probability of positive labels.
+Train a multitask model on the Clintox dataset to predict a drug's toxicity and FDA approval status. Save the test set predictions, including the SMILES representation of drugs and the probability of positive labels, to "output file".
 
 ## Dataset
 
@@ -23,7 +23,7 @@ C[C@@H]1CCN([C@H](C1)C(=O)[O-])C(=O)[C@H](CCC[NH+]=C(N)N)NS(=O)(=O)c2cccc3c2NC[C
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
+Save predictions with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 

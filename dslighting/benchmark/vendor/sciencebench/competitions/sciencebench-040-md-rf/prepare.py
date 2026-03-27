@@ -4,8 +4,8 @@ from pathlib import Path
 import shutil
 import pandas as pd
 
-DATA_DIR = Path("/path/to/ScienceAgent-bench/benchmark/datasets/dili_MD")
-GOLD_PATH = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/MD_gold.csv")
+DATA_DIR = None  # set inside prepare()
+GOLD_PATH = None  # set inside prepare()
 OUTPUT_FILES = ["MD_all_RF.csv", "MD_MCNC_RF.csv", "MD_MCLCNC_RF.csv"]
 
 
@@ -32,6 +32,9 @@ def _write_answer(path: Path, gold_df: pd.DataFrame) -> None:
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
+    global DATA_DIR, GOLD_PATH
+    DATA_DIR = raw / "dili_MD"
+    GOLD_PATH = raw / "MD_gold.csv"
     print("=" * 60)
     print("Preparing ScienceBench Task 40: MD RF models")
     print("=" * 60)

@@ -4,10 +4,10 @@ from pathlib import Path
 import shutil
 import pandas as pd
 
-SOURCE_DATA_DIR = Path("/path/to/ScienceAgent-bench/benchmark/datasets/crystalline_compound")
-TRAIN_FILE = SOURCE_DATA_DIR / "compound_elastic_properties_train.csv"
-TEST_FILE = SOURCE_DATA_DIR / "compound_elastic_properties_test.csv"
-GOLD_FILE = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/compound_elastic_properties_gold.csv")
+SOURCE_DATA_DIR = None  # set inside prepare()
+TRAIN_FILE = None  # set inside prepare()
+TEST_FILE = None  # set inside prepare()
+GOLD_FILE = None  # set inside prepare()
 
 
 def _ensure_dir(path: Path) -> None:
@@ -22,6 +22,11 @@ def _make_sample_submission(answer_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
+    global SOURCE_DATA_DIR, TRAIN_FILE, TEST_FILE, GOLD_FILE
+    SOURCE_DATA_DIR = raw / "crystalline_compound"
+    TRAIN_FILE = SOURCE_DATA_DIR / "compound_elastic_properties_train.csv"
+    TEST_FILE = SOURCE_DATA_DIR / "compound_elastic_properties_test.csv"
+    GOLD_FILE = raw / "compound_elastic_properties_gold.csv"
     print("=" * 60)
     print("Preparing ScienceBench Task 3: predict bulk modulus")
     print("=" * 60)

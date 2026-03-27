@@ -2,49 +2,40 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
-ID_COLUMN = "Unnamed: 0"
+PRED_FILENAME = "experimental_band_gap_prediction_pred.csv"
+GOLD_FILENAME = "experimental_band_gap_prediction_gold.csv"
 TARGET_COLUMN = "gap_expt_eV"
+THRESHOLD = 0.6
 
 
-def grade(submission, answers) -> float:
-    """
-    Return the actual evaluation metric (MAE; lower is better).
+def grade(request: GradingRequest) -> float:
+    submission_path = request.submission.root
+    if submission_path.is_file():
+        pred_path = submission_path
+    else:
+        pred_path = submission_path / PRED_FILENAME
+    gold_path = request.references.private_dir / GOLD_FILENAME
 
-    `submission` and `answers` are pandas DataFrames loaded from CSV.
-    """
-    if not isinstance(submission, pd.DataFrame) or not isinstance(answers, pd.DataFrame):
-        raise InvalidSubmissionError("Submission/answers must be CSV tables.")
+    if not pred_path.exists():
+        print(f"Prediction file not found: {pred_path}")
+        return 0.0
 
-    for col in (ID_COLUMN, TARGET_COLUMN):
-        if col not in submission.columns:
-            raise InvalidSubmissionError(f"Missing required column in submission: {col}")
-        if col not in answers.columns:
-            raise InvalidSubmissionError(f"Missing required column in answers: {col}")
+    pred_df = pd.read_csv(pred_path)
+    gold_df = pd.read_csv(gold_path)
 
-    sub = submission[[ID_COLUMN, TARGET_COLUMN]].copy()
-    gold = answers[[ID_COLUMN, TARGET_COLUMN]].copy()
+    if TARGET_COLUMN not in pred_df.columns:
+        print(f"Missing '{TARGET_COLUMN}' column in prediction.")
+        return 0.0
 
-    sub[TARGET_COLUMN] = pd.to_numeric(sub[TARGET_COLUMN], errors="coerce")
-    gold[TARGET_COLUMN] = pd.to_numeric(gold[TARGET_COLUMN], errors="coerce")
-
-    if sub[TARGET_COLUMN].isna().any():
-        raise InvalidSubmissionError("Submission contains non-numeric values.")
-
-    merged = gold.merge(sub, on=ID_COLUMN, suffixes=("_gold", "_pred"), how="inner")
+    merged = gold_df[[TARGET_COLUMN]].join(pred_df[[TARGET_COLUMN]], how="inner", rsuffix="_pred")
     if merged.empty:
-        raise InvalidSubmissionError("No overlapping ids between submission and answers.")
+        print("No overlapping rows between prediction and gold.")
+        return 0.0
 
-    mae = float(
-        np.mean(
-            np.abs(
-                merged[f"{TARGET_COLUMN}_gold"].to_numpy()
-                - merged[f"{TARGET_COLUMN}_pred"].to_numpy()
-            )
-        )
-    )
-    return mae
+    mae = (merged[TARGET_COLUMN] - merged[f"{TARGET_COLUMN}_pred"]).abs().mean()
+    print(f"MAE: {mae}")
+    return 1.0 if mae < THRESHOLD else 0.0

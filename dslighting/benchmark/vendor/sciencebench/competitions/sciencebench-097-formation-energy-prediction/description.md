@@ -5,7 +5,7 @@
 - Domain: Computational Chemistry
 - Subtask Categories: Deep Learning
 - Source: deepchem/deepchem
-- Output Type: CSV (numeric)
+- Output Type: Text (numeric)
 
 ## Task
 
@@ -20,7 +20,7 @@ Train a formation-energy predictor using the provided perovskite training molecu
 
 ## Submission Format
 
-Submit a `.csv` file with a single `formation_energy` column containing one floating-point prediction per test example, aligned with the order of entries in `perovskite_test.pkl`.
+Save the predictions as a text file with one floating-point value per line.
 
 ## Evaluation
 

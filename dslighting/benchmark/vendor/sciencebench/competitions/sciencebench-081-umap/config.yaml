@@ -1,0 +1,19 @@
+id: sciencebench-081-umap
+name: "ScienceBench - umap.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-081-umap/description.md
+
+dataset:
+  answers: sciencebench-081-umap/prepared/private/answer.csv
+  sample_submission: sciencebench-081-umap/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-081-umap.prepare:prepare

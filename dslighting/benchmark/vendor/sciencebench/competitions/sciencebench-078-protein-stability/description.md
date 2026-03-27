@@ -5,7 +5,6 @@
 - Domain: Bioinformatics
 - Subtask Categories: Feature Engineering, Deep Learning
 - Source: deepchem/deepchem
-- Expected Output: pucci-proteins_test_pred.csv
 - Output Type: Tabular
 
 ## Task
@@ -23,11 +22,8 @@ Train a neural network model using the pucci dataset to predict the melting temp
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template. The file uses:
-
-- `test_data_id`: row identifier
-- `deltaTm`: predicted value
+Save predictions with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 
-The grader computes the mean absolute error (MAE) against the reference labels.
+The grader loads your CSV, computes the mean absolute error against the gold file, and awards full credit when the MAE is at most 11.0.

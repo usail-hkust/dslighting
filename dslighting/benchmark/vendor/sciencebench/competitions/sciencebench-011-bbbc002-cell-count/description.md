@@ -21,7 +21,7 @@ CPvalid1_Anillin_40x_Tiles_p1069DAPI        32        42
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
+Save predictions with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 

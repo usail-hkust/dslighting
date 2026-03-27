@@ -9,7 +9,7 @@
 
 ## Task
 
-Train a model on the provided Drug-Induced Liver Injury (DILI) training data and generate predictions for the held-out test compounds. Map the vDILIConcern labels to a binary outcome (`DILI` vs `NoDILI`) and keep the test set ordering intact when producing your outputs.
+Train a support vector machine classifier on the provided Drug-Induced Liver Injury (DILI) training data and generate predictions for the held-out test compounds. Map the vDILIConcern labels to a binary outcome (`DILI` vs `NoDILI`) and keep the test set ordering intact when producing your outputs.
 
 ## Dataset
 

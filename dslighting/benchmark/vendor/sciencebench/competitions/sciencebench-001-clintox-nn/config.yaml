@@ -3,7 +3,7 @@ name: "ScienceBench - clintox_nn"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-001-clintox-nn/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-001-clintox-nn/description.md
 
 dataset:
   answers: sciencebench-001-clintox-nn/prepared/private/answer.csv
@@ -11,6 +11,9 @@ dataset:
 
 grader:
   name: roc_auc
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-001-clintox-nn/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-001-clintox-nn/prepare.py:prepare
+submission_filename: clintox_test_pred.csv
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-001-clintox-nn.prepare:prepare

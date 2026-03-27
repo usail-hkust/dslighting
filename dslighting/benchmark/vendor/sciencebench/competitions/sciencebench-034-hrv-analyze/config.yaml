@@ -1,0 +1,17 @@
+id: sciencebench-034-hrv-analyze
+name: "ScienceBench - HRV_analyze.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-034-hrv-analyze/description.md
+
+dataset:
+  answers: sciencebench-034-hrv-analyze/prepared/private/answer.csv
+  sample_submission: sciencebench-034-hrv-analyze/prepared/public/sample_submission.csv
+
+grader:
+  name: rmse
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-034-hrv-analyze.prepare:prepare

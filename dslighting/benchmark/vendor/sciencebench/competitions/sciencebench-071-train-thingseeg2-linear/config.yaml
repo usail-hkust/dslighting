@@ -1,0 +1,17 @@
+id: sciencebench-071-train-thingseeg2-linear
+name: "ScienceBench - train_thingseeg2_linear.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-071-train-thingseeg2-linear/description.md
+
+dataset:
+  answers: sciencebench-071-train-thingseeg2-linear/prepared/private/answer.npy
+  sample_submission: sciencebench-071-train-thingseeg2-linear/prepared/public/sample_submission.npy
+
+grader:
+  name: spearman_correlation
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-071-train-thingseeg2-linear.prepare:prepare

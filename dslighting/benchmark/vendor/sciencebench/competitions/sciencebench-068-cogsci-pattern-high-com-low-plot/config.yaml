@@ -1,0 +1,19 @@
+id: sciencebench-068-cogsci-pattern-high-com-low-plot
+name: "ScienceBench - CogSci_pattern_high_com_low_plot.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-068-cogsci-pattern-high-com-low-plot/description.md
+
+dataset:
+  answers: sciencebench-068-cogsci-pattern-high-com-low-plot/prepared/private/answer.csv
+  sample_submission: sciencebench-068-cogsci-pattern-high-com-low-plot/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-068-cogsci-pattern-high-com-low-plot.prepare:prepare

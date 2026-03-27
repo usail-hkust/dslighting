@@ -4,11 +4,19 @@ from __future__ import annotations
 
 import pandas as pd
 
+from dslighting.benchmark.grading.models import GradingRequest
+
 REQUIRED_COLUMN = "percentage_deforestation"
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
+def grade(request: GradingRequest) -> float:
     """Return 1 - relative error (clipped at 0) between submission and answers."""
+    submission_path = request.submission.root
+    answers_path = request.references.private_dir / "answer.csv"
+
+    submission = pd.read_csv(submission_path)
+    answers = pd.read_csv(answers_path)
+
     if submission.empty:
         print("Submission is empty.")
         return 0.0

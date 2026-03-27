@@ -1,0 +1,17 @@
+id: sciencebench-085-saliva
+name: "ScienceBench - saliva.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-085-saliva/description.md
+
+dataset:
+  answers: sciencebench-085-saliva/prepared/private/answer.json
+  sample_submission: sciencebench-085-saliva/prepared/public/sample_submission.json
+
+grader:
+  name: exact_match
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-085-saliva.prepare:prepare

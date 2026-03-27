@@ -1,0 +1,19 @@
+id: sciencebench-004-elk-new
+name: "ScienceBench - elk_new.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-004-elk-new/description.md
+
+dataset:
+  answers: sciencebench-004-elk-new/prepared/private/answer.csv
+  sample_submission: sciencebench-004-elk-new/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-004-elk-new.prepare:prepare

@@ -1,0 +1,17 @@
+id: sciencebench-053-mountainlion3
+name: "ScienceBench - mountainLion3.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-053-mountainlion3/description.md
+
+dataset:
+  answers: sciencebench-053-mountainlion3/prepared/private/answer.csv
+  sample_submission: sciencebench-053-mountainlion3/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-053-mountainlion3.prepare:prepare

@@ -9,12 +9,7 @@
 
 ## Task
 
-Use molecular descriptors to train a model that predicts DILI risk and generate predictions for the evaluation set.
-
-Write a single submission CSV that matches the provided `sample_submission.csv` format exactly, with columns:
-
-- `test_data_id`
-- `label` (`DILI` or `NoDILI`)
+Use molecular descriptors to train Random Forest classifiers that predict DILI risk. Build separate models for the `MCNC`, `MCLCNC`, and `all` splits, and store the predictions in separate CSV files per split, with columns `standardised_smiles` and `label` (`DILI` or `NoDILI`).
 
 ## Dataset
 
@@ -26,8 +21,8 @@ The `dili_MD/` directory contains:
 
 ## Submission Format
 
-Submit a single CSV matching `sample_submission.csv` (same header and row order).
+Produce one CSV per split (`all`, `MCNC`, `MCLCNC`). Each file must align with `test.csv` and include the `label` predictions.
 
 ## Evaluation
 
-The grader compares your submitted `label` values against the reference and reports the F1 score using `DILI` as the positive class.
+Submissions are accepted when the mean F1 score across the three splits reaches the reference threshold of 0.73.

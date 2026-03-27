@@ -1,0 +1,19 @@
+id: sciencebench-055-plot-ocean-profiles
+name: "ScienceBench - plot_ocean_profiles.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-055-plot-ocean-profiles/description.md
+
+dataset:
+  answers: sciencebench-055-plot-ocean-profiles/prepared/private/answer.csv
+  sample_submission: sciencebench-055-plot-ocean-profiles/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-055-plot-ocean-profiles.prepare:prepare

@@ -1,0 +1,19 @@
+id: sciencebench-027-generate-plot-similarity
+name: "ScienceBench - generate_plot_similarity.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-027-generate-plot-similarity/description.md
+
+dataset:
+  answers: sciencebench-027-generate-plot-similarity/prepared/private/answer.csv
+  sample_submission: sciencebench-027-generate-plot-similarity/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-027-generate-plot-similarity.prepare:prepare

@@ -1,44 +1,45 @@
-"""Grading function for ScienceBench task 51 (brain-blood QSAR)."""
+"""Grading function for ScienceBench task 51 (brain-blood-qsar)."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import balanced_accuracy_score
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
-REQUIRED_COLUMNS = {"MolID", "label"}
+THRESHOLD = 0.70
+PRED_FILENAME = "brain_blood_qsar.csv"
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
-    """
-    Return the actual evaluation metric (balanced accuracy; higher is better).
+def grade(request: GradingRequest) -> float:
+    submission_path = request.submission.root
+    if submission_path.is_file():
+        pred_path = submission_path
+    else:
+        pred_path = submission_path / PRED_FILENAME
+    answers_path = request.references.private_dir / "answer.csv"
 
-    Both submission and answers must have columns: MolID,label.
-    """
-    if submission is None or submission.empty:
-        raise InvalidSubmissionError("Submission is empty.")
-    if answers is None or answers.empty:
-        raise InvalidSubmissionError("Answer data is empty.")
+    if not pred_path.exists():
+        print(f"Submission file not found: {pred_path}")
+        return 0.0
 
-    if not REQUIRED_COLUMNS.issubset(submission.columns):
-        raise InvalidSubmissionError(f"Submission missing columns: {REQUIRED_COLUMNS - set(submission.columns)}")
-    if not REQUIRED_COLUMNS.issubset(answers.columns):
-        raise InvalidSubmissionError(f"Answers missing columns: {REQUIRED_COLUMNS - set(answers.columns)}")
+    submission_df = pd.read_csv(pred_path)
+    answers_df = pd.read_csv(answers_path)
 
-    merged = pd.merge(
-        answers[["MolID", "label"]],
-        submission[["MolID", "label"]],
-        on="MolID",
-        how="inner",
-        suffixes=("_true", "_pred"),
-    )
-    if len(merged) != len(answers):
-        raise InvalidSubmissionError(
-            f"Row alignment mismatch: merged={len(merged)} answers={len(answers)}. "
-            "Ensure you predict for every MolID exactly once."
-        )
+    if "label" not in submission_df.columns:
+        raise ValueError("Submission must contain 'label' column")
+    if "label" not in answers_df.columns:
+        raise ValueError("Answers must contain 'label' column")
 
-    score = balanced_accuracy_score(merged["label_true"], merged["label_pred"])
+    pred_labels = submission_df["label"]
+    gold_labels = answers_df["label"]
+
+    if len(pred_labels) != len(gold_labels):
+        print(f"Row count mismatch: {len(pred_labels)} vs {len(gold_labels)}")
+        return 0.0
+
+    score = balanced_accuracy_score(gold_labels, pred_labels)
     print(f"Balanced accuracy: {score}")
-    return float(score)
+    return 1.0 if score >= THRESHOLD else 0.0

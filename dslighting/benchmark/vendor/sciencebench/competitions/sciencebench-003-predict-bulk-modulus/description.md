@@ -15,7 +15,7 @@ Train a random forest model with the given dataset of inorganic crystalline comp
 
 ## Submission Format
 
-Submit `sample_submission.csv` with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
+Save predictions with the same header and column order as the template. Ensure numeric columns retain their dtype and identifiers remain aligned.
 
 ## Evaluation
 

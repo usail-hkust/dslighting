@@ -1,0 +1,17 @@
+id: sciencebench-018-dili-models-ecfp-rf
+name: "ScienceBench - DILI_models_ECFP_RF.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-018-dili-models-ecfp-rf/description.md
+
+dataset:
+  answers: sciencebench-018-dili-models-ecfp-rf/prepared/private/answer.csv
+  sample_submission: sciencebench-018-dili-models-ecfp-rf/prepared/public/sample_submission.csv
+
+grader:
+  name: f1
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-018-dili-models-ecfp-rf.prepare:prepare

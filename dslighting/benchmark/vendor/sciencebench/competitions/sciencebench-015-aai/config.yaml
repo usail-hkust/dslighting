@@ -3,7 +3,7 @@ name: "ScienceBench - aai.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-015-aai/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-015-aai/description.md
 
 dataset:
   answers: sciencebench-015-aai/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: accuracy
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-015-aai/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-015-aai/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-015-aai.prepare:prepare

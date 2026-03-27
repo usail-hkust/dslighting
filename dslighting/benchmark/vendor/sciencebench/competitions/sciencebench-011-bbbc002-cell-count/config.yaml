@@ -3,7 +3,7 @@ name: "ScienceBench - BBBC002_cell-count.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-011-bbbc002-cell-count/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-011-bbbc002-cell-count/description.md
 
 dataset:
   answers: sciencebench-011-bbbc002-cell-count/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: accuracy
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-011-bbbc002-cell-count/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-011-bbbc002-cell-count/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-011-bbbc002-cell-count.prepare:prepare

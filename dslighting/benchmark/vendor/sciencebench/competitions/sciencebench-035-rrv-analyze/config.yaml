@@ -1,0 +1,17 @@
+id: sciencebench-035-rrv-analyze
+name: "ScienceBench - RRV_analyze.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-035-rrv-analyze/description.md
+
+dataset:
+  answers: sciencebench-035-rrv-analyze/prepared/private/answer.csv
+  sample_submission: sciencebench-035-rrv-analyze/prepared/public/sample_submission.csv
+
+grader:
+  name: rmse
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-035-rrv-analyze.prepare:prepare

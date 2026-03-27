@@ -1,143 +1,136 @@
-# ScienceBench for DSLighting
+# ScienceAgentBench Competitions
 
-ScienceBench是DSLighting框架集成的102个科学计算任务基准测试，源自ScienceAgent-bench。
+This directory hosts the competition definitions for the ScienceAgentBench workflow. ScienceAgentBench is a benchmark for evaluating language agents on data-driven scientific discovery tasks, sourced from peer-reviewed publications across four scientific disciplines.
 
-## 目录结构
+**Paper**: [ScienceAgentBench: Toward Rigorous Assessment of Language Agents for Data-Driven Scientific Discovery](https://arxiv.org/abs/2410.05080) (ICLR 2025)
 
+**Upstream repository**: https://github.com/OSU-NLP-Group/ScienceAgentBench
+
+## Benchmark Overview
+
+- **102** benchmark tasks extracted from **44** peer-reviewed papers
+- **4** scientific disciplines: Bioinformatics, Chemoinformatics, Geoscience, Cognitive Neuroscience
+- **9** subject matter experts validated all task instances
+- Each task is a self-contained Python program generation problem evaluated on code execution results
+
+## Adding a New Competition
+
+To register an additional competition, add a new folder under `benchmark/vendor/sciencebench/competitions/<competition-name>` and include the following files:
+
+1. `config.yaml` – top-level competition metadata (ID, task type, grader, dataset paths).
+2. `description.md` – human-readable overview: problem statement, dataset details, and submission format.
+3. `prepare.py` – data preparation hook that downloads/loads the raw data and materializes the prepared artifacts into the public/private directories defined in `config.yaml`.
+4. `grade.py` – scoring logic that consumes a submission and the private ground-truth labels, then returns the configured metric.
+5. `checksums.yaml` – SHA256 hashes for every artifact emitted by `prepare.py` to guard against accidental drift.
+6. `leaderboard.csv` – optional sample leaderboard with historical submissions or reference baselines.
+
+Place the actual dataset assets inside the paired data directory at `data/competitions/<competition-name>`, following the public/private split:
+
+- `prepared/public/` – files exposed to the agent (inputs, sample submissions).
+- `prepared/private/` – ground-truth labels used exclusively for scoring.
+
+## Supported Disciplines
+
+- **Bioinformatics** – molecular biology, genomics, protein modeling
+- **Chemoinformatics** – drug property prediction, molecular modeling, toxicity
+- **Geoscience** – materials science, earth observation, environmental modeling
+- **Cognitive Neuroscience** – brain-behavior modeling, neural data analysis
+
+## Available Competitions
+
+| # | Competition | Discipline | Task Type | Metric |
+|---|---|---|---|---|
+| 001 | clintox-nn | Chemoinformatics | Classification | ROC-AUC |
+| 002 | mat-feature-select | Materials Science | Feature Selection | Exact Match |
+| 003 | predict-bulk-modulus | Materials Science | Regression | RMSE |
+| 004 | elk-new | Geoscience | Visualization | Pixel Similarity |
+| 005 | dkpes-model-development-1 | Chemoinformatics | Classification | Accuracy |
+| 006-008 | dkpes-visualization-* | Chemoinformatics | Visualization | Pixel Similarity |
+| 009 | factors-correlations | Geoscience | Visualization | Pixel Similarity |
+| 010 | toronto-new | Geoscience | Visualization | Pixel Similarity |
+| 011 | bbbc002-cell-count | Bioinformatics | Regression | MAE |
+| 012 | davis-dti | Chemoinformatics | Ranking | List Match |
+| 013 | drug-property-model | Chemoinformatics | Classification | F1 |
+| 014 | flooding-gpd | Geoscience | Visualization | Pixel Similarity |
+| 015 | aai | Bioinformatics | Classification | ROC-AUC |
+| 016 | compound-filter | Chemoinformatics | Classification | Overlap |
+| 017 | drugex-vis | Chemoinformatics | Visualization | Pixel Similarity |
+| 018 | dili-models-ecfp-rf | Chemoinformatics | Classification | F1 |
+| 019 | dili-models-ecfp-svm | Chemoinformatics | Classification | F1 |
+| 020 | tdc-visualization | Chemoinformatics | Visualization | Pixel Similarity |
+| 021 | deforestation | Geoscience | Regression | Relative Error |
+| 022 | papyrus-filtering | Bioinformatics | Classification | Exact Match |
+| 023 | deforestation-predict | Geoscience | Visualization | Pixel Similarity |
+| 024-025 | ecg-processing-vis* | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 026 | ligand-fingerprint | Chemoinformatics | Classification | Accuracy |
+| 027 | generate-plot-similarity | Chemoinformatics | Visualization | Pixel Similarity |
+| 028 | charge-density-difference | Materials Science | Visualization | Pixel Similarity |
+| 029 | bio-eventrelated-analyze | Cognitive Neuroscience | Regression | Tolerance |
+| 030-031 | plot-phonon-* | Materials Science | Visualization | Pixel Similarity |
+| 032 | coral-sponge | Bioinformatics | Visualization | Pixel Similarity |
+| 033 | transit-access | Geoscience | Visualization | Pixel Similarity |
+| 034 | hrv-analyze | Cognitive Neuroscience | Regression | Column Sum |
+| 035 | rrv-analyze | Cognitive Neuroscience | Regression | Column Sum |
+| 036 | eeg-processing-vis1 | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 037 | cft | Cognitive Neuroscience | Regression | Tolerance |
+| 038 | fingerprint-similarity-vis | Chemoinformatics | Visualization | Pixel Similarity |
+| 039 | protein-protein-fingerprint-similarity-vis | Chemoinformatics | Visualization | Pixel Similarity |
+| 040 | md-rf | Chemoinformatics | Classification | F1 |
+| 041 | md-knn | Chemoinformatics | Classification | F1 |
+| 042 | edr-analyze | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 043 | eog-analyze | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 044 | imu | Cognitive Neuroscience | Regression | Tolerance |
+| 045 | questionnaire | Cognitive Neuroscience | Regression | Tolerance |
+| 046-050 | mountainlion*/sst*/eof-* | Geoscience | Visualization | Pixel Similarity |
+| 051 | brain-blood-qsar | Chemoinformatics | Classification | Balanced Accuracy |
+| 052 | aquatic-toxicity-qsar-vis | Chemoinformatics | Visualization | Pixel Similarity |
+| 053-054 | mountainlion* | Geoscience | Visualization | Pixel Similarity |
+| 055-056 | plot-ocean*/plot-temperature* | Geoscience | Visualization | Pixel Similarity |
+| 057-062 | nvc-* | Cognitive Neuroscience | Visualization/Classification | Various |
+| 063 | bio-interval-analyze | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 064-065 | plotting-* | Geoscience | Visualization | Pixel Similarity |
+| 066-068 | cogsci-pattern-* | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 069 | single-cell-analysis-pca | Bioinformatics | Visualization | Pixel Similarity |
+| 070 | single-cell-analysis-de | Bioinformatics | Visualization | Pixel Similarity |
+| 071 | train-thingseeg2-linear | Cognitive Neuroscience | Regression | Spearman r |
+| 072 | train-thingseeg2 | Cognitive Neuroscience | Regression | Spearman r |
+| 073 | eeg2eeg-vis | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 074 | plotting-glacier-* | Geoscience | Visualization | Pixel Similarity |
+| 075 | topic-modeling-lda | Bioinformatics | Visualization | Pixel Similarity |
+| 076 | mineral-prospectivity-pred | Geoscience | Visualization | Pixel Similarity |
+| 077 | waterquality | Geoscience | Visualization | Pixel Similarity |
+| 078 | protein-stability | Bioinformatics | Regression | MAE |
+| 079-082 | violin/genes-*/umap/dendrogram | Bioinformatics | Visualization | Pixel Similarity |
+| 083 | urbanheat | Geoscience | Visualization | Pixel Similarity |
+| 084 | burnscar | Geoscience | Visualization | Pixel Similarity |
+| 085 | saliva | Cognitive Neuroscience | Regression | Tolerance |
+| 086 | plot-tec | Geoscience | Visualization | Pixel Similarity |
+| 087 | polynomial-fit | Physics | Regression | Exact Match |
+| 088 | plot-collisions-map | Geoscience | Visualization | Pixel Similarity |
+| 089 | plot-trees-count | Geoscience | Visualization | Pixel Similarity |
+| 090 | run-jnmf | Cognitive Neuroscience | Matrix Factorization | Reconstruction Error |
+| 091 | jnmf-plot-patterns | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 092 | h-importances | Cognitive Neuroscience | Regression | Tolerance |
+| 093 | plot-h-distribution | Cognitive Neuroscience | Visualization | Pixel Similarity |
+| 094 | polyverse-visualize-molecules | Chemoinformatics | Visualization | Pixel Similarity |
+| 095 | synthetic-feasibility-modeling | Chemoinformatics | Regression | MSE |
+| 096 | scatter | Bioinformatics | Visualization | Pixel Similarity |
+| 097 | formation-energy-prediction | Materials Science | Regression | MSE |
+| 098 | 3k | Bioinformatics | Visualization | Pixel Similarity |
+| 099-100 | spatial* | Bioinformatics | Visualization | Pixel Similarity |
+| 101 | experimental-band-gap-prediction | Materials Science | Regression | MAE |
+| 102 | refractive-index-prediction | Materials Science | Regression | MAE |
+
+**Total: 102 tasks across 4 disciplines**
+
+## Citation
+
+```bibtex
+@inproceedings{chen2025scienceagentbench,
+  title     = {ScienceAgentBench: Toward Rigorous Assessment of Language Agents for Data-Driven Scientific Discovery},
+  author    = {Ziru Chen and Shijie Chen and Yuting Ning and others},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2410.05080}
+}
 ```
-/path/to/dslighting/benchmark/vendor/sciencebench/
-├── competitions/              # 竞赛注册目录（registry）
-│   ├── __init__.py
-│   ├── utils.py
-│   ├── sciencebench-001-clintox-nn/
-│   │   ├── config.yaml        # 竞赛配置
-│   │   ├── description.md     # 任务描述
-│   │   ├── prepare.py         # 数据准备脚本
-│   │   ├── grade.py           # 评分函数
-│   │   ├── leaderboard.csv    # 排行榜
-│   │   └── checksums.yaml     # 校验和
-│   ├── sciencebench-002-mat-feature-select/
-│   └── ...                    # 共102个竞赛
-
-/path/to/ScienceAgent-bench/
-└── competitions/              # 数据目录（data-dir）
-    ├── sciencebench-001-clintox-nn/
-    │   └── prepared/
-    │       ├── public/        # 公开数据（训练集）
-    │       └── private/       # 私有数据（测试集答案）
-    ├── sciencebench-002-mat-feature-select/
-    └── ...
-```
-
-## 任务分类
-
-- **Computational Chemistry** (20任务): 计算化学
-- **Geographical Information Science** (27任务): 地理信息科学
-- **Bioinformatics** (27任务): 生物信息学
-- **Psychology and Cognitive Science** (28任务): 心理学与认知科学
-
-## 使用方法
-
-### 1. 列出所有任务
-
-```bash
-python examples/scienceagentbench-to-mlebench/convert_scienceagent_to_mlebench.py --list
-```
-
-### 2. 转换特定任务
-
-```bash
-python examples/scienceagentbench-to-mlebench/convert_scienceagent_to_mlebench.py --instance-ids 1 2 3
-```
-
-### 3. 转换所有任务
-
-```bash
-python examples/scienceagentbench-to-mlebench/convert_scienceagent_to_mlebench.py --all
-```
-
-### 4. 运行基准测试
-
-```bash
-python main.py \
-  --workflow scientific \
-  --benchmark sciencebench \
-  --data-dir "/path/to/ScienceAgent-bench/competitions" \
-  --llm-model openai/deepseek-ai/DeepSeek-V3.1-Terminus \
-  --task sciencebench-001-clintox-nn
-```
-
-## 配置格式
-
-每个竞赛的`config.yaml`格式：
-
-```yaml
-id: sciencebench-001-clintox-nn
-name: "ScienceBench - clintox_nn"
-competition_type: code
-awards_medals: false
-prizes: null
-description: vendor/sciencebench/competitions/sciencebench-001-clintox-nn/description.md
-
-dataset:
-  answers: sciencebench-001-clintox-nn/prepared/private/answer.csv
-  sample_submission: sciencebench-001-clintox-nn/prepared/public/sample_submission.csv
-
-grader:
-  name: roc_auc
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-001-clintox-nn/grade.py:grade
-
-preparer: file:vendor/sciencebench/competitions/sciencebench-001-clintox-nn/prepare.py:prepare
-```
-
-## 评估指标
-
-- `accuracy`: 准确率（分类任务）
-- `rmse`: 均方根误差（回归任务，返回负值）
-- `visual_similarity`: 视觉相似度（可视化任务）
-- `exact_match`: 精确匹配（特征选择等）
-
-## 技术细节
-
-### 导入路径处理
-
-竞赛ID中包含连字符（如`sciencebench-001-clintox-nn`），这在Python模块名中是无效的。我们使用与MLE-Bench相同的解决方案：
-
-1. 在`dslighting.benchmark.vendor.sciencebench.utils.import_fn`中处理带连字符的模块导入
-2. ScienceBenchmark使用该函数动态加载grade和prepare函数
-3. 为竞赛目录创建假父模块，支持相对导入
-
-### 与MLE-Bench的兼容性
-
-ScienceBench复用了MLE-Bench的导入机制：
-- 使用`dslighting.benchmark.vendor.sciencebench.utils.import_fn`处理动态导入
-- 竞赛配置格式类似
-- 支持相同的评估指标
-
-## 注意事项
-
-1. **数据准备**: 首次运行任务前，需要准备数据（运行prepare.py）
-2. **依赖包**: 某些任务需要特定的科学计算库（如deepchem, matminer, geopandas等）
-3. **计算资源**: 部分任务（特别是深度学习相关）可能需要GPU
-
-## 转换脚本
-
-转换脚本位置：`examples/scienceagentbench-to-mlebench/convert_scienceagent_to_mlebench.py`
-
-主要功能：
-- 从ScienceAgent-bench元数据生成竞赛配置
-- 推断评估指标
-- 生成prepare.py和grade.py
-- 自动清理任务描述（去除文件路径等具体信息）
-
-## 已知问题
-
-1. 某些任务的原始数据可能需要从ScienceAgent-bench手动获取
-2. 图像相似度评估是占位实现，需要根据具体任务调整
-3. 部分任务的评估指标可能需要手动优化
-
-## 更新日志
-
-- 2025-11-03: 初始版本，转换了全部102个任务
-- 采用MLE-Bench兼容的导入机制
-- 简化的registry结构，无需复杂的Registry类

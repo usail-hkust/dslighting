@@ -1,0 +1,19 @@
+id: sciencebench-054-mountainlioncorridor
+name: "ScienceBench - mountainLionCorridor.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-054-mountainlioncorridor/description.md
+
+dataset:
+  answers: sciencebench-054-mountainlioncorridor/prepared/private/answer.csv
+  sample_submission: sciencebench-054-mountainlioncorridor/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-054-mountainlioncorridor.prepare:prepare

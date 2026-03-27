@@ -1,0 +1,17 @@
+id: sciencebench-044-imu
+name: "ScienceBench - imu.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-044-imu/description.md
+
+dataset:
+  answers: sciencebench-044-imu/prepared/private/answer.json
+  sample_submission: sciencebench-044-imu/prepared/public/sample_submission.json
+
+grader:
+  name: rmse
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-044-imu.prepare:prepare

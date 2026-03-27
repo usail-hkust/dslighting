@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import pandas as pd
 
-DATA_DIR = Path("/path/to/ScienceAgent-bench/benchmark/datasets/hiv")
+DATA_DIR = None  # set inside prepare()
 OUTPUT_FILENAME = "pred_results/hiv_test_pred.csv"
 
 
@@ -26,6 +26,8 @@ def _write_answer(path: Path, gold_df: pd.DataFrame) -> None:
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
+    global DATA_DIR
+    DATA_DIR = raw / "hiv"
     print("=" * 60)
     print("Preparing ScienceBench Task 13: HIV property prediction")
     print("=" * 60)
@@ -55,7 +57,7 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
     _write_sample_submission(public)
     print("✓ Wrote sample_submission.csv")
 
-    gold_path = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/HIV_gold.csv")
+    gold_path = raw / "HIV_gold.csv"
     gold_df = pd.read_csv(gold_path)
     _write_answer(private, gold_df)
     print("✓ Wrote answer.csv")

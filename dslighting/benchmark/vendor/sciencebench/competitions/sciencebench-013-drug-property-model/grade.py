@@ -5,44 +5,47 @@ from __future__ import annotations
 import pandas as pd
 from sklearn.metrics import f1_score
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
 REQUIRED_COLUMNS = {"smiles", "HIV_active"}
+F1_THRESHOLD = 0.43
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
+def grade(request: GradingRequest) -> float:
     """
-    Return the actual evaluation metric (F1; higher is better) with ordering validation.
+    Evaluate predictions using F1 score with ordering validation.
 
     Args:
-        submission: DataFrame produced by the participant.
-        answers: Ground-truth DataFrame provided by the benchmark.
+        request: GradingRequest containing submission path and references
 
     Returns:
-        F1 score (float).
+        1.0 if the SMILES ordering matches and F1 >= threshold; otherwise 0.0.
     """
+    submission_path = request.submission.root
+    answers_path = request.references.private_dir / "answer.csv"
+
+    submission = pd.read_csv(submission_path)
+    answers = pd.read_csv(answers_path)
+
     if submission.empty:
-        raise InvalidSubmissionError("Submission is empty.")
+        print("Submission is empty.")
+        return 0.0
 
     if not REQUIRED_COLUMNS.issubset(submission.columns):
-        raise InvalidSubmissionError(
-            f"Submission missing required columns: {REQUIRED_COLUMNS - set(submission.columns)}"
-        )
+        print(f"Submission missing required columns: {REQUIRED_COLUMNS - set(submission.columns)}")
+        return 0.0
 
     if not REQUIRED_COLUMNS.issubset(answers.columns):
-        raise InvalidSubmissionError("Answer file is missing required columns.")
+        print("Answer file is missing required columns.")
+        return 0.0
 
     # Ensure ordering matches exactly.
     if list(submission["smiles"]) != list(answers["smiles"]):
-        raise InvalidSubmissionError("SMILES ordering mismatch.")
+        print("SMILES ordering mismatch.")
+        return 0.0
 
     # Compute F1 score on the aligned columns.
-    y_true = answers["HIV_active"].astype(int).values
-    y_pred_raw = submission["HIV_active"].astype(float).values
-    # Allow probability submissions by thresholding at 0.5.
-    y_pred = (y_pred_raw >= 0.5).astype(int)
-
-    metric = f1_score(y_true, y_pred)
+    metric = f1_score(answers["HIV_active"].values, submission["HIV_active"].values)
     print(f"F1 score: {metric}")
 
-    return float(metric)
+    return 1.0 if metric >= F1_THRESHOLD else 0.0

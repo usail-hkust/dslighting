@@ -7,8 +7,8 @@ import shutil
 import pandas as pd
 
 
-DATASET_ROOT = Path("/path/to/ScienceAgent-bench/benchmark/datasets/deforestation")
-GOLD_FILE = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/deforestation_rate_gold.csv")
+DATASET_ROOT = None  # set inside prepare()
+GOLD_FILE = None  # set inside prepare()
 EXPECTED_OUTPUT = "deforestation_rate.csv"
 
 
@@ -49,6 +49,9 @@ def _write_answers(private_dir: Path, gold_df: pd.DataFrame) -> None:
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
+    global DATASET_ROOT, GOLD_FILE
+    DATASET_ROOT = raw / "deforestation"
+    GOLD_FILE = raw / "deforestation_rate_gold.csv"
     print("=" * 60)
     print("Preparing ScienceBench Task 21: deforestation analysis")
     print("=" * 60)

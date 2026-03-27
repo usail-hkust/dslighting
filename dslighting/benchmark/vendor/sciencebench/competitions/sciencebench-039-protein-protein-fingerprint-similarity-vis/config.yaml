@@ -1,0 +1,17 @@
+id: sciencebench-039-protein-protein-fingerprint-similarity-vis
+name: "ScienceBench - protein_protein_fingerprint_similarity_vis.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-039-protein-protein-fingerprint-similarity-vis/description.md
+
+dataset:
+  answers: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/private/answer.csv
+  sample_submission: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-039-protein-protein-fingerprint-similarity-vis.prepare:prepare

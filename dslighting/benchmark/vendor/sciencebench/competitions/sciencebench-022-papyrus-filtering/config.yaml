@@ -1,0 +1,14 @@
+id: sciencebench-022-papyrus-filtering
+name: ScienceBench - papyrus_filtering.py
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-022-papyrus-filtering/description.md
+dataset:
+  answers: sciencebench-022-papyrus-filtering/prepared/private/answer.pkl
+  sample_submission: sciencebench-022-papyrus-filtering/prepared/public/sample_submission.pkl
+grader:
+  name: table_match
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+preparer: benchmarks.sciencebench.competitions.sciencebench-022-papyrus-filtering.prepare:prepare

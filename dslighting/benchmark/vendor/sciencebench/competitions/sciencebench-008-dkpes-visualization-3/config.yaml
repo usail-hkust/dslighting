@@ -1,0 +1,19 @@
+id: sciencebench-008-dkpes-visualization-3
+name: "ScienceBench - dkpes_visualization_3.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-008-dkpes-visualization-3/description.md
+
+dataset:
+  answers: sciencebench-008-dkpes-visualization-3/prepared/private/answer.csv
+  sample_submission: sciencebench-008-dkpes-visualization-3/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-008-dkpes-visualization-3.prepare:prepare

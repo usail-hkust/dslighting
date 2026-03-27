@@ -1,0 +1,19 @@
+id: sciencebench-014-flooding-gpd
+name: "ScienceBench - flooding_gpd.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-014-flooding-gpd/description.md
+
+dataset:
+  answers: sciencebench-014-flooding-gpd/prepared/private/answer.csv
+  sample_submission: sciencebench-014-flooding-gpd/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-014-flooding-gpd.prepare:prepare

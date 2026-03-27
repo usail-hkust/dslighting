@@ -3,15 +3,15 @@ name: "ScienceBench - synthetic_feasibility_modeling.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-095-synthetic-feasibility-modeling/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-095-synthetic-feasibility-modeling/description.md
 
 dataset:
   answers: sciencebench-095-synthetic-feasibility-modeling/prepared/private/answer.npy
   sample_submission: sciencebench-095-synthetic-feasibility-modeling/prepared/public/sample_submission.npy
-  submission_filename: tox21_mol_scscores_pred.npy
 
 grader:
   name: mse
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-095-synthetic-feasibility-modeling/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-095-synthetic-feasibility-modeling/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-095-synthetic-feasibility-modeling.prepare:prepare

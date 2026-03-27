@@ -5,44 +5,41 @@ from __future__ import annotations
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-from dslighting.benchmark.vendor.sciencebench.grade_helpers import InvalidSubmissionError
+from dslighting.benchmark.grading.models import GradingRequest
 
-REQUIRED_COLUMNS = {"Drug_ID", "Y"}
+REQUIRED_COLUMNS = {"Drug", "Y"}
+THRESHOLD = 0.84
 
 
-def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
-    """Return the actual evaluation metric (ROC-AUC; higher is better)."""
+def grade(request: GradingRequest) -> float:
+    """Return 1.0 if ROC AUC >= 0.84 and Drug ordering matches; otherwise 0.0."""
+    submission_path = request.submission.root
+    answers_path = request.references.private_dir / "answer.csv"
+
+    submission = pd.read_csv(submission_path)
+    answers = pd.read_csv(answers_path)
+
     if submission.empty:
-        raise InvalidSubmissionError("Submission is empty.")
+        print("Submission is empty.")
+        return 0.0
 
     if not REQUIRED_COLUMNS.issubset(submission.columns):
-        raise InvalidSubmissionError(
-            f"Submission missing required columns: {REQUIRED_COLUMNS - set(submission.columns)}"
-        )
+        print(f"Submission missing required columns: {REQUIRED_COLUMNS - set(submission.columns)}")
+        return 0.0
 
     if not REQUIRED_COLUMNS.issubset(answers.columns):
-        raise InvalidSubmissionError("Answer file is missing required columns.")
+        print("Answer file is missing required columns.")
+        return 0.0
 
-    # Align on identifier (avoid relying on ordering).
-    merged = pd.merge(
-        answers[["Drug_ID", "Y"]],
-        submission[["Drug_ID", "Y"]],
-        on="Drug_ID",
-        how="inner",
-        suffixes=("_true", "_pred"),
-    )
-    if len(merged) != len(answers):
-        raise InvalidSubmissionError(
-            f"Row alignment mismatch: merged={len(merged)} answers={len(answers)}. "
-            "Ensure you predict for every Drug_ID exactly once."
-        )
+    if list(submission["Drug"]) != list(answers["Drug"]):
+        print("Drug ordering mismatch.")
+        return 0.0
 
     try:
-        y_true = merged["Y_true"].astype(int).values
-        y_pred = merged["Y_pred"].astype(float).values
-        auc = roc_auc_score(y_true, y_pred)
+        auc = roc_auc_score(answers["Y"].values, submission["Y"].values)
     except ValueError as exc:
-        raise InvalidSubmissionError(f"Unable to compute ROC AUC: {exc}") from exc
+        print(f"Unable to compute ROC AUC: {exc}")
+        return 0.0
 
-    print(f"ROC AUC: {auc}")
-    return float(auc)
+    print(f"ROC AUC: {auc:.4f} (threshold: {THRESHOLD})")
+    return 1.0 if auc >= THRESHOLD else 0.0

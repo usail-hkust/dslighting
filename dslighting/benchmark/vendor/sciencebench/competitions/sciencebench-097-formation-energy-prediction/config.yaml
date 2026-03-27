@@ -3,7 +3,7 @@ name: "ScienceBench - formation_energy_prediction.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-097-formation-energy-prediction/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-097-formation-energy-prediction/description.md
 
 dataset:
   answers: sciencebench-097-formation-energy-prediction/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: mse
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-097-formation-energy-prediction/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-097-formation-energy-prediction/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-097-formation-energy-prediction.prepare:prepare

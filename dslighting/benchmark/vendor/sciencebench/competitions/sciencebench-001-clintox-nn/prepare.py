@@ -13,7 +13,7 @@ def prepare(raw: Path, public: Path, private: Path):
     Prepare the clintox task data.
 
     Args:
-        raw: Path to raw data directory (/path/to/ScienceAgent-bench/benchmark/datasets/clintox)
+        raw: Path to raw data directory
         public: Path to public directory (visible to participants)
         private: Path to private directory (used for grading)
     """
@@ -25,7 +25,7 @@ def prepare(raw: Path, public: Path, private: Path):
     print(f"Private directory: {private}")
 
     # Source dataset path
-    source_dir = Path("/path/to/ScienceAgent-bench/benchmark/datasets/clintox")
+    source_dir = raw / "clintox"
 
     if not source_dir.exists():
         raise FileNotFoundError(f"Source dataset not found: {source_dir}")
@@ -73,7 +73,7 @@ def prepare(raw: Path, public: Path, private: Path):
     print(f"  ✓ Saved: clintox_test.csv ({test_output.shape[0]} rows, {test_output.shape[1]} columns) with original SMILES")
 
     # Load gold results for answer
-    gold_file = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/clintox_gold.csv")
+    gold_file = raw / "clintox_gold.csv"
     if gold_file.exists():
         gold_df = pd.read_csv(gold_file)
         gold_df.to_csv(private / "answer.csv", index=False)

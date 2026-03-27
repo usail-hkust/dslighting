@@ -3,7 +3,7 @@ name: "ScienceBench - predict_bulk_modulus.py"
 competition_type: code
 awards_medals: false
 prizes: null
-description: vendor/sciencebench/competitions/sciencebench-003-predict-bulk-modulus/description.md
+description: benchmarks/sciencebench/competitions/sciencebench-003-predict-bulk-modulus/description.md
 
 dataset:
   answers: sciencebench-003-predict-bulk-modulus/prepared/private/answer.csv
@@ -11,6 +11,7 @@ dataset:
 
 grader:
   name: accuracy
-  grade_fn: file:vendor/sciencebench/competitions/sciencebench-003-predict-bulk-modulus/grade.py:grade
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
 
-preparer: file:vendor/sciencebench/competitions/sciencebench-003-predict-bulk-modulus/prepare.py:prepare
+preparer: benchmarks.sciencebench.competitions.sciencebench-003-predict-bulk-modulus.prepare:prepare

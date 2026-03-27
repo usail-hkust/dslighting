@@ -1,0 +1,19 @@
+id: sciencebench-024-ecg-processing-vis1
+name: "ScienceBench - ecg_processing_vis1.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-024-ecg-processing-vis1/description.md
+
+dataset:
+  answers: sciencebench-024-ecg-processing-vis1/prepared/private/answer.csv
+  sample_submission: sciencebench-024-ecg-processing-vis1/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-024-ecg-processing-vis1.prepare:prepare

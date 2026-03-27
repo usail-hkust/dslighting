@@ -1,0 +1,19 @@
+id: sciencebench-046-mountainlion1
+name: "ScienceBench - mountainLion1.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-046-mountainlion1/description.md
+
+dataset:
+  answers: sciencebench-046-mountainlion1/prepared/private/answer.csv
+  sample_submission: sciencebench-046-mountainlion1/prepared/public/sample_submission.csv
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+submission_filename: sample_submission.png
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-046-mountainlion1.prepare:prepare

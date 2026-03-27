@@ -1,0 +1,19 @@
+id: sciencebench-061-nvc-stackbar-plain-prediction
+name: "ScienceBench - nvc_stackbar_plain_prediction.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-061-nvc-stackbar-plain-prediction/description.md
+
+dataset:
+  answers: sciencebench-061-nvc-stackbar-plain-prediction/prepared/private/answer.csv
+  sample_submission: sciencebench-061-nvc-stackbar-plain-prediction/prepared/public/sample_submission.csv
+
+submission_filename: sample_submission.png
+
+grader:
+  name: image_similarity
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-061-nvc-stackbar-plain-prediction.prepare:prepare

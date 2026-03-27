@@ -1,0 +1,17 @@
+id: sciencebench-060-nvc-accuracies
+name: "ScienceBench - nvc_accuracies.py"
+competition_type: code
+awards_medals: false
+prizes: null
+description: benchmarks/sciencebench/competitions/sciencebench-060-nvc-accuracies/description.md
+
+dataset:
+  answers: sciencebench-060-nvc-accuracies/prepared/private/answer.csv
+  sample_submission: sciencebench-060-nvc-accuracies/prepared/public/sample_submission.csv
+
+grader:
+  name: accuracy
+  grade_fn: file:grade.py:grade
+  api_version: artifact_v1
+
+preparer: benchmarks.sciencebench.competitions.sciencebench-060-nvc-accuracies.prepare:prepare

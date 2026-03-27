@@ -24,7 +24,7 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
         shutil.copy2(csv_file, public / csv_file.name)
         print(f"✓ Copied {csv_file.name} to public directory")
 
-    gold_path = Path("/path/to/ScienceAgent-bench/benchmark/eval_programs/gold_results/dkpes_test_gold.csv")
+    gold_path = raw / "dkpes_test_gold.csv"
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold labels not found at: {gold_path}")
 
