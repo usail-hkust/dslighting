@@ -35,6 +35,7 @@ _LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
     "analyze": ("dslighting.api.convenience", "analyze"),
     "process": ("dslighting.api.convenience", "process"),
     "model": ("dslighting.api.convenience", "model"),
+    "configure_logging": ("dslighting.logging", "configure_logging"),
     # Core config
     "DSLightingConfig": ("dslighting.config", "DSLightingConfig"),
     # Advanced architecture namespace
@@ -153,6 +154,7 @@ __all__ = [
     "analyze",
     "process",
     "model",
+    "configure_logging",
     "DSLightingConfig",
     # Advanced architecture namespace
     "arch",

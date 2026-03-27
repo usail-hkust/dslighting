@@ -24,9 +24,16 @@ class ConsoleSink:
         self._payload_store = None
 
     async def handle(self, event, payload_store) -> None:
-        if event.llm is None or not event.llm.logical_call_id:
-            return
         self._payload_store = payload_store
+        if event.llm is None or not event.llm.logical_call_id:
+            block = self.formatter.format_generic_event(
+                event,
+                payload_store,
+                printed_payload_refs=self._printed_payload_refs,
+            )
+            if block:
+                debug_logger.info(block)
+            return
         logical_call_id = event.llm.logical_call_id
         expired_to_flush: list[str] = []
         should_flush = False

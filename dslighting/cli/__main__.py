@@ -12,11 +12,13 @@ from typing import Optional
 
 # Import error formatter function for consistent error messages
 from dslighting.error import format_error
+from dslighting.logging import configure_logging
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s'
+configure_logging(
+    level="INFO",
+    format="%(message)s",
+    force=True,
 )
 logger = logging.getLogger(__name__)
 

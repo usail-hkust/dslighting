@@ -1,9 +1,15 @@
-"""Compatibility layer for the legacy debug_logger API."""
+"""Legacy compatibility layer for the deprecated ``debug_logger`` API.
+
+This module exists only to preserve older imports while the public logging API
+has moved to ``dslighting.configure_logging(...)``. New code should not build
+on the wrappers defined here.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import warnings
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -24,7 +30,12 @@ class DebugLevel(Enum):
 
 
 class LLMDebugLogger:
-    """Thin compatibility wrapper that delegates to the new DebugSession."""
+    """Legacy wrapper around ``DebugSession`` kept for backward compatibility.
+
+    The preferred entrypoint for new code is ``configure_logging(...)``. This
+    class intentionally preserves the old object shape for callers that still
+    depend on the deprecated debug logger API.
+    """
 
     def __init__(
         self,
@@ -167,6 +178,15 @@ def init_debug_logger(
     output_dir: Optional[str] = None,
     console_output: bool = True,
 ) -> LLMDebugLogger:
+    """Initialize the deprecated legacy debug logger wrapper.
+
+    New code should use ``configure_logging(trace_llm=...)`` instead.
+    """
+    warnings.warn(
+        "init_debug_logger() is deprecated; use configure_logging(trace_llm=...) instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     global _global_debug_logger
     _global_debug_logger = LLMDebugLogger(
         enabled=enabled,

@@ -101,6 +101,49 @@ class HumanStructuredFormatter:
 
         return "\n".join(lines)
 
+    def format_generic_event(
+        self,
+        event,
+        payload_store,
+        *,
+        printed_payload_refs: set[str] | None = None,
+    ) -> str:
+        if printed_payload_refs is None:
+            printed_payload_refs = set()
+        run = event.run
+        node = event.node
+        kind = self._event_kind_label(event.event_type)
+        lines = [
+            self._paint(f"[{kind}]", self._CYAN, self._BOLD),
+            "  "
+            + " ".join(
+                [
+                    f"run={getattr(run, 'run_id', 'N/A')}",
+                    f"task={getattr(run, 'task_id', 'N/A') or 'N/A'}",
+                    f"workflow={getattr(run, 'workflow_name', 'N/A') or 'N/A'}",
+                    f"node={getattr(node, 'node_id', 'N/A') or 'N/A'}",
+                ]
+            ),
+            f"- {self._paint(event.event_type, self._event_color(event.event_type), self._BOLD)}: {event.summary}",
+        ]
+        lines.extend(self._render_standard_fields(event))
+        for label, payload_ref in event.payload_refs.items():
+            if payload_ref.ref in printed_payload_refs:
+                lines.append(
+                    "  "
+                    + f"{label}: payload={payload_ref.ref} reused"
+                    + (f" preview={payload_ref.preview}" if payload_ref.preview else "")
+                )
+                continue
+            printed_payload_refs.add(payload_ref.ref)
+            lines.append(
+                f"  {label}: payload={payload_ref.ref} chars={payload_ref.chars_len} bytes={payload_ref.bytes_len}"
+            )
+            if self.profile != "summary":
+                payload = payload_store.get(payload_ref.ref)
+                lines.extend(self._render_payload(label=label, payload=payload))
+        return "\n".join(lines)
+
     def _render_standard_fields(self, event) -> list[str]:
         lines: list[str] = []
         tags = dict(event.tags or {})
@@ -113,6 +156,7 @@ class HumanStructuredFormatter:
         reason = tags.pop("reason", None)
         next_transport = tags.pop("next_transport_attempt", None)
         next_semantic = tags.pop("next_semantic_attempt", None)
+        max_tokens = tags.pop("max_tokens", None)
 
         if provider is not None:
             lines.append(f"  Provider: {provider}")
@@ -120,6 +164,8 @@ class HumanStructuredFormatter:
             lines.append(f"  API Base: {api_base}")
         if temperature is not None:
             lines.append(f"  Temperature: {temperature}")
+        if max_tokens is not None:
+            lines.append(f"  Max Tokens: {max_tokens}")
         if response_format is not None:
             lines.append(
                 "  Response Format: "
@@ -189,7 +235,7 @@ class HumanStructuredFormatter:
                     role = str(item.get("role", "unknown"))
                     content = item.get("content", "")
                 lines.append(f"    [{idx}] {role}:")
-                lines.extend(self._indent_lines(self._stringify(content), prefix="      "))
+                lines.extend(self._render_request_content(content))
             return lines
         if label.endswith("response_body") and isinstance(payload, dict):
             return self._render_response_payload(payload)
@@ -215,10 +261,44 @@ class HumanStructuredFormatter:
             lines.extend(self._indent_lines(self._stringify(extra), prefix="      "))
         return lines or self._indent_lines(self._stringify(payload), prefix="    ")
 
+    def _render_request_content(self, content: Any) -> list[str]:
+        if not isinstance(content, list):
+            return self._indent_lines(self._stringify(content), prefix="      ")
+
+        lines: list[str] = []
+        image_idx = 0
+        for item in content:
+            if not isinstance(item, dict):
+                lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
+                continue
+
+            item_type = item.get("type")
+            if item_type == "text":
+                lines.extend(self._indent_lines(str(item.get("text", "")), prefix="      "))
+                continue
+
+            if item_type == "image_url":
+                image_idx += 1
+                image_url = item.get("image_url", {})
+                if isinstance(image_url, dict) and image_url.get("kind") == "inline_base64_image":
+                    mime_type = image_url.get("mime_type", "unknown")
+                    approx_chars = image_url.get("approx_chars", 0)
+                    lines.append(
+                        f"      [image {image_idx}] inline_base64_image mime={mime_type} chars={approx_chars}"
+                    )
+                    continue
+
+            lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
+        return lines or self._indent_lines(self._stringify(content), prefix="      ")
+
     def _stringify(self, value: Any) -> str:
         if isinstance(value, str):
-            return value
-        return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=str)
+            text = value
+        else:
+            text = json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=str)
+        if len(text) > self.max_inline_chars:
+            return text[: self.max_inline_chars] + "\n... [truncated]"
+        return text
 
     @staticmethod
     def _indent_lines(value: str, *, prefix: str) -> list[str]:
@@ -234,6 +314,14 @@ class HumanStructuredFormatter:
         if "provider" in event_type:
             return self._BLUE
         return self._CYAN
+
+    @staticmethod
+    def _event_kind_label(event_type: str) -> str:
+        if event_type.startswith("tool."):
+            return "TOOL"
+        if event_type.startswith("sandbox."):
+            return "SANDBOX"
+        return "EVENT"
 
     def _paint(self, text: str, *codes: str) -> str:
         if not self.use_color:

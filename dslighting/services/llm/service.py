@@ -30,6 +30,7 @@ from dslighting.debug.api import get_debug_session
 from dslighting.error import LLMServiceError
 from dslighting.services.llm.cost import apply_custom_model_pricing
 from dslighting.services.llm.executor import LLMCallExecutor, LLMCallSpec
+from dslighting.services.llm.observed_call import extract_usage, serialize_response_for_debug
 from dslighting.services.llm.pool import GlobalAPIKeyPool
 from dslighting.utils.constants import (
     DEFAULT_CACHE_TTL_SECONDS,
@@ -252,62 +253,7 @@ class LLMService:
     @staticmethod
     def _serialize_response_for_debug(response: Any) -> dict[str, Any]:
         """Convert provider response objects into JSON-serializable dict for debug logging."""
-        if response is None:
-            return {}
-        if isinstance(response, dict):
-            return response
-
-        for method_name in ("model_dump", "dict"):
-            method = getattr(response, method_name, None)
-            if callable(method):
-                try:
-                    payload = method()
-                    if isinstance(payload, dict):
-                        return payload
-                except Exception:
-                    pass
-
-        payload: dict[str, Any] = {}
-
-        choices = getattr(response, "choices", None)
-        if choices is not None:
-            serialized_choices: list[dict[str, Any]] = []
-            for choice in choices:
-                if isinstance(choice, dict):
-                    message = choice.get("message", {})
-                    serialized_choices.append(
-                        {
-                            "message": {
-                                "role": message.get("role", "assistant"),
-                                "content": message.get("content", ""),
-                            }
-                        }
-                    )
-                    continue
-
-                message = getattr(choice, "message", None)
-                serialized_choices.append(
-                    {
-                        "message": {
-                            "role": getattr(message, "role", "assistant"),
-                            "content": getattr(message, "content", ""),
-                        }
-                    }
-                )
-            payload["choices"] = serialized_choices
-
-        usage = getattr(response, "usage", None)
-        if usage is not None:
-            if isinstance(usage, dict):
-                payload["usage"] = usage
-            else:
-                payload["usage"] = {
-                    "prompt_tokens": getattr(usage, "prompt_tokens", None),
-                    "completion_tokens": getattr(usage, "completion_tokens", None),
-                    "total_tokens": getattr(usage, "total_tokens", None),
-                }
-
-        return payload
+        return serialize_response_for_debug(response)
 
     def _build_completion_kwargs(
         self,
@@ -534,31 +480,7 @@ class LLMService:
         """
         从 LiteLLM Response 中提取 token / 费用信息，确保可 JSON 序列化。
         """
-        usage = getattr(response, "usage", None)
-        if not usage:
-            return {}
-
-        payload: dict[str, Any] = {
-            "prompt_tokens": self._safe_int(getattr(usage, "prompt_tokens", None)),
-            "completion_tokens": self._safe_int(
-                getattr(usage, "completion_tokens", None)
-            ),
-            "total_tokens": self._safe_int(getattr(usage, "total_tokens", None)),
-            "prompt_tokens_cost": self._safe_float(
-                getattr(usage, "prompt_tokens_cost", None)
-            ),
-            "completion_tokens_cost": self._safe_float(
-                getattr(usage, "completion_tokens_cost", None)
-            ),
-        }
-        total_tokens_cost = self._safe_float(getattr(usage, "total_tokens_cost", None))
-        if total_tokens_cost is None:
-            prompt_cost = payload.get("prompt_tokens_cost")
-            completion_cost = payload.get("completion_tokens_cost")
-            if prompt_cost is not None and completion_cost is not None:
-                total_tokens_cost = prompt_cost + completion_cost
-        payload["total_tokens_cost"] = total_tokens_cost
-        return payload
+        return extract_usage(response)
 
     async def call(
         self,

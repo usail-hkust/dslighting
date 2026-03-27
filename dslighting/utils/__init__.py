@@ -90,9 +90,10 @@ from dslighting.utils.defaults import (
     DEFAULT_SANDBOX_TIMEOUT as SANDBOX_TIMEOUT_SECONDS,
 )
 
-from dslighting.utils.debug_logger import (
-    init_debug_logger,
-    DebugLevel,
+from dslighting.logging import (
+    configure_logging,
+    LoggingConfig,
+    LoggingController,
 )
 
 __all__ = [
@@ -155,9 +156,10 @@ __all__ = [
     "DEEP_DISCOVERY_MAX_FILES",
     "PER_DIR_LIMIT",
     "MAX_ROWS_PER_FILE",
-    # debug_logger
-    "init_debug_logger",
-    "DebugLevel",
+    # unified logging
+    "configure_logging",
+    "LoggingConfig",
+    "LoggingController",
     # package_detector
     "PackageDetector",
     "detect_and_save_packages",

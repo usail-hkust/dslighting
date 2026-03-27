@@ -318,7 +318,9 @@ __all__ = [
 
 if __name__ == "__main__":
     # Test the detector
-    logging.basicConfig(level=logging.INFO)
+    from dslighting.logging import configure_logging
+
+    configure_logging(level="INFO", force=True)
 
     detector = PackageDetector()
     packages = detector.detect_packages()

@@ -10,10 +10,14 @@ Design Principles:
 - Extensible: Researchers can add custom tools
 """
 
+import inspect
+import time
 from typing import Callable, Dict, Any, Optional, List, Type
 from dataclasses import dataclass, field
 from threading import Lock
 from pydantic import BaseModel, Field
+
+from dslighting.logging.events import emit_runtime_event, is_tool_trace_enabled
 
 
 @dataclass
@@ -71,7 +75,73 @@ class Tool:
         Returns:
             Any: The result returned by the underlying function fn.
         """
-        return self.fn(*args, **kwargs)
+        if not is_tool_trace_enabled():
+            return self.fn(*args, **kwargs)
+
+        started = time.perf_counter()
+        payload_args = {"args": list(args), "kwargs": kwargs}
+        try:
+            result = self.fn(*args, **kwargs)
+        except Exception as exc:
+            emit_runtime_event(
+                "tool.call.failed",
+                f"Tool '{self.name}' failed",
+                tags={
+                    "tool_name": self.name,
+                    "tool_version": self.version,
+                    "tool_description": self.description,
+                },
+                metrics={"duration_seconds": round(time.perf_counter() - started, 4)},
+                payloads={"tool_args": payload_args},
+                error={"type": type(exc).__name__, "message": str(exc)},
+            )
+            raise
+
+        if inspect.isawaitable(result):
+            async def _await_and_trace():
+                try:
+                    awaited = await result
+                except Exception as exc:
+                    emit_runtime_event(
+                        "tool.call.failed",
+                        f"Tool '{self.name}' failed",
+                        tags={
+                            "tool_name": self.name,
+                            "tool_version": self.version,
+                            "tool_description": self.description,
+                        },
+                        metrics={"duration_seconds": round(time.perf_counter() - started, 4)},
+                        payloads={"tool_args": payload_args},
+                        error={"type": type(exc).__name__, "message": str(exc)},
+                    )
+                    raise
+                emit_runtime_event(
+                    "tool.call.completed",
+                    f"Tool '{self.name}' completed",
+                    tags={
+                        "tool_name": self.name,
+                        "tool_version": self.version,
+                        "tool_description": self.description,
+                    },
+                    metrics={"duration_seconds": round(time.perf_counter() - started, 4)},
+                    payloads={"tool_args": payload_args, "tool_result": awaited},
+                )
+                return awaited
+
+            return _await_and_trace()
+
+        emit_runtime_event(
+            "tool.call.completed",
+            f"Tool '{self.name}' completed",
+            tags={
+                "tool_name": self.name,
+                "tool_version": self.version,
+                "tool_description": self.description,
+            },
+            metrics={"duration_seconds": round(time.perf_counter() - started, 4)},
+            payloads={"tool_args": payload_args, "tool_result": result},
+        )
+        return result
 
     def __repr__(self) -> str:
         """

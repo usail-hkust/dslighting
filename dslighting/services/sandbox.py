@@ -25,6 +25,7 @@ from nbclient.exceptions import CellExecutionError, CellTimeoutError, DeadKernel
 from dslighting.utils.typing import ExecutionResult
 from dslighting.services.workspace import WorkspaceService
 from dslighting.error import WorkspaceError
+from dslighting.logging.events import emit_runtime_event, is_sandbox_trace_enabled
 from dslighting.utils.constants import (
     DEFAULT_FLUSH_INTERVAL,
     DEFAULT_MAX_BATCH_SIZE,
@@ -299,6 +300,25 @@ class NotebookExecutor:
         notebook_path = self.workspace.get_path("artifacts") / "session.ipynb"
         with open(notebook_path, "w", encoding='utf-8') as f:
             nbformat.write(self.nb, f)
+        if is_sandbox_trace_enabled():
+            emit_runtime_event(
+                "sandbox.exec.completed" if result.success else "sandbox.exec.failed",
+                "Notebook cell executed" if result.success else "Notebook cell execution failed",
+                tags={
+                    "mode": "notebook",
+                    "cwd": str(self.workspace.get_path("sandbox_workdir")),
+                },
+                metrics={
+                    "stdout_chars": len(result.stdout),
+                    "stderr_chars": len(result.stderr),
+                    "artifact_count": len(result.artifacts),
+                },
+                payloads={
+                    "sandbox_code": code,
+                    "sandbox_result": result.model_dump(),
+                },
+                error=None if result.success else {"type": result.exc_type or "ExecutionError", "message": result.stderr},
+            )
         return result
 
 # ==============================================================================
@@ -474,7 +494,22 @@ class ProcessIsolatedNotebookExecutor:
 
         # Wait for the result asynchronously
         result = await loop.run_in_executor(None, self.result_queue.get)
-
+        if is_sandbox_trace_enabled():
+            emit_runtime_event(
+                "sandbox.exec.completed" if result.success else "sandbox.exec.failed",
+                "Isolated notebook cell executed" if result.success else "Isolated notebook cell execution failed",
+                tags={"mode": "notebook_worker"},
+                metrics={
+                    "stdout_chars": len(result.stdout),
+                    "stderr_chars": len(result.stderr),
+                    "artifact_count": len(result.artifacts),
+                },
+                payloads={
+                    "sandbox_code": code,
+                    "sandbox_result": result.model_dump(),
+                },
+                error=None if result.success else {"type": result.exc_type or "ExecutionError", "message": result.stderr},
+            )
         return result
 
 
@@ -663,7 +698,17 @@ class SandboxService:
         # If a backend is provided, use it
         if self.backend is not None:
             workspace_path = str(self.workspace.get_path("sandbox_workdir"))
-            return await self.backend.execute(script_code, workspace_path, timeout)
+            result = await self.backend.execute(script_code, workspace_path, timeout)
+            if is_sandbox_trace_enabled():
+                emit_runtime_event(
+                    "sandbox.exec.completed" if result.success else "sandbox.exec.failed",
+                    "Sandbox backend script executed" if result.success else "Sandbox backend script execution failed",
+                    tags={"mode": "script_backend", "cwd": workspace_path},
+                    metrics={"stdout_chars": len(result.stdout), "stderr_chars": len(result.stderr)},
+                    payloads={"sandbox_code": script_code, "sandbox_result": result.model_dump()},
+                    error=None if result.success else {"type": result.exc_type or "ExecutionError", "message": result.stderr},
+                )
+            return result
 
         # Otherwise, use the legacy local execution
         loop = asyncio.get_event_loop()
@@ -791,6 +836,34 @@ class SandboxService:
                 "code": fixed_code,
             }
             self.execution_history.append(history_entry)
+            if is_sandbox_trace_enabled():
+                emit_runtime_event(
+                    "sandbox.exec.completed" if execution_result.success else "sandbox.exec.failed",
+                    "Sandbox script executed" if execution_result.success else "Sandbox script execution failed",
+                    tags={
+                        "mode": "script",
+                        "cwd": str(self.workspace.get_path("sandbox_workdir")),
+                        "script_filename": script_name,
+                        "execution_id": execution_id,
+                    },
+                    metrics={
+                        "duration_seconds": duration,
+                        "stdout_chars": len(execution_result.stdout),
+                        "stderr_chars": len(execution_result.stderr),
+                    },
+                    payloads={
+                        "sandbox_code": fixed_code,
+                        "sandbox_result": execution_result.model_dump(),
+                    },
+                    error=(
+                        None
+                        if execution_result.success
+                        else {
+                            "type": execution_result.exc_type or "ExecutionError",
+                            "message": execution_result.stderr,
+                        }
+                    ),
+                )
         return execution_result
 
     @asynccontextmanager

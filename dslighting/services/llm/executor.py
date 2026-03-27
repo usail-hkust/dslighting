@@ -11,12 +11,14 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ValidationError
 
-from dslighting.debug.context import get_effective_debug_context
-from dslighting.debug.api import get_debug_session
 from dslighting.debug.context import debug_scope
-from dslighting.debug.events import DebugEvent
 from dslighting.debug.models import LLMCallContext
 from dslighting.error import LLMServiceError
+from dslighting.services.llm.observed_call import (
+    attach_debug_metadata,
+    emit_llm_event,
+    extract_response_content,
+)
 
 if TYPE_CHECKING:
     from dslighting.services.llm.service import LLMService
@@ -294,15 +296,10 @@ class LLMCallExecutor:
         ) from last_exception
 
     def _extract_content(self, response: Any) -> str:
-        if not response or not hasattr(response, "choices") or not response.choices:
-            raise LLMServiceError("Invalid response structure: missing choices")
         try:
-            content = response.choices[0].message.content
-        except (IndexError, AttributeError) as exc:
+            return extract_response_content(response)
+        except ValueError as exc:
             raise LLMServiceError(f"Invalid response structure: {exc}") from exc
-        if content is None:
-            return ""
-        return str(content)
 
     def _is_retryable_transport_error(self, error: Exception) -> bool:
         if isinstance(error, LLMServiceError):
@@ -431,40 +428,15 @@ class LLMCallExecutor:
         tags: dict[str, Any] | None = None,
         error: dict[str, Any] | None = None,
     ) -> None:
-        session = get_debug_session()
-        if session is None or not session.enabled:
-            return
-        payload_refs = {}
-        for label, (kind, body) in (payloads or {}).items():
-            payload_refs[label] = session.store_payload(kind=kind, body=body)
-        context = get_effective_debug_context(session.session_id)
-        event = DebugEvent(
-            schema_version=session.config.schema_version,
-            event_id=uuid.uuid4().hex,
-            timestamp_utc=datetime.now(timezone.utc).isoformat(),
-            event_type=event_type,
-            summary=summary,
-            run=context.run,
-            node=context.node,
-            llm=llm_context,
-            payload_refs=payload_refs,
-            metrics=metrics or {},
-            tags=tags or {},
+        await emit_llm_event(
+            event_type,
+            summary,
+            llm_context=llm_context,
+            payloads=payloads,
+            metrics=metrics,
+            tags=tags,
             error=error,
         )
-        await session.emit(event)
 
     def _attach_debug_metadata(self, *, kwargs: dict[str, Any], llm_context: LLMCallContext) -> None:
-        metadata = kwargs.get("metadata")
-        if not isinstance(metadata, dict):
-            metadata = {}
-            kwargs["metadata"] = metadata
-        metadata["dslighting_debug"] = {
-            "logical_call_id": llm_context.logical_call_id,
-            "model": llm_context.model,
-            "provider": llm_context.provider,
-            "response_mode": llm_context.response_mode,
-            "semantic_attempt": llm_context.semantic_attempt,
-            "transport_attempt": llm_context.transport_attempt,
-            "validation_attempt": llm_context.validation_attempt,
-        }
+        attach_debug_metadata(kwargs=kwargs, llm_context=llm_context)
