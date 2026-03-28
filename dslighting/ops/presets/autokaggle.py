@@ -7,6 +7,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from dslighting.core.visualization_policy import (
+    VisualizationPolicy,
+    find_blocked_display_usage,
+)
 from dslighting.ops.base import Operator
 from dslighting.services.llm import LLMService
 from dslighting.services.sandbox import SandboxService
@@ -319,30 +323,18 @@ class DynamicValidationOperator(Operator):
 class AutoKaggleDeveloperOperator(Operator):
     """Writes, executes, and validates code."""
 
-    _PLOTTING_BLOCK_PATTERNS = [
-        (re.compile(r"^\s*import\s+matplotlib\b", re.MULTILINE), "import matplotlib"),
-        (re.compile(r"^\s*from\s+matplotlib\b", re.MULTILINE), "from matplotlib"),
-        (re.compile(r"^\s*import\s+seaborn\b", re.MULTILINE), "import seaborn"),
-        (re.compile(r"^\s*from\s+seaborn\b", re.MULTILINE), "from seaborn"),
-        (re.compile(r"\bplt\."), "plt."),
-        (re.compile(r"\bsns\."), "sns."),
-        (re.compile(r"\.plot\s*\("), ".plot("),
-        (re.compile(r"\bhistplot\s*\("), "histplot("),
-        (re.compile(r"\bscatter\s*\("), "scatter("),
-    ]
-
     def __init__(
         self,
         llm_service: LLMService,
         sandbox_service: SandboxService,
         validator: DynamicValidationOperator,
         *,
-        enforce_no_plotting: bool = True,
+        visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
     ):
         super().__init__(llm_service, name="AutoKaggleDeveloper")
         self.sandbox = sandbox_service
         self.validator = validator
-        self.enforce_no_plotting = bool(enforce_no_plotting)
+        self.visualization_policy = visualization_policy
 
     def _normalize_format_validation_result(self, raw_result: Any, fallback_reason: str) -> Dict[str, Any]:
         if not isinstance(raw_result, dict):
@@ -363,13 +355,6 @@ class AutoKaggleDeveloperOperator(Operator):
         if isinstance(raw_result.get("files"), dict):
             normalized["files"] = raw_result["files"]
         return normalized
-
-    def _find_blocked_plotting_usage(self, code: str) -> List[str]:
-        blocked_matches: List[str] = []
-        for pattern, label in self._PLOTTING_BLOCK_PATTERNS:
-            if pattern.search(code):
-                blocked_matches.append(label)
-        return blocked_matches
 
     def _build_execution_code(self, code: str, branch_workdir: Optional[Path]) -> str:
         if branch_workdir is None:
@@ -392,7 +377,13 @@ class AutoKaggleDeveloperOperator(Operator):
         branch_workdir: Optional[str] = None,
     ) -> Dict:
         logger.info(f"Developer starting work for phase: '{phase_goal}'")
-        prompt = get_developer_prompt(state, phase_goal, plan, attempt_history)
+        prompt = get_developer_prompt(
+            state,
+            phase_goal,
+            plan,
+            attempt_history,
+            visualization_policy=self.visualization_policy,
+        )
 
         raw_reply = await self.llm_service.call(prompt)
         match = re.search(r"```(?:python|py)?\s*([\s\S]*?)\s*```", raw_reply, re.DOTALL)
@@ -409,18 +400,17 @@ class AutoKaggleDeveloperOperator(Operator):
                 "format_validation_result": {"passed": False, "errors": [reason]},
             }
 
-        if self.enforce_no_plotting:
-            blocked_matches = self._find_blocked_plotting_usage(code)
-            if blocked_matches:
-                reason = f"Blocked plotting usage detected: {', '.join(blocked_matches)}"
-                return {
-                    "code": code,
-                    "status": False,
-                    "output": "",
-                    "error": reason,
-                    "validation_result": {},
-                    "format_validation_result": {"passed": False, "errors": [reason]},
-                }
+        blocked_matches = find_blocked_display_usage(code, self.visualization_policy)
+        if blocked_matches:
+            reason = f"Blocked interactive display usage detected: {', '.join(blocked_matches)}"
+            return {
+                "code": code,
+                "status": False,
+                "output": "",
+                "error": reason,
+                "validation_result": {},
+                "format_validation_result": {"passed": False, "errors": [reason]},
+            }
 
         normalized_branch_workdir: Optional[Path] = None
         if branch_workdir:
@@ -476,9 +466,23 @@ class AutoKaggleDeveloperOperator(Operator):
 class AutoKaggleReviewerOperator(Operator):
     """Reviews the developer's work and provides a score and suggestions."""
 
+    def __init__(
+        self,
+        llm_service: LLMService,
+        *,
+        visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
+    ):
+        super().__init__(llm_service, name="AutoKaggleReviewer")
+        self.visualization_policy = visualization_policy
+
     async def __call__(self, state: AutoKaggleState, phase_goal: str, dev_result: Dict, plan: str = "") -> Dict:
         logger.info("Reviewer assessing developer's work...")
-        prompt = get_reviewer_prompt(phase_goal, dev_result, plan)
+        prompt = get_reviewer_prompt(
+            phase_goal,
+            dev_result,
+            plan,
+            visualization_policy=self.visualization_policy,
+        )
         review = await self.llm_service.call_with_json(prompt, output_model=ReviewResponse)
         review_dict = {
             "score": review.score,

@@ -1,5 +1,5 @@
 id: sciencebench-041-md-knn
-name: ScienceBench - MD_KNN.py
+name: "ScienceBench - MD_KNN.py"
 competition_type: code
 awards_medals: false
 prizes: null
@@ -7,30 +7,33 @@ description: description.md
 dataset:
   answers: sciencebench-041-md-knn/prepared/private/answer.csv
   sample_submission: sciencebench-041-md-knn/prepared/public
+
 grader:
   name: mean_f1_threshold
   grade_fn: file:grade.py:grade
+
 evaluator:
   api_version: artifact_v1
   submission:
     root_kind: directory
     root_basename: pred_results
     entries:
-    - relative_path: MD_all_KNN.csv
-      format: csv
-      sample: sciencebench-041-md-knn/prepared/public/MD_all_KNN.csv
-      description: Predicted DILI labels for all split
-    - relative_path: MD_MCNC_KNN.csv
-      format: csv
-      sample: sciencebench-041-md-knn/prepared/public/MD_MCNC_KNN.csv
-      description: Predicted DILI labels for MCNC split
-    - relative_path: MD_MCLCNC_KNN.csv
-      format: csv
-      sample: sciencebench-041-md-knn/prepared/public/MD_MCLCNC_KNN.csv
-      description: Predicted DILI labels for MCLCNC split
+      - relative_path: MD_all_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_all_KNN.csv
+        description: Predicted DILI labels for all split
+      - relative_path: MD_MCNC_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_MCNC_KNN.csv
+        description: Predicted DILI labels for MCNC split
+      - relative_path: MD_MCLCNC_KNN.csv
+        format: csv
+        sample: sciencebench-041-md-knn/prepared/public/MD_MCLCNC_KNN.csv
+        description: Predicted DILI labels for MCLCNC split
   references:
     root_kind: directory
     root_path: sciencebench-041-md-knn/prepared/private
     entries:
-    - relative_path: answer.csv
+      - relative_path: answer.csv
+
 preparer: file:prepare.py:prepare

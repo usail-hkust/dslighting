@@ -5,12 +5,26 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-042-edr-analyze/prepared/private/EDR_analyze_gold.png
+  answers: sciencebench-042-edr-analyze/prepared/private/result.png
   sample_submission: sciencebench-042-edr-analyze/prepared/public/sample_submission.png
-  gold_submission: sciencebench-042-edr-analyze/prepared/private/EDR_analyze_gold.png
+  gold_submission: sciencebench-042-edr-analyze/prepared/private/result.png
 grader:
   name: visual_similarity
   grade_fn: file:grade.py:grade
+submission_filename: sample_submission.png
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+      - relative_path: EDR_analyze_pred.png
+        format: png
+        sample: sciencebench-042-edr-analyze/prepared/public/sample_submission.png
+        description: Predicted EDR analysis plot image.
+  references:
+    root_kind: directory
+    root_path: sciencebench-042-edr-analyze/prepared/private
+    entries:
+      - relative_path: result.png

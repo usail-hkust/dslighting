@@ -13,3 +13,16 @@ grader:
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.json
+      format: json
+      sample: sciencebench-092-h-importances/prepared/public/sample_submission.json
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-092-h-importances/prepared/private
+    entries:
+    - relative_path: answer.json

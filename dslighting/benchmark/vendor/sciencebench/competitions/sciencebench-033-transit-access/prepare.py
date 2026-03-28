@@ -3,21 +3,26 @@ Data preparation for ScienceBench task 33
 Dataset: TransitAccessDemographic
 """
 
-import base64
+from __future__ import annotations
+
 from pathlib import Path
 import shutil
-import pandas as pd
+
+from PIL import Image
 
 
 EXPECTED_FILENAME = "transit_access.png"
-GOLD_IMAGE_PATH = None  # set inside prepare()
+GOLD_FILENAME = "transit_access.png"
 SOURCE_DATASET = "TransitAccessDemographic"
 
 
-def prepare(raw: Path, public: Path, private: Path):
+def _write_placeholder_png(target: Path, *, width: int, height: int) -> None:
+    Image.new("RGBA", (max(1, width), max(1, height)), (255, 255, 255, 255)).save(target, format="PNG")
+
+
+def prepare(raw: Path, public: Path, private: Path) -> None:
     """Prepare data for image-based ScienceBench task."""
-    global GOLD_IMAGE_PATH
-    GOLD_IMAGE_PATH = raw / "transit_access.png"
+    gold_path = raw / GOLD_FILENAME
     print("=" * 60)
     print("Preparing ScienceBench Task 33")
     print("Dataset:", SOURCE_DATASET)
@@ -30,11 +35,7 @@ def prepare(raw: Path, public: Path, private: Path):
         print("\n⚠ Warning: Raw data directory not found:", raw)
         public.mkdir(parents=True, exist_ok=True)
         private.mkdir(parents=True, exist_ok=True)
-        placeholder = pd.DataFrame([
-            {"file_name": EXPECTED_FILENAME, "image_base64": ""}
-        ])
-        placeholder.to_csv(public / "sample_submission.csv", index=False)
-        placeholder.to_csv(private / "answer.csv", index=False)
+        _write_placeholder_png(public / "sample_submission.png", width=1, height=1)
         return
 
     file_count = 0
@@ -55,25 +56,14 @@ def prepare(raw: Path, public: Path, private: Path):
     public.mkdir(parents=True, exist_ok=True)
     private.mkdir(parents=True, exist_ok=True)
 
-    gold_base64 = ""
-    if GOLD_IMAGE_PATH and GOLD_IMAGE_PATH.exists():
-        gold_bytes = GOLD_IMAGE_PATH.read_bytes()
-        (private / EXPECTED_FILENAME).write_bytes(gold_bytes)
-        gold_base64 = base64.b64encode(gold_bytes).decode("utf-8")
-        print("✓ Embedded gold image from", GOLD_IMAGE_PATH)
+    if gold_path.exists():
+        with Image.open(gold_path).convert("RGBA") as gold_img:
+            _write_placeholder_png(public / "sample_submission.png", width=gold_img.width, height=gold_img.height)
+            gold_img.save(private / "result.png", format="PNG")
+        print("✓ Created sample_submission.png")
+        print("✓ Copied result.png")
     else:
-        print("⚠ Gold image not found; creating empty placeholder.")
-
-    sample_df = pd.DataFrame([
-        {"file_name": EXPECTED_FILENAME, "image_base64": ""}
-    ])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Created sample_submission.csv")
-
-    answer_df = pd.DataFrame([
-        {"file_name": EXPECTED_FILENAME, "image_base64": gold_base64}
-    ])
-    answer_df.to_csv(private / "answer.csv", index=False)
-    print("✓ Created answer.csv with encoded gold image")
+        print("⚠ Gold image not found; creating blank sample_submission.png.")
+        _write_placeholder_png(public / "sample_submission.png", width=1, height=1)
 
     print("\nData preparation completed!")

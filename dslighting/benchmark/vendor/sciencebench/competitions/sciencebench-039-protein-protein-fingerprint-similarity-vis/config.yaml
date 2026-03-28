@@ -5,11 +5,26 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/private/answer.csv
-  sample_submission: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/public/sample_submission.csv
+  answers: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/private/result.png
+  sample_submission: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/public/sample_submission.png
+  gold_submission: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/private/result.png
 grader:
   name: image_similarity
   grade_fn: file:grade.py:grade
+submission_filename: sample_submission.png
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+      - relative_path: protein_protein_similarity_pred.png
+        format: png
+        sample: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/public/sample_submission.png
+        description: Predicted protein-protein fingerprint similarity plot.
+  references:
+    root_kind: directory
+    root_path: sciencebench-039-protein-protein-fingerprint-similarity-vis/prepared/private
+    entries:
+      - relative_path: result.png

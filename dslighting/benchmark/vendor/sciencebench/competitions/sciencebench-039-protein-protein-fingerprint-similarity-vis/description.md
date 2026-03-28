@@ -17,8 +17,8 @@ N/A
 
 ## Submission Format
 
-Save columns `file_name` and `image_base64`. Encode the output PNG as base64 (UTF-8 string) and place it in the row for that filename.
+Save a single PNG file named `sample_submission.png`.
 
 ## Evaluation
 
-The grader decodes your base64 image, rescales it to the reference size, and computes a similarity score between 0 and 1.
+The grader compares the submitted PNG against the gold reference image and accepts the submission when the similarity score meets the task threshold.

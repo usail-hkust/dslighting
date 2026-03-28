@@ -5,11 +5,26 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-043-eog-analyze/prepared/private/answer.csv
-  sample_submission: sciencebench-043-eog-analyze/prepared/public/sample_submission.csv
+  answers: sciencebench-043-eog-analyze/prepared/private/result.png
+  sample_submission: sciencebench-043-eog-analyze/prepared/public/sample_submission.png
+  gold_submission: sciencebench-043-eog-analyze/prepared/private/result.png
 grader:
   name: visual_similarity
   grade_fn: file:grade.py:grade
+submission_filename: sample_submission.png
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+      - relative_path: EOG_analyze_pred.png
+        format: png
+        sample: sciencebench-043-eog-analyze/prepared/public/sample_submission.png
+        description: Predicted EOG analysis plot image.
+  references:
+    root_kind: directory
+    root_path: sciencebench-043-eog-analyze/prepared/private
+    entries:
+      - relative_path: result.png

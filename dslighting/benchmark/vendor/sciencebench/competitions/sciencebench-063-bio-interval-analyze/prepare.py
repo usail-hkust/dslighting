@@ -4,11 +4,10 @@ Data preparation for ScienceBench task 63.
 
 from __future__ import annotations
 
-import base64
 import shutil
 from pathlib import Path
 
-import pandas as pd
+from PIL import Image
 
 DATASET_NAME = "biosignals"
 EXPECTED_FILES = [
@@ -35,6 +34,10 @@ def _gold_dir() -> Path:
 
 def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _write_placeholder_png(target: Path, *, width: int, height: int) -> None:
+    Image.new("RGBA", (max(1, width), max(1, height)), (255, 255, 255, 255)).save(target, format="PNG")
 
 
 def _copy_dataset(src: Path, public: Path) -> None:
@@ -68,23 +71,20 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
     _ensure_dir(private)
     _copy_dataset(source_dir, public)
 
-    sample_df = pd.DataFrame([{"file_name": name, "image_base64": ""} for name in EXPECTED_FILES])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Created sample_submission.csv")
+    sample_root = public / "pred_results"
+    sample_root.mkdir(parents=True, exist_ok=True)
 
     gold_dir = _gold_dir()
-    answer_rows = []
     for filename, gold_name in GOLD_MAPPING.items():
         gold_path = gold_dir / gold_name
         if not gold_path.exists():
             raise FileNotFoundError(f"Missing gold image: {gold_path}")
-        encoded = base64.b64encode(gold_path.read_bytes()).decode("utf-8")
-        answer_rows.append({"file_name": filename, "image_base64": encoded})
         target = private / gold_path.name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(gold_path, target)
-    answer_df = pd.DataFrame(answer_rows)
-    answer_df.to_csv(private / "answer.csv", index=False)
-    print("✓ Created answer.csv and copied gold images")
+        gold_img = Image.open(gold_path).convert("RGBA")
+        _write_placeholder_png(sample_root / filename, width=gold_img.width, height=gold_img.height)
+    print("✓ Created placeholder prediction directory in public/pred_results")
+    print("✓ Copied gold images")
 
     print("Data preparation completed.")

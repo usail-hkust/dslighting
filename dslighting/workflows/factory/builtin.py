@@ -21,6 +21,10 @@ from dslighting.ops.llm.basic import (
 from dslighting.ops.presets import AFlowReviewOperator, AFlowReviseOperator, ScEnsembleOperator
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
 from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
+from dslighting.core.visualization_policy import (
+    resolve_visualization_policy_from_config,
+    should_force_noninteractive_backend,
+)
 from dslighting.services.llm import LLMService
 from dslighting.services.data_analysis_provider import (
     create_data_analyzer,
@@ -62,11 +66,19 @@ def _create_sandbox_service(workspace: WorkspaceService, config: Any) -> Sandbox
     backend_type = getattr(config.sandbox, "backend", "local")
     backend_type_option = getattr(config.sandbox, "backend_type", "docker")
     api_key = getattr(config.sandbox, "api_key", None)
+    visualization_policy = resolve_visualization_policy_from_config(config)
+    force_noninteractive_backend = should_force_noninteractive_backend(visualization_policy)
+    env_overrides = _resolve_sandbox_env(config) or {}
+    if force_noninteractive_backend:
+        env_overrides = {**env_overrides, "MPLBACKEND": "Agg"}
 
     from dslighting.services.sandbox_backends.backends.base import SandboxBackendConfig
     from dslighting.services.sandbox_backends.backends.local import LocalSandboxBackend
 
-    backend_config = SandboxBackendConfig(timeout=config.sandbox.timeout)
+    backend_config = SandboxBackendConfig(
+        timeout=config.sandbox.timeout,
+        env_vars=dict(env_overrides),
+    )
 
     if backend_type == "e2b":
         from dslighting.services.sandbox_backends.backends.e2b import E2BSandboxBackend
@@ -79,14 +91,16 @@ def _create_sandbox_service(workspace: WorkspaceService, config: Any) -> Sandbox
     else:
         backend = LocalSandboxBackend(
             config=backend_config,
-            env_overrides=_resolve_sandbox_env(config),
+            env_overrides=env_overrides,
         )
 
     return SandboxService(
         workspace=workspace,
         backend=backend,
         timeout=config.sandbox.timeout,
-        env_overrides=_resolve_sandbox_env(config),
+        env_overrides=env_overrides,
+        auto_matplotlib=force_noninteractive_backend,
+        visualization_policy=visualization_policy,
     )
 
 
@@ -193,8 +207,16 @@ class DSAgentWorkflowFactory(BaseWorkflowFactory):
 
         state = DSAgentState()
         operators = {
-            "planner": DevelopPlanOperator(llm_service=llm_service, vdb_service=vdb_service),
-            "executor": ExecutePlanOperator(llm_service=llm_service, sandbox_service=sandbox_service),
+            "planner": DevelopPlanOperator(
+                llm_service=llm_service,
+                vdb_service=vdb_service,
+                agent_config=config.agent.model_dump(),
+            ),
+            "executor": ExecutePlanOperator(
+                llm_service=llm_service,
+                sandbox_service=sandbox_service,
+                agent_config=config.agent.model_dump(),
+            ),
             "logger": ReviseLogOperator(llm_service=llm_service),
         }
         services = {

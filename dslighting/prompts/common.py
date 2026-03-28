@@ -12,6 +12,10 @@ Note:
 
 from typing import Dict, List, Optional
 
+from dslighting.core.visualization_policy import (
+    VisualizationPolicy,
+    build_visualization_instruction_text,
+)
 from dslighting.prompts.base import dict_to_str
 
 
@@ -34,7 +38,9 @@ def _normalize_io_instructions(io_instructions: Optional[str]) -> str:
     return text or "N/A"
 
 
-def _get_common_guidelines() -> Dict:
+def _get_common_guidelines(
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
+) -> Dict:
     """
     Returns workflow-specific common instructions for all prompts.
 
@@ -58,7 +64,8 @@ def _get_common_guidelines() -> Dict:
             "The code must be a self-contained, single-file Python script.",
             "If the task involves modeling or optimization, print key metrics (e.g., validation scores) to standard output. Otherwise, ensure the output clearly presents the findings or results.",
             "Follow the CRITICAL I/O REQUIREMENTS provided in the task description precisely for all file operations.",
-            "Do not use interactive elements like `input()` or `matplotlib.pyplot.show()`."
+            "Do not use interactive elements like `input()` or `matplotlib.pyplot.show()`.",
+            build_visualization_instruction_text(visualization_policy),
         ]
     }
 
@@ -71,7 +78,8 @@ def create_draft_prompt(
     task_context: Dict,
     memory_summary: str,
     retrieved_knowledge: Optional[str] = None,
-    extra_context: Optional[str] = None
+    extra_context: Optional[str] = None,
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
 ) -> str:
     """
     Creates the system prompt for generating an initial solution draft.
@@ -116,7 +124,7 @@ def create_draft_prompt(
         "Design Guideline": "Your first solution should be straightforward and robust. Focus on correctly addressing the core requirements based on the data report AND the CRITICAL I/O REQUIREMENTS." + (
             " Consider the additional context provided above if applicable." if extra_context else ""
         ),
-        **_get_common_guidelines()
+        **_get_common_guidelines(visualization_policy)
     }
 
     return dict_to_str(prompt_dict)

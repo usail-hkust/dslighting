@@ -10,6 +10,7 @@ Functions:
 
 from typing import Dict
 
+from dslighting.core.visualization_policy import VisualizationPolicy
 from dslighting.state.context import MAX_HISTORY_CHARS, MAX_OUTPUT_CHARS, truncate_output
 from dslighting.prompts.base import dict_to_str
 from dslighting.prompts.common import (
@@ -26,7 +27,8 @@ def create_improve_prompt(
     previous_analysis: str,
     previous_plan: str = "",
     previous_output: str = "",
-    extra_context: str = None
+    extra_context: str = None,
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
 ) -> str:
     """
     Creates the system prompt for improving an existing solution.
@@ -70,7 +72,7 @@ def create_improve_prompt(
         "Improvement Guideline": "Focus on one specific change to the approach, algorithm, data processing pipeline, or parameters to better meet the task requirements." + (
             " Consider the additional context provided above when making improvements." if extra_context else ""
         ),
-        **_get_common_guidelines()
+        **_get_common_guidelines(visualization_policy)
     }
     return dict_to_str(prompt_dict)
 
@@ -81,7 +83,8 @@ def create_debug_prompt(
     error_history: str,
     previous_plan: str = "",
     memory_summary: str = "",
-    extra_context: str = None
+    extra_context: str = None,
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
 ) -> str:
     """
     Creates the system prompt for debugging a failed solution.
@@ -122,7 +125,7 @@ def create_debug_prompt(
         "Debugging Guideline": "Your plan should state the root cause and the fix. The new code must be a complete, runnable script." + (
             " Consider the additional context provided above when debugging." if extra_context else ""
         ),
-        **_get_common_guidelines()
+        **_get_common_guidelines(visualization_policy)
     }
     return dict_to_str(prompt_dict)
 

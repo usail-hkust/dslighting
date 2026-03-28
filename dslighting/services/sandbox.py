@@ -22,6 +22,11 @@ import nbformat
 from nbclient import NotebookClient
 from nbclient.exceptions import CellExecutionError, CellTimeoutError, DeadKernelError
 
+from dslighting.core.visualization_policy import (
+    VisualizationPolicy,
+    build_noninteractive_execution_preamble,
+    coerce_visualization_policy,
+)
 from dslighting.utils.typing import ExecutionResult
 from dslighting.services.workspace import WorkspaceService
 from dslighting.error import WorkspaceError
@@ -651,6 +656,7 @@ class SandboxService:
         auto_matplotlib: bool = False,
         env_overrides: Optional[Dict[str, str]] = None,
         backend: Optional[Any] = None,
+        visualization_policy: Any = VisualizationPolicy.NO_DISPLAY,
     ):
         """Initialize SandboxService.
 
@@ -664,6 +670,7 @@ class SandboxService:
         self.workspace = workspace
         self.timeout = timeout
         self.auto_matplotlib = auto_matplotlib
+        self.visualization_policy = coerce_visualization_policy(visualization_policy)
         self.env_overrides = {
             str(key): str(value)
             for key, value in (env_overrides or {}).items()
@@ -695,17 +702,19 @@ class SandboxService:
         Example:
             >>> result = await sandbox.run_script("print('hello')")
         """
+        execution_code = build_noninteractive_execution_preamble(self.visualization_policy) + script_code
+
         # If a backend is provided, use it
         if self.backend is not None:
             workspace_path = str(self.workspace.get_path("sandbox_workdir"))
-            result = await self.backend.execute(script_code, workspace_path, timeout)
+            result = await self.backend.execute(execution_code, workspace_path, timeout)
             if is_sandbox_trace_enabled():
                 emit_runtime_event(
                     "sandbox.exec.completed" if result.success else "sandbox.exec.failed",
                     "Sandbox backend script executed" if result.success else "Sandbox backend script execution failed",
                     tags={"mode": "script_backend", "cwd": workspace_path},
                     metrics={"stdout_chars": len(result.stdout), "stderr_chars": len(result.stderr)},
-                    payloads={"sandbox_code": script_code, "sandbox_result": result.model_dump()},
+                    payloads={"sandbox_code": execution_code, "sandbox_result": result.model_dump()},
                     error=None if result.success else {"type": result.exc_type or "ExecutionError", "message": result.stderr},
                 )
             return result
@@ -716,7 +725,7 @@ class SandboxService:
         return await loop.run_in_executor(
             self._executor,
             self._run_script_sync,
-            script_code,
+            execution_code,
             timeout
         )
 
@@ -744,15 +753,10 @@ class SandboxService:
             )
             effective_timeout = float(self.timeout)
 
-        # Optionally inject matplotlib non-interactive backend
-        # This is only done if auto_matplotlib=True (used by Web UI for visualization)
-        if self.auto_matplotlib:
-            # Force non-interactive backend for matplotlib to prevent blocking plt.show()
-            fixed_code = "import matplotlib\nmatplotlib.use('Agg')\n" + script_code
-            logger.debug("Auto-injected matplotlib non-interactive backend")
-        else:
-            # Use code as-is without modification (default for DSLighting package)
-            fixed_code = script_code
+        fixed_code = script_code
+        if self.auto_matplotlib and not fixed_code.startswith("import os\nos.environ.setdefault('MPLBACKEND', 'Agg')\n"):
+            fixed_code = build_noninteractive_execution_preamble(VisualizationPolicy.NO_DISPLAY) + fixed_code
+            logger.debug("Auto-injected non-interactive visualization preamble")
 
         script_name = f"_sandbox_script_{uuid.uuid4().hex}.py"
         script_path = self.workspace.run_dir / script_name

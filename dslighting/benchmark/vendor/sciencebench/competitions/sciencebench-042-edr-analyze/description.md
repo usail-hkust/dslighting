@@ -19,8 +19,8 @@ Derive respiratory signals from ECG data using multiple EDR methods and create a
 
 ## Submission Format
 
-Save columns `file_name` and `image_base64`. Encode the output PNG as base64 (UTF-8 string) and place it in the row for that filename.
+Save a single PNG file named `sample_submission.png`.
 
 ## Evaluation
 
-The grader decodes the submitted image, compares it against the reference visualization, and accepts the submission when the similarity score meets or exceeds 60.
+The grader compares the submitted image against the reference visualization and accepts the submission when the similarity score meets or exceeds 60.

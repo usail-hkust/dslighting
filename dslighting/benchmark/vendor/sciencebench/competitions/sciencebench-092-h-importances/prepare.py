@@ -87,7 +87,7 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
         )
     print("✓ Created sample_submission.json placeholder")
 
-    shutil.copy2(gold_path, private / PRED_FILENAME)
-    print("✓ Copied gold JSON to private directory")
+    shutil.copy2(gold_path, private / "answer.json")
+    print("✓ Copied answer.json to private directory")
 
     print("Data preparation completed.")

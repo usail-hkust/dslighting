@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 if TYPE_CHECKING:
     from dslighting.benchmark import RuntimeSchedulerOptions
 
+from dslighting.core.visualization_policy import VisualizationPolicy
 from dslighting.utils.constants import DEFAULT_CACHE_MAX_ENTRIES
 
 
@@ -183,8 +184,6 @@ class AgentSearchConfig(BaseModel):
     debug_prob: float = 0.8
     max_iterations: int = 5
     max_debug_depth: int = 10
-    # Shared policy knob exposed to all agent configs; currently enforced in AutoKaggle.
-    enforce_no_plotting: bool = True
 
 
 class AutoKaggleConfig(BaseModel):
@@ -192,7 +191,12 @@ class AutoKaggleConfig(BaseModel):
 
     max_attempts_per_phase: int = 10
     success_threshold: float = 3.0
-    enforce_no_plotting: bool = True
+
+
+class AgentVisualizationConfig(BaseModel):
+    """Shared visualization policy for all code-writing agents."""
+
+    policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY
 
 
 class AgentConfig(BaseModel):
@@ -201,6 +205,7 @@ class AgentConfig(BaseModel):
     search: AgentSearchConfig = Field(default_factory=AgentSearchConfig)
     max_retries: int = 10
     autokaggle: AutoKaggleConfig = Field(default_factory=AutoKaggleConfig)
+    visualization: AgentVisualizationConfig = Field(default_factory=AgentVisualizationConfig)
     task_context: Dict[str, Any] = Field(default_factory=dict)
 
 

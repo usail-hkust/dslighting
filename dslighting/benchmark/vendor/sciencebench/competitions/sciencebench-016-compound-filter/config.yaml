@@ -14,3 +14,16 @@ submission_filename: filtered_compounds.txt
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.txt
+      format: txt
+      sample: sciencebench-016-compound-filter/prepared/public/sample_submission.txt
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-016-compound-filter/prepared/private
+    entries:
+    - relative_path: answer.csv

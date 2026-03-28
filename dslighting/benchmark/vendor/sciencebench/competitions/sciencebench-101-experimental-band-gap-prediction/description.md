@@ -14,8 +14,8 @@ Train a MODNet-style regressor on the provided experimental band-gap dataset. Us
 ## Dataset
 
 [START Dataset Preview: experimental_band_gap]
-|-- matbench_expt_gap_train.csv
-|-- matbench_expt_gap_test.csv
+|-- matbench_expt_gap_train.pkl
+|-- matbench_expt_gap_test.pkl
 [END Dataset Preview]
 
 ## Submission Format

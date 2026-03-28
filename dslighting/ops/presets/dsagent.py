@@ -1,6 +1,10 @@
 import logging
 from typing import Optional, Tuple
 
+from dslighting.core.visualization_policy import (
+    build_visualization_instruction_text,
+    resolve_visualization_policy_from_agent_config,
+)
 from dslighting.ops.base import Operator
 from dslighting.prompts.workflows.dsagent import (
     PLAN_PROMPT_TEMPLATE, PROGRAMMER_PROMPT_TEMPLATE, 
@@ -20,9 +24,16 @@ logger = logging.getLogger(__name__)
 
 class DevelopPlanOperator(Operator):
     """Retrieves cases and generates an experiment plan."""
-    def __init__(self, llm_service: LLMService, vdb_service: Optional[VDBService] = None):
+    def __init__(
+        self,
+        llm_service: LLMService,
+        vdb_service: Optional[VDBService] = None,
+        *,
+        agent_config: Optional[dict] = None,
+    ):
         super().__init__(llm_service, name="DevelopPlan")
         self.vdb = vdb_service
+        self.visualization_policy = resolve_visualization_policy_from_agent_config(agent_config)
 
     async def __call__(self, research_problem: str, io_instructions: str, running_log: str) -> str:
         safe_running_log = truncate_output(running_log, MAX_HISTORY_CHARS)
@@ -37,17 +48,26 @@ class DevelopPlanOperator(Operator):
             research_problem=research_problem,
             io_instructions=io_instructions,
             running_log=safe_running_log,
-            case=case
+            case=case,
+            visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
         )
         plan = await self.llm_service.call(prompt)
         return plan.strip()
 
 class ExecutePlanOperator(Operator):
     """Manages the programmer-debugger loop to implement a plan."""
-    def __init__(self, llm_service: LLMService, sandbox_service: SandboxService, max_retries: int = 10):
+    def __init__(
+        self,
+        llm_service: LLMService,
+        sandbox_service: SandboxService,
+        max_retries: int = 10,
+        *,
+        agent_config: Optional[dict] = None,
+    ):
         super().__init__(llm_service, name="ExecutePlan")
         self.sandbox = sandbox_service
         self.max_retries = max_retries
+        self.visualization_policy = resolve_visualization_policy_from_agent_config(agent_config)
 
     async def __call__(self, initial_code: str, plan: str, research_problem: str, io_instructions: str, running_log: str = "") -> Tuple[ExecutionResult, str]:
         safe_running_log = truncate_output(running_log, MAX_HISTORY_CHARS)
@@ -57,13 +77,15 @@ class ExecutePlanOperator(Operator):
             if attempt == 0:
                 prompt = PROGRAMMER_PROMPT_TEMPLATE.format(
                     code=current_code, plan=plan, research_problem=research_problem,
-                    io_instructions=io_instructions, running_log=safe_running_log
+                    io_instructions=io_instructions, running_log=safe_running_log,
+                    visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
                 )
             else:
                 safe_error_log = truncate_output(exec_result.stderr, MAX_OUTPUT_CHARS)
                 prompt = DEBUGGER_PROMPT_TEMPLATE.format(
                     plan=plan, code=current_code, error_log=safe_error_log,
-                    research_problem=research_problem, io_instructions=io_instructions, running_log=safe_running_log
+                    research_problem=research_problem, io_instructions=io_instructions, running_log=safe_running_log,
+                    visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
                 )
 
             response = await self.llm_service.call(prompt)

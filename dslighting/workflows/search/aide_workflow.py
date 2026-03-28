@@ -6,6 +6,7 @@ from typing import Dict, Optional, Any, List, Tuple
 from dslighting.workflows.base import BaseWorkflow
 from dslighting.state.search.journal import JournalState, Node, MetricValue
 from dslighting.benchmark.core.base import BaseBenchmark
+from dslighting.core.visualization_policy import resolve_visualization_policy_from_agent_config
 from dslighting.runtime.dag import BaseWorkflowActor, NodeResult, OpNode
 from dslighting.error import LLMServiceError
 from dslighting.services.llm import LLMService
@@ -273,7 +274,11 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
 
     def initial_nodes(self) -> List[OpNode]:
         """初始节点：第一个Gen, 使用draft prompt"""
-        system_prompt = create_draft_prompt(self.task_context, self.workflow.state.generate_summary())
+        system_prompt = create_draft_prompt(
+            self.task_context,
+            self.workflow.state.generate_summary(),
+            visualization_policy=self.workflow.visualization_policy,
+        )
         return [self._build_gen_node(step=0, depends_on=[], system_prompt=system_prompt)]
 
     def on_node_result(self, result: NodeResult) -> Tuple[List[OpNode], bool]:
@@ -347,7 +352,11 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
         if parent_node is None:
             # This case happens if the journal is empty or no nodes are expandable. Start fresh.
             logger.info(f"Step {next_step}: Creating new draft solution from scratch.")
-            prompt = create_draft_prompt(self.task_context, self.workflow.state.generate_summary())
+            prompt = create_draft_prompt(
+                self.task_context,
+                self.workflow.state.generate_summary(),
+                visualization_policy=self.workflow.visualization_policy,
+            )
         elif parent_node.is_buggy:
             # Debug branch: create a prompt to fix the code of the selected buggy node.
             logger.info(f"Step {next_step}: Debugging failed node #{parent_node.step}.")
@@ -358,6 +367,7 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
                 error_history,
                 previous_plan=parent_node.plan,
                 memory_summary=self.workflow.state.generate_summary(),
+                visualization_policy=self.workflow.visualization_policy,
             )
         else:
             # Improve branch: create a prompt to improve upon the selected successful node.
@@ -370,6 +380,7 @@ class FineGrainedAIDEWorkflowDagActor(BaseWorkflowActor):
                 parent_node.analysis,
                 previous_plan=parent_node.plan,
                 previous_output=summarized_output,
+                visualization_policy=self.workflow.visualization_policy,
             )
 
         # 3. Build and return the new generation node for the next step.
@@ -410,6 +421,7 @@ class AIDEWorkflow(BaseWorkflow):
         self.review_op = self.operators["review"]
 
         self.context_manager = ContextManager()
+        self.visualization_policy = resolve_visualization_policy_from_agent_config(agent_config)
 
     def _get_error_history(self, node: Node, max_depth: int = 3) -> str:
         """
@@ -623,7 +635,11 @@ class AIDEWorkflow(BaseWorkflow):
 
         # 2. Create a prompt
         if parent_node is None:
-            prompt = create_draft_prompt(task_context, self.state.generate_summary())
+            prompt = create_draft_prompt(
+                task_context,
+                self.state.generate_summary(),
+                visualization_policy=self.visualization_policy,
+            )
         elif parent_node.is_buggy:
             error_history = self._get_error_history(parent_node)
             prompt = create_debug_prompt(
@@ -632,6 +648,7 @@ class AIDEWorkflow(BaseWorkflow):
                 error_history,
                 previous_plan=parent_node.plan,
                 memory_summary=self.state.generate_summary(),
+                visualization_policy=self.visualization_policy,
             )
         else:
             summarized_output = summarize_repetitive_logs(parent_node.term_out)
@@ -642,6 +659,7 @@ class AIDEWorkflow(BaseWorkflow):
                 parent_node.analysis,
                 previous_plan=parent_node.plan,
                 previous_output=summarized_output,
+                visualization_policy=self.visualization_policy,
             )
 
         # 3. Generate a new plan and code using the LLM.

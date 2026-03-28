@@ -39,10 +39,10 @@ def _check_non_negative(arr: np.ndarray, name: str) -> bool:
 
 def grade(request: GradingRequest) -> float:
     submission_path = request.submission.root
-    references_path = request.references.private_dir
+    public_dir = request.references.public_dir
 
-    x1 = np.load(references_path / "jnmf_data" / X1_NAME)
-    x2 = np.load(references_path / "jnmf_data" / X2_NAME)
+    x1 = np.load(public_dir / "jnmf_data" / X1_NAME)
+    x2 = np.load(public_dir / "jnmf_data" / X2_NAME)
 
     if submission_path.is_file():
         raise ValueError("Submission should be a directory for this task.")

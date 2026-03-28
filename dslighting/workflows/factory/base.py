@@ -10,6 +10,7 @@ from typing import Any, List, Optional, TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
 from dslighting.config import DSLightingConfig, DataAnalysisConfig, RunConfig, SandboxConfig, WorkflowConfig
+from dslighting.core.visualization_policy import consume_visualization_policy
 from dslighting.core.config.runtime_logging import log_resolved_runtime_config
 from dslighting.core.data import TaskContext
 from dslighting.core.execution import TaskExecutor
@@ -349,16 +350,16 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
                 raise ValueError("`data_analysis` must be a dict matching DataAnalysisConfig.")
             config.data_analysis = DataAnalysisConfig(**raw_data_analysis)
 
+        visualization_policy = consume_visualization_policy(merged)
+        if visualization_policy is not None:
+            config.agent.visualization.policy = visualization_policy
+
         search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
-        if self._get_workflow_name() != "autokaggle":
-            search_keys.add("enforce_no_plotting")
         for key in search_keys:
             if key in merged:
                 setattr(config.agent.search, key, merged.pop(key))
 
         autokaggle_keys = {"max_attempts_per_phase", "success_threshold"}
-        if self._get_workflow_name() == "autokaggle":
-            autokaggle_keys.add("enforce_no_plotting")
         for key in autokaggle_keys:
             if key in merged:
                 setattr(config.agent.autokaggle, key, merged.pop(key))

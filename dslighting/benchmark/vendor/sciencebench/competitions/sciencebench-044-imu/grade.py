@@ -30,7 +30,7 @@ def _coerce_to_dict(data: Any) -> Dict[str, Any]:
 
 def grade(request: GradingRequest) -> float:
     submission_path = request.submission.root
-    answers_path = request.references.private_dir / "answer.csv"
+    answers_path = request.references.private_dir / "answer.json"
 
     # Try to read as JSON first
     try:

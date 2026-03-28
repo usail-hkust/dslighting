@@ -13,6 +13,7 @@ from dslighting.config import (
     WorkflowConfig,
 )
 from dslighting.core.config.llm_resolution import build_llm_config
+from dslighting.core.visualization_policy import consume_visualization_policy
 from dslighting.error import ConfigurationError
 
 
@@ -103,16 +104,16 @@ class AgentConfigBuilder:
                     error_code="CFG-002",
                 )
 
+        visualization_policy = consume_visualization_policy(merged)
+        if visualization_policy is not None:
+            config.agent.visualization.policy = visualization_policy
+
         search_keys = {"num_drafts", "debug_prob", "max_iterations", "max_debug_depth"}
-        if self.workflow_name != "autokaggle":
-            search_keys.add("enforce_no_plotting")
         for key in search_keys:
             if key in merged:
                 setattr(config.agent.search, key, merged.pop(key))
 
         autokaggle_keys = {"max_attempts_per_phase", "success_threshold"}
-        if self.workflow_name == "autokaggle":
-            autokaggle_keys.add("enforce_no_plotting")
         for key in autokaggle_keys:
             if key in merged:
                 setattr(config.agent.autokaggle, key, merged.pop(key))

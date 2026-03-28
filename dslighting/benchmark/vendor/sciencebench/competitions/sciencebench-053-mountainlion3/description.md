@@ -23,8 +23,11 @@ Reclassify the provided land-cover and protected-status rasters to a common 1–
 
 ## Submission Format
 
-Save columns `file_name` and `image_base64`. Include one row for each output raster and encode the GeoTIFF bytes as base64 strings.
+Save a submission directory containing exactly these two GeoTIFF files:
+
+- `landCover_reclassified.tif`
+- `protected_status_reclassified.tif`
 
 ## Evaluation
 
-The grader decodes both rasters, compares them with the reference reclassified arrays, and awards full credit when each raster matches more than 70% of the reference cells.
+The grader compares both submitted rasters against the reference rasters and awards full credit when each raster matches more than 70% of the reference cells.

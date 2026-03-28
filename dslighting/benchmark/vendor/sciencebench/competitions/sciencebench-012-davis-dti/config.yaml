@@ -5,12 +5,26 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-012-davis-dti/prepared/private/answer.csv
-  sample_submission: sciencebench-012-davis-dti/prepared/public/sample_submission.csv
+  answers: sciencebench-012-davis-dti/prepared/private/answer.txt
+  sample_submission: sciencebench-012-davis-dti/prepared/public/sample_submission.txt
+  gold_submission: sciencebench-012-davis-dti/prepared/private/answer.txt
 grader:
   name: accuracy
   grade_fn: file:grade.py:grade
-submission_filename: pred_results/davis_dti_repurposing.txt
+submission_filename: davis_dti_repurposing.txt
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+      - relative_path: davis_dti_repurposing.txt
+        format: txt
+        sample: sciencebench-012-davis-dti/prepared/public/sample_submission.txt
+        description: Ranked antiviral candidates, one drug name per line.
+  references:
+    root_kind: directory
+    root_path: sciencebench-012-davis-dti/prepared/private
+    entries:
+      - relative_path: answer.txt

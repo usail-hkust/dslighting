@@ -37,6 +37,7 @@ GENERATE_CODE_PROMPT = """
 
 # Instruction
 Write Python code for the **Current Task**. Ensure the code strictly follows the CRITICAL I/O REQUIREMENTS. Generate visualizations if required.
+{visualization_guidance}
 Provide ONLY the Python code in a single code block.
 """
 
@@ -65,6 +66,7 @@ REFLECT_AND_DEBUG_PROMPT = """
 
 # Instruction
 Your previous code failed. Analyze the error in the context of the execution history (previous steps) and rewrite the full, corrected Python code for the **Current Task**. Ensure the corrected code strictly follows the CRITICAL I/O REQUIREMENTS.
+{visualization_guidance}
 Provide ONLY the corrected Python code in a single code block.
 """
 
@@ -84,6 +86,7 @@ Your final and most important task is to generate the required output file.
 Based on all the previous steps and the CRITICAL I/O REQUIREMENTS, write the Python code that creates the final output file named **'{output_filename}'** in the correct format.
 
 The file MUST be saved in the current working directory.
+{visualization_guidance}
 Provide ONLY the Python code for this final step in a single code block.
 """
 

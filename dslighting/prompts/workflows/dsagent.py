@@ -25,6 +25,7 @@ You are a helpful AI expert assistant, responsible for decision making on the ac
 {case}
 
 Based on all this information, provide a short, precise but detailed instruction summary on the action plan for the next step. Ensure the plan considers the CRITICAL I/O REQUIREMENTS.
+{visualization_guidance}
 """
 
 PROGRAMMER_PROMPT_TEMPLATE = """
@@ -51,6 +52,7 @@ Now please edit this script according to the following instructions:
 ```
 
 Provide the **full** code after the edit, ensuring it aligns with the overall goal, the CRITICAL I/O REQUIREMENTS, and lessons learned from the progress log.
+{visualization_guidance}
 """
 
 DEBUGGER_PROMPT_TEMPLATE = """
@@ -84,6 +86,7 @@ However, there are some bugs in this version. Here is the execution log:
 ```
 
 Please revise the script to fix these bugs and provide the **full** corrected code, ensuring it aligns with the overall goal, the CRITICAL I/O REQUIREMENTS, and lessons learned from the progress log.
+{visualization_guidance}
 """
 
 LOGGER_PROMPT_TEMPLATE = """

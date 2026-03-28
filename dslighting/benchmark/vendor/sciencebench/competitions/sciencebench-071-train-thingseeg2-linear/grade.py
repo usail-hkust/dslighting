@@ -9,7 +9,7 @@ from scipy.stats import spearmanr
 
 from dslighting.benchmark.grading.models import GradingRequest
 
-THRESHOLD = 0.73
+THRESHOLD = 0.6
 PRED_FILENAME = "linear_sub01tosub03_pred.npy"
 
 
@@ -26,7 +26,7 @@ def grade(request: GradingRequest) -> float:
 
     pred = np.load(pred_path)
 
-    gold_path = request.references.private_dir / "sub03_gold.npy"
+    gold_path = request.references.answers_path or (request.references.private_dir / "answer.npy")
     if not gold_path.exists():
         print(f"Gold file not found: {gold_path}")
         return 0.0

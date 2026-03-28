@@ -115,7 +115,10 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
                     cases, task_goal
                 )
             prompt = create_draft_prompt(
-                self.task_context, self.workflow.state.generate_summary(), retrieved_knowledge
+                self.task_context,
+                self.workflow.state.generate_summary(),
+                retrieved_knowledge,
+                visualization_policy=self.workflow.visualization_policy,
             )
         elif parent_node.is_buggy:
             error_summary = self.workflow.context_manager.summarize_error(
@@ -127,6 +130,7 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
                 error_summary,
                 previous_plan=parent_node.plan,
                 memory_summary=self.workflow.state.generate_summary(),
+                visualization_policy=self.workflow.visualization_policy,
             )
         else:
             summarized_output = summarize_repetitive_logs(parent_node.term_out)
@@ -137,6 +141,7 @@ class AutoMindWorkflowDagActor(BaseWorkflowActor):
                 parent_node.analysis,
                 previous_plan=parent_node.plan,
                 previous_output=summarized_output,
+                visualization_policy=self.workflow.visualization_policy,
             )
 
         return OpNode(
@@ -595,7 +600,10 @@ class AutoMindWorkflow(AIDEWorkflow):
                 )
 
             prompt = create_draft_prompt(
-                task_context, self.state.generate_summary(), retrieved_knowledge
+                task_context,
+                self.state.generate_summary(),
+                retrieved_knowledge,
+                visualization_policy=self.visualization_policy,
             )
         elif parent_node.is_buggy:
             error_summary = self.context_manager.summarize_error(
@@ -607,6 +615,7 @@ class AutoMindWorkflow(AIDEWorkflow):
                 error_summary,
                 previous_plan=parent_node.plan,
                 memory_summary=self.state.generate_summary(),
+                visualization_policy=self.visualization_policy,
             )
         else:
             summarized_output = summarize_repetitive_logs(parent_node.term_out)
@@ -617,6 +626,7 @@ class AutoMindWorkflow(AIDEWorkflow):
                 parent_node.analysis,
                 previous_plan=parent_node.plan,
                 previous_output=summarized_output,
+                visualization_policy=self.visualization_policy,
             )
 
         # 3. Generate initial plan and one-pass code.

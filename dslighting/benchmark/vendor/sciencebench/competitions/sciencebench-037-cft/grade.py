@@ -22,7 +22,7 @@ def _load_json(data: Any) -> Dict[str, Any]:
 
 def grade(request: GradingRequest) -> float:
     submission_path = request.submission.root
-    answers_path = request.references.private_dir / "answer.csv"
+    answers_path = request.references.private_dir / "answer.json"
 
     # Read submission as text (JSON)
     submission_text = submission_path.read_text()

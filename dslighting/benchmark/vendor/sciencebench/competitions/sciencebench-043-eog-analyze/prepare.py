@@ -1,17 +1,12 @@
-"""
-Data preparation for ScienceBench task 43
-Dataset: biosignals
-"""
+"""Data preparation for ScienceBench task 43 (EOG analysis)."""
 
 from __future__ import annotations
 
-import base64
+import io
 import shutil
 from pathlib import Path
 
-import pandas as pd
-
-EXPECTED_FILENAME = "EOG_analyze_pred.png"
+from PIL import Image
 
 
 def _default_dataset_dir() -> Path:
@@ -26,6 +21,10 @@ def _default_gold_path() -> Path:
 
 def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _write_placeholder_png(target: Path, *, width: int, height: int) -> None:
+    Image.new("RGBA", (max(1, width), max(1, height)), (255, 255, 255, 255)).save(target, format="PNG")
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
@@ -47,23 +46,18 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
     data_file = data_dir / "eog_100hz.csv"
     if not data_file.exists():
         raise FileNotFoundError(f"Required data file not found: {data_file}")
-
     shutil.copy2(data_file, public / "eog_100hz.csv")
     print("✓ Copied EOG data")
-
-    sample_df = pd.DataFrame([{"file_name": EXPECTED_FILENAME, "image_base64": ""}])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Created sample_submission.csv")
 
     gold_path = _default_gold_path()
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold image not found: {gold_path}")
-
     gold_bytes = gold_path.read_bytes()
-    answer_df = pd.DataFrame(
-        [{"file_name": EXPECTED_FILENAME, "image_base64": base64.b64encode(gold_bytes).decode("utf-8")}]
-    )
-    answer_df.to_csv(private / "answer.csv", index=False)
-    print("✓ Created answer.csv with encoded gold image")
+    gold_img = Image.open(io.BytesIO(gold_bytes)).convert("RGBA")
+    _write_placeholder_png(public / "sample_submission.png", width=gold_img.width, height=gold_img.height)
+    print("✓ Created sample_submission.png")
+
+    gold_img.save(private / "result.png", format="PNG")
+    print("✓ Copied result.png")
 
     print("EOG analysis task preparation complete")

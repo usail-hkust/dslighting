@@ -22,8 +22,11 @@ Extract heart-rate and respiration-rate intervals from the biosignals recordings
 
 ## Submission Format
 
-Save columns `file_name` and `image_base64`. Encode each output PNG as base64 (UTF-8 string) and place it in the corresponding row.
+Save a submission directory containing exactly these two PNG files:
+
+- `bio_ecg_plot.png`
+- `bio_rsp_plot.png`
 
 ## Evaluation
 
-The grader decodes both submitted images, compares them to the reference plots, and grants full credit when each similarity score meets or exceeds 60.
+The grader compares both submitted images against the corresponding reference plots and grants full credit when each similarity score meets or exceeds 60.

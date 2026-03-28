@@ -3,6 +3,10 @@ import logging
 from pathlib import Path
 from typing import Dict, Any
 
+from dslighting.core.visualization_policy import (
+    build_visualization_instruction_text,
+    resolve_visualization_policy_from_agent_config,
+)
 from dslighting.workflows.base import BaseWorkflow
 from dslighting.core.types import Plan
 
@@ -48,6 +52,7 @@ class DataInterpreterWorkflow(BaseWorkflow):
         self.executor_op = self.operators["executor"]
         self.max_retries = self.agent_config.get("max_retries", 3)
         self.context_manager = ContextManager()
+        self.visualization_policy = resolve_visualization_policy_from_agent_config(self.agent_config)
     
     async def solve(self, description: str, io_instructions: str, data_dir: Path, output_path: Path) -> None:
         """
@@ -94,7 +99,9 @@ class DataInterpreterWorkflow(BaseWorkflow):
                             user_requirement=description,
                             io_instructions=io_instructions, # Pass separately
                             plan_status=plan.model_dump_json(),
-                            current_task=task.instruction, history=history_context
+                            current_task=task.instruction,
+                            history=history_context,
+                            visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
                         )
                         _, current_code = await self.generator_op(system_prompt=prompt)
                     else:
@@ -104,7 +111,8 @@ class DataInterpreterWorkflow(BaseWorkflow):
                             io_instructions=io_instructions, # Pass separately
                             current_task=task.instruction,
                             failed_code=current_code, error_output=safe_error_output,
-                            history=history_context
+                            history=history_context,
+                            visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
                         )
                         _, current_code = await self.debugger_op(system_prompt=prompt)
                     
@@ -145,7 +153,8 @@ class DataInterpreterWorkflow(BaseWorkflow):
                 user_requirement=description,
                 io_instructions=io_instructions, # Pass separately
                 history=final_history_context,
-                output_filename=output_path.name
+                output_filename=output_path.name,
+                visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
             )
             _, final_code = await self.generator_op(system_prompt=finalize_prompt)
             report_lines.append(f"**Finalization Code:**\n```python\n{final_code}\n```")

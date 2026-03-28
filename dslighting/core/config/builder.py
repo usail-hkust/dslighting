@@ -30,6 +30,11 @@ from dslighting.utils.defaults import (
     ENV_DSLIGHTING_WORKSPACE_DIR,
 )
 from dslighting.core.config.llm_resolution import build_llm_config
+from dslighting.core.visualization_policy import (
+    VISUALIZATION_POLICY_KEY,
+    coerce_visualization_policy,
+    consume_visualization_policy,
+)
 
 # Import shared config utilities
 from dslighting.core.config.shared import (
@@ -87,6 +92,7 @@ class ConfigBuilder:
         run_name: str = None,
         keep_workspace: bool = None,
         keep_workspace_on_failure: bool = None,
+        visualization_policy: Optional[str] = None,
         **kwargs
     ) -> DSLightingConfig:
         """
@@ -133,6 +139,7 @@ class ConfigBuilder:
             run_name=run_name,
             keep_workspace=keep_workspace,
             keep_workspace_on_failure=keep_workspace_on_failure,
+            visualization_policy=visualization_policy,
             **kwargs
         )
         config = self._deep_merge(config, user_config)
@@ -181,6 +188,7 @@ class ConfigBuilder:
         run_name: str = None,
         keep_workspace: bool = None,
         keep_workspace_on_failure: bool = None,
+        visualization_policy: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -215,6 +223,11 @@ class ConfigBuilder:
 
         # Process workflow-specific nested parameters
         for wf_name, wf_params in workflow_specific_params.items():
+            wf_params = dict(wf_params)
+            wf_visualization_policy = consume_visualization_policy(wf_params)
+            if wf_visualization_policy is not None:
+                config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = wf_visualization_policy
+
             if wf_name == 'autokaggle':
                 # AutoKaggle parameters → agent.autokaggle
                 config.setdefault("agent", {})["autokaggle"] = wf_params
@@ -280,6 +293,15 @@ class ConfigBuilder:
         if keep_workspace_on_failure is not None:
             config.setdefault("run", {})["keep_workspace_on_failure"] = keep_workspace_on_failure
 
+        if visualization_policy is not None:
+            config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = (
+                coerce_visualization_policy(visualization_policy)
+            )
+
+        flat_visualization_policy = consume_visualization_policy(remaining_kwargs)
+        if flat_visualization_policy is not None:
+            config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = flat_visualization_policy
+
         # Warn about unused kwargs (legacy flat parameter format no longer supported)
         if remaining_kwargs:
             logger.warning(
@@ -318,6 +340,23 @@ class ConfigBuilder:
 
         # Extract agent config
         agent_dict = config_dict.get("agent", {})
+        if isinstance(agent_dict, dict):
+            agent_dict = dict(agent_dict)
+            visualization_dict = dict(agent_dict.get("visualization") or {})
+            if "policy" not in visualization_dict:
+                search_dict = agent_dict.get("search")
+                autokaggle_dict = agent_dict.get("autokaggle")
+                legacy_value = None
+                if isinstance(search_dict, dict) and "enforce_no_plotting" in search_dict:
+                    legacy_value = search_dict.pop("enforce_no_plotting")
+                if isinstance(autokaggle_dict, dict) and "enforce_no_plotting" in autokaggle_dict:
+                    legacy_value = autokaggle_dict.pop("enforce_no_plotting")
+                if legacy_value is not None:
+                    visualization_dict["policy"] = (
+                        "no_display" if legacy_value else "allow"
+                    )
+            if visualization_dict:
+                agent_dict["visualization"] = visualization_dict
         agent_config = AgentConfig(**agent_dict)
 
         # Extract sandbox config
@@ -438,6 +477,7 @@ class ConfigBuilder:
             "max_debug_depth": (int, "max_debug_depth"),
             "max_attempts_per_phase": (int, "max_attempts_per_phase"),
             "enforce_no_plotting": (_coerce_bool, "enforce_no_plotting"),
+            VISUALIZATION_POLICY_KEY: (coerce_visualization_policy, VISUALIZATION_POLICY_KEY),
             "enabled": (_coerce_bool, "enabled"),
             "cache_enabled": (_coerce_bool, "cache_enabled"),
             "cache_max_entries": (int, "cache_max_entries"),
@@ -456,10 +496,13 @@ class ConfigBuilder:
         if isinstance(agent_config, dict):
             search_config = agent_config.get("search", {})
             autokaggle_config = agent_config.get("autokaggle", {})
+            visualization_config = agent_config.get("visualization", {})
             if isinstance(search_config, dict):
                 sections.append(search_config)
             if isinstance(autokaggle_config, dict):
                 sections.append(autokaggle_config)
+            if isinstance(visualization_config, dict):
+                sections.append(visualization_config)
 
         data_analysis_config = coerced.get("data_analysis", {})
         if isinstance(data_analysis_config, dict):

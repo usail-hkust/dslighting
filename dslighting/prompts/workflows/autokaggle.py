@@ -1,5 +1,9 @@
 from typing import Dict, Any, List
 import json
+from dslighting.core.visualization_policy import (
+    VisualizationPolicy,
+    build_visualization_instruction_text,
+)
 from dslighting.state.autokaggle import AutoKaggleState, PhaseMemory
 from dslighting.core.types import TaskContract
 from dslighting.core.types import StepPlan
@@ -120,7 +124,14 @@ Provide ONLY a JSON object that conforms to the following schema.
 """
 
 
-def get_developer_prompt(state: AutoKaggleState, phase_goal: str, plan: str, attempt_history: List) -> str:
+def get_developer_prompt(
+    state: AutoKaggleState,
+    phase_goal: str,
+    plan: str,
+    attempt_history: List,
+    *,
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
+) -> str:
     history_summary = _summarize_phase_history_and_artifacts(state)
     
     error_context = ""
@@ -182,7 +193,7 @@ You are an expert developer. Your task is to write a complete Python script to e
 - HARD RULE: You MUST read `sample_submission` (when provided in the task files/I/O requirements) and write the final answer strictly by filling that template.
 - HARD RULE: If tagged syntax like `@tag[...]` is required by the sample submission, preserve every required tag exactly. Do NOT drop tags, rename tags, or output bare untagged values where tagged answers are required.
 - HARD RULE: Never use placeholder tags such as `@placeholder` in final outputs.
-- HARD BAN: Do NOT import or use `matplotlib`, `seaborn`, or any plotting API (including `.plot(...)`, `pyplot`, or `plotly`).
+- VISUALIZATION POLICY: {build_visualization_instruction_text(visualization_policy)}
 - All file operations must be relative to the current working directory.
 
 # RESPONSE FORMAT
@@ -216,7 +227,13 @@ Respond with a single JSON object: {{"passed": <true_or_false>, "reason": "A det
 """
 
 
-def get_reviewer_prompt(phase_goal: str, dev_result: Dict, plan: str = "") -> str:
+def get_reviewer_prompt(
+    phase_goal: str,
+    dev_result: Dict,
+    plan: str = "",
+    *,
+    visualization_policy: VisualizationPolicy = VisualizationPolicy.NO_DISPLAY,
+) -> str:
     safe_code = truncate_output(dev_result.get('code', '# N/A'), MAX_OUTPUT_CHARS)
     safe_error = truncate_output(dev_result.get('error') or "None", MAX_OUTPUT_CHARS)
     safe_validation = truncate_output(json.dumps(dev_result.get('validation_result')), MAX_OUTPUT_CHARS)
@@ -249,7 +266,7 @@ You are a meticulous reviewer. Assess the developer's work for the given phase. 
   - If the code failed to execute, the score must be low (1 or 2). Your suggestion should focus on fixing the error.
   - If the phase is an early one like "Explore Data" or "Prepare Data", DO NOT penalize the developer for not creating the final output file specified in the contract. The validation check for that file might fail, which is acceptable at this stage. Focus on whether the code successfully achieved the phase's specific goal.
   - If tagged output is expected (e.g., `@tag[...]` format), assign a low score (1 or 2) for any of: placeholder tags (such as `@placeholder`), missing tags, renamed tags, altered tag syntax, or bare untagged values where tags are required.
-  - Using `matplotlib`, `seaborn`, or plotting APIs is a hard-rule violation and should receive a low score (1 or 2).
+  - Interactive display calls such as `matplotlib.pyplot.show()`, `pyplot.show()`, `Figure.show()`, `Image.show()`, or `cv2.imshow()` violate the visualization policy and should receive a low score (1 or 2).
   - If the code executed and passed relevant validations for this phase, evaluate the approach. Is it a good way to achieve the phase goal? Score 3-5.
   - A score of 5 requires a truly excellent and efficient implementation.
 

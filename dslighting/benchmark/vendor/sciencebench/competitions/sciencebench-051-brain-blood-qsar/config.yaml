@@ -13,3 +13,16 @@ grader:
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.csv
+      format: csv
+      sample: sciencebench-051-brain-blood-qsar/prepared/public/sample_submission.csv
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-051-brain-blood-qsar/prepared/private
+    entries:
+    - relative_path: answer.csv

@@ -5,11 +5,10 @@ Dataset: aquatic_toxicity
 
 from __future__ import annotations
 
-import base64
 import shutil
 from pathlib import Path
 
-import pandas as pd
+from PIL import Image
 
 EXPECTED_FILENAME = "aquatic_toxicity_qsar_vis.png"
 
@@ -26,6 +25,10 @@ def _gold_path() -> Path:
 
 def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _write_placeholder_png(target: Path, *, width: int, height: int) -> None:
+    Image.new("RGBA", (max(1, width), max(1, height)), (255, 255, 255, 255)).save(target, format="PNG")
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
@@ -58,18 +61,14 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
         shutil.copy2(path, target)
     print("✓ Copied aquatic toxicity SDF files")
 
-    sample_df = pd.DataFrame([{"file_name": EXPECTED_FILENAME, "image_base64": ""}])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Created sample_submission.csv")
-
     gold_path = _gold_path()
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold image not found: {gold_path}")
-    encoded = base64.b64encode(gold_path.read_bytes()).decode("utf-8")
-    answer_df = pd.DataFrame([{"file_name": EXPECTED_FILENAME, "image_base64": encoded}])
-    answer_df.to_csv(private / "answer.csv", index=False)
-    shutil.copy2(gold_path, private / gold_path.name)
-    print("✓ Created answer.csv and copied gold image")
+    gold_img = Image.open(gold_path).convert("RGBA")
+    _write_placeholder_png(public / "sample_submission.png", width=gold_img.width, height=gold_img.height)
+    print("✓ Created sample_submission.png")
+    gold_img.save(private / "result.png", format="PNG")
+    print("✓ Copied result.png")
 
     print("Aquatic toxicity visualization task preparation complete")
 

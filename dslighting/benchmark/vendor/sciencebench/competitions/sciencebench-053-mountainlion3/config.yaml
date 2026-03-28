@@ -5,11 +5,30 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-053-mountainlion3/prepared/private/answer.csv
-  sample_submission: sciencebench-053-mountainlion3/prepared/public/sample_submission.csv
+  answers: sciencebench-053-mountainlion3/prepared/private/landCover_reclassified_gold.tif
+  sample_submission: sciencebench-053-mountainlion3/prepared/public/pred_results
+  gold_submission: sciencebench-053-mountainlion3/prepared/private/landCover_reclassified_gold.tif
 grader:
   name: accuracy
   grade_fn: file:grade.py:grade
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: pred_results
+    entries:
+      - relative_path: landCover_reclassified.tif
+        format: tif
+        sample: sciencebench-053-mountainlion3/prepared/public/pred_results/landCover_reclassified.tif
+        description: Reclassified land-cover raster.
+      - relative_path: protected_status_reclassified.tif
+        format: tif
+        sample: sciencebench-053-mountainlion3/prepared/public/pred_results/protected_status_reclassified.tif
+        description: Reclassified protected-status raster.
+  references:
+    root_kind: directory
+    root_path: sciencebench-053-mountainlion3/prepared/private
+    entries:
+      - relative_path: landCover_reclassified_gold.tif
+      - relative_path: protected_status_reclassified_gold.tif

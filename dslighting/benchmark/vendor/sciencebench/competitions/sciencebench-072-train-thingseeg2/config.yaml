@@ -5,11 +5,25 @@ awards_medals: false
 prizes: null
 description: description.md
 dataset:
-  answers: sciencebench-072-train-thingseeg2/prepared/private/answer.csv
-  sample_submission: sciencebench-072-train-thingseeg2/prepared/public/sample_submission.csv
+  answers: sciencebench-072-train-thingseeg2/prepared/private/answer.npy
+  sample_submission: sciencebench-072-train-thingseeg2/prepared/public/sample_submission.npy
+  gold_submission: sciencebench-072-train-thingseeg2/prepared/private/answer.npy
 grader:
   name: spearman_correlation
   grade_fn: file:grade.py:grade
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.npy
+      format: npy
+      sample: sciencebench-072-train-thingseeg2/prepared/public/sample_submission.npy
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-072-train-thingseeg2/prepared/private
+    entries:
+    - relative_path: answer.npy

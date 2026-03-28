@@ -7,7 +7,7 @@ import numpy as np
 from dslighting.benchmark.grading.models import GradingRequest
 
 PRED_FILENAME = "tox21_mol_scscores_pred.npy"
-GOLD_FILENAME = "tox21_mol_scscores_gold.npy"
+GOLD_FILENAME = "answer.npy"
 THRESHOLD = 0.4
 
 
@@ -17,7 +17,7 @@ def grade(request: GradingRequest) -> float:
         pred_path = submission_path
     else:
         pred_path = submission_path / PRED_FILENAME
-    gold_path = request.references.private_dir / GOLD_FILENAME
+    gold_path = request.references.answers_path or (request.references.private_dir / GOLD_FILENAME)
 
     if not pred_path.exists():
         print(f"Prediction file not found: {pred_path}")

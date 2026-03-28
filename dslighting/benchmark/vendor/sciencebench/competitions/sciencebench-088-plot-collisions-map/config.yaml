@@ -15,3 +15,16 @@ grader:
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.png
+      format: png
+      sample: sciencebench-088-plot-collisions-map/prepared/public/sample_submission.png
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-088-plot-collisions-map/prepared/private
+    entries:
+    - relative_path: result.png

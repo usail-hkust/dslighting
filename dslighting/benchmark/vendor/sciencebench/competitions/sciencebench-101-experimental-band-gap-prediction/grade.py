@@ -7,7 +7,7 @@ import pandas as pd
 from dslighting.benchmark.grading.models import GradingRequest
 
 PRED_FILENAME = "experimental_band_gap_prediction_pred.csv"
-GOLD_FILENAME = "experimental_band_gap_prediction_gold.csv"
+GOLD_FILENAME = "answer.csv"
 TARGET_COLUMN = "gap_expt_eV"
 THRESHOLD = 0.6
 
@@ -18,7 +18,7 @@ def grade(request: GradingRequest) -> float:
         pred_path = submission_path
     else:
         pred_path = submission_path / PRED_FILENAME
-    gold_path = request.references.private_dir / GOLD_FILENAME
+    gold_path = request.references.answers_path or (request.references.private_dir / GOLD_FILENAME)
 
     if not pred_path.exists():
         print(f"Prediction file not found: {pred_path}")

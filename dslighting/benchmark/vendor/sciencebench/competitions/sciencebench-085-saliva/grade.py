@@ -10,7 +10,7 @@ from pathlib import Path
 from dslighting.benchmark.grading.models import GradingRequest
 
 PRED_FILENAME = "saliva_pred.json"
-GOLD_FILENAME = "biopsykit_saliva_gold.json"
+GOLD_FILENAME = "answer.json"
 
 
 def _values_close(gold_value, pred_value) -> bool:
@@ -28,7 +28,7 @@ def grade(request: GradingRequest) -> float:
         pred_path = submission_path
     else:
         pred_path = submission_path / PRED_FILENAME
-    gold_path = request.references.private_dir / GOLD_FILENAME
+    gold_path = request.references.answers_path or (request.references.private_dir / GOLD_FILENAME)
 
     if not pred_path.exists():
         print(f"Prediction file not found: {pred_path}")
@@ -38,14 +38,9 @@ def grade(request: GradingRequest) -> float:
         pred = json.load(f)
 
     if not gold_path.exists():
-        # Fall back to answer.csv if it's a JSON file
-        gold_path = request.references.private_dir / "answer.csv"
-        if not gold_path.exists():
-            print(f"Gold file not found: {gold_path}")
-            return 0.0
-        gold = json.loads(gold_path.read_text())
-    else:
-        gold = json.loads(gold_path.read_text())
+        print(f"Gold file not found: {gold_path}")
+        return 0.0
+    gold = json.loads(gold_path.read_text())
 
     if set(gold.keys()) != set(pred.keys()):
         print("Subject keys do not match.")

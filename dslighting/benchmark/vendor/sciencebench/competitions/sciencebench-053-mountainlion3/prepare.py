@@ -1,20 +1,19 @@
-"""
-Data preparation for ScienceBench task 53.
-"""
+"""Data preparation for ScienceBench task 53."""
 
 from __future__ import annotations
 
-import base64
 import shutil
 from pathlib import Path
-
-import pandas as pd
 
 DATASET_NAME = "MountainLionNew"
 EXPECTED_FILES = [
     "landCover_reclassified.tif",
     "protected_status_reclassified.tif",
 ]
+SAMPLE_MAPPING = {
+    "landCover_reclassified.tif": "landcover_reclassified.tif",
+    "protected_status_reclassified.tif": "protected_status_reclassified.tif",
+}
 GOLD_MAPPING = {
     "landCover_reclassified.tif": "landCover_reclassified_gold.tif",
     "protected_status_reclassified.tif": "protected_status_reclassified_gold.tif",
@@ -66,26 +65,24 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
 
     _ensure_dir(public)
     _ensure_dir(private)
-
     _copy_dataset(source_dir, public)
 
-    sample_df = pd.DataFrame([{"file_name": name, "image_base64": ""} for name in EXPECTED_FILES])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Created sample_submission.csv")
+    sample_root = public / 'pred_results'
+    sample_root.mkdir(parents=True, exist_ok=True)
+    dataset_root = public / DATASET_NAME
+    for expected_name, source_name in SAMPLE_MAPPING.items():
+        sample_source = dataset_root / source_name
+        if not sample_source.exists():
+            raise FileNotFoundError(f"Sample raster not found: {sample_source}")
+        shutil.copy2(sample_source, sample_root / expected_name)
+    print("✓ Created sample submission rasters")
 
     gold_dir = _gold_dir()
-    answer_rows = []
-    for file_name, gold_name in GOLD_MAPPING.items():
+    for expected_name, gold_name in GOLD_MAPPING.items():
         gold_path = gold_dir / gold_name
         if not gold_path.exists():
             raise FileNotFoundError(f"Missing gold raster: {gold_path}")
-        encoded = base64.b64encode(gold_path.read_bytes()).decode("utf-8")
-        answer_rows.append({"file_name": file_name, "image_base64": encoded})
-        target = private / gold_path.name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(gold_path, target)
-    answer_df = pd.DataFrame(answer_rows)
-    answer_df.to_csv(private / "answer.csv", index=False)
-    print("✓ Created answer.csv and copied gold rasters")
+        shutil.copy2(gold_path, private / gold_name)
+    print("✓ Copied gold rasters")
 
     print("Data preparation completed.")

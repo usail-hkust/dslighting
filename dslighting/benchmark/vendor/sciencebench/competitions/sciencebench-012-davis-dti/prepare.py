@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import shutil
-import pandas as pd
 
 DATA_DIR = None  # set inside prepare()
 DAVIS_DIR = None  # set inside prepare()
@@ -20,7 +19,7 @@ REMOVED_LAST5 = [
     "Imiquimod",
     "Pyrimidine",
 ]
-OUTPUT_FILENAME = "pred_results/davis_dti_repurposing.txt"
+OUTPUT_FILENAME = "davis_dti_repurposing.txt"
 
 
 def _ensure_dir(path: Path) -> None:
@@ -29,22 +28,19 @@ def _ensure_dir(path: Path) -> None:
 
 def _write_sample_submission(path: Path) -> None:
     sample_lines = [
-        "SMILES_SAMPLE_1",
-        "SMILES_SAMPLE_2",
-        "SMILES_SAMPLE_3",
-        "SMILES_SAMPLE_4",
-        "SMILES_SAMPLE_5",
+        "DrugName_SAMPLE_1",
+        "DrugName_SAMPLE_2",
+        "DrugName_SAMPLE_3",
+        "DrugName_SAMPLE_4",
+        "DrugName_SAMPLE_5",
     ]
     with (path / "sample_submission.txt").open("w", encoding="utf-8") as handle:
         handle.write("\n".join(sample_lines) + "\n")
 
 
-def _write_answer_metadata(path: Path) -> None:
-    answer_df = pd.DataFrame({
-        "gold_top5": GOLD_TOP5,
-        "removed_drugs": REMOVED_LAST5 + [""] * (len(GOLD_TOP5) - len(REMOVED_LAST5)),
-    })
-    answer_df.to_csv(path / "answer.csv", index=False)
+def _write_answer_file(path: Path) -> None:
+    with (path / "answer.txt").open("w", encoding="utf-8") as handle:
+        handle.write("\n".join(GOLD_TOP5) + "\n")
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
@@ -84,8 +80,8 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
     _write_sample_submission(public)
     print("✓ Wrote sample_submission.txt")
 
-    _write_answer_metadata(private)
-    print("✓ Wrote answer.csv metadata")
+    _write_answer_file(private)
+    print("✓ Wrote answer.txt")
 
     print("Preparation complete. Expected submission file:", OUTPUT_FILENAME)
 

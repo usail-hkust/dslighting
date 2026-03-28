@@ -6,10 +6,31 @@ prizes: null
 description: description.md
 dataset:
   answers: sciencebench-040-md-rf/prepared/private/answer.csv
-  sample_submission: sciencebench-040-md-rf/prepared/public/sample_submission.csv
+  sample_submission: sciencebench-040-md-rf/prepared/public/sample_submission
 grader:
   name: accuracy
   grade_fn: file:grade.py:grade
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: pred_results
+    entries:
+      - relative_path: MD_all_RF.csv
+        format: csv
+        sample: sciencebench-040-md-rf/prepared/public/sample_submission/MD_all_RF.csv
+        description: Predictions for the all split.
+      - relative_path: MD_MCNC_RF.csv
+        format: csv
+        sample: sciencebench-040-md-rf/prepared/public/sample_submission/MD_MCNC_RF.csv
+        description: Predictions for the MCNC split.
+      - relative_path: MD_MCLCNC_RF.csv
+        format: csv
+        sample: sciencebench-040-md-rf/prepared/public/sample_submission/MD_MCLCNC_RF.csv
+        description: Predictions for the MCLCNC split.
+  references:
+    root_kind: directory
+    root_path: sciencebench-040-md-rf/prepared/private
+    entries:
+      - relative_path: answer.csv

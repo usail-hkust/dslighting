@@ -12,8 +12,8 @@ Train a MODNet regressor on the provided refractive-index dataset and predict th
 ## Dataset
 
 [START Dataset Preview: ref_index]
-|-- md_ref_index_train.h5
-|-- MP_2018.6.h5
+|-- md_ref_index_train
+|-- MP_2018.6
 [END Dataset Preview]
 
 ## Submission Format

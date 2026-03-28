@@ -9,7 +9,7 @@ from pathlib import Path
 from dslighting.benchmark.grading.models import GradingRequest
 
 PRED_FILENAME = "polynomial_fit_pred.csv"
-GOLD_FILENAME = "polynomial_fit_gold.csv"
+GOLD_FILENAME = "answer.csv"
 
 
 def _load_sorted_csv(path: Path) -> tuple[list[str], list[list[str]]]:

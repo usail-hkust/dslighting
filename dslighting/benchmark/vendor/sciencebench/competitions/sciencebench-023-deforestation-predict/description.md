@@ -34,7 +34,7 @@ OBJECTID        Shape_Length        Shape_Area        geometry
 [START Preview of planned_road.geojson]
 OBJECTID        Shape_Length        Name        Status        geometry
 0        1        208040.821565        BR 421        Proposed        LINESTRING (-1761430.843 8738648.014, -1758067...)
-[END Preview of protectedForest.geojson]
+[END Preview of planned_road.geojson]
 
 ## Submission Format
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from dslighting.benchmark.grading.models import GradingRequest
 
 PRED_FILENAME = "jnmf_h_importances.json"
-GOLD_FILENAME = "jnmf_h_importances_gold.json"
+GOLD_FILENAME = "answer.json"
 TOLERANCE = 1e-4
 
 
@@ -23,7 +23,7 @@ def grade(request: GradingRequest) -> float:
         pred_path = submission_path
     else:
         pred_path = submission_path / PRED_FILENAME
-    gold_path = request.references.private_dir / GOLD_FILENAME
+    gold_path = request.references.answers_path or (request.references.private_dir / GOLD_FILENAME)
 
     if not pred_path.exists():
         print(f"Prediction file not found: {pred_path}")

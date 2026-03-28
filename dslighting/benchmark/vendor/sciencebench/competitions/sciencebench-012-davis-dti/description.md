@@ -9,7 +9,7 @@
 
 ## Task
 
-Train a drug–target interaction model on the DAVIS benchmark to predict binding affinity between small-molecule drugs and protein targets. Fine-tune the model on the provided training/validation splits, score the antiviral candidates against the COVID-19 target sequence, rank the drugs by predicted affinity, and write the ordered SMILES strings to the required output file.
+Train a drug–target interaction model on the DAVIS benchmark to predict binding affinity between small-molecule drugs and protein targets. Fine-tune the model on the provided training/validation splits, score the antiviral candidates against the COVID-19 target sequence, rank the drugs by predicted affinity, and write the ordered antiviral drug names to the required output file.
 
 ## Dataset
 
@@ -18,12 +18,12 @@ The `dti/` directory contains the DAVIS training/validation data plus the antivi
 - `DAVIS/affinity_train.csv`, `DAVIS/affinity_val.csv` – binding affinities used for training and validation.
 - `DAVIS/drug_train.txt`, `DAVIS/drug_val.txt` – SMILES strings aligned with the affinity matrices.
 - `DAVIS/target_seq.json` – protein target sequences.
-- `antiviral_drugs.tab` – SMILES strings for antiviral candidates to rank.
+- `antiviral_drugs.tab` – antiviral candidate metadata, including the drug names to rank.
 - `covid_seq.txt` – amino-acid sequence for the COVID-19 target.
 
 ## Submission Format
 
-Create submission with two columns: `gold_top5` and `removed_drugs`. Populate `gold_top5` with your ranked SMILES strings (highest affinity first) and list any filtered or disqualified drugs in the `removed_drugs` column (leave blank if none). Follow the structure shown in the public `sample_submission.csv`.
+Create a single plain-text file with one ranked drug name per line, ordered from highest predicted affinity to lowest. Do not include the five disqualified antivirals in the output.
 
 ## Evaluation
 

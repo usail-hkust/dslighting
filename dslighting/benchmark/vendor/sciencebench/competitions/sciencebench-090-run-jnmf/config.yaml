@@ -14,3 +14,28 @@ grader:
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: directory
+    root_basename: submission
+    entries:
+    - relative_path: fit_result_conscientiousness_H_high.npy
+      format: npy
+      sample: sciencebench-090-run-jnmf/prepared/public/sample_submission/fit_result_conscientiousness_H_high.npy
+      description: Expected submission artifact.
+    - relative_path: fit_result_conscientiousness_H_low.npy
+      format: npy
+      sample: sciencebench-090-run-jnmf/prepared/public/sample_submission/fit_result_conscientiousness_H_low.npy
+      description: Expected submission artifact.
+    - relative_path: fit_result_conscientiousness_W_high.npy
+      format: npy
+      sample: sciencebench-090-run-jnmf/prepared/public/sample_submission/fit_result_conscientiousness_W_high.npy
+      description: Expected submission artifact.
+    - relative_path: fit_result_conscientiousness_W_low.npy
+      format: npy
+      sample: sciencebench-090-run-jnmf/prepared/public/sample_submission/fit_result_conscientiousness_W_low.npy
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-090-run-jnmf/prepared/private
+    entries:
+    - relative_path: answer.npy

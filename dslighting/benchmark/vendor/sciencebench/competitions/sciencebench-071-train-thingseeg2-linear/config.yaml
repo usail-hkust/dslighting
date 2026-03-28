@@ -14,3 +14,16 @@ grader:
 preparer: file:prepare.py:prepare
 evaluator:
   api_version: artifact_v1
+  submission:
+    root_kind: file
+    root_basename: submission
+    entries:
+    - relative_path: sample_submission.npy
+      format: npy
+      sample: sciencebench-071-train-thingseeg2-linear/prepared/public/sample_submission.npy
+      description: Expected submission artifact.
+  references:
+    root_kind: directory
+    root_path: sciencebench-071-train-thingseeg2-linear/prepared/private
+    entries:
+    - relative_path: answer.npy

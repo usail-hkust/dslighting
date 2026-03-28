@@ -1,9 +1,11 @@
 """Data preparation for ScienceBench Task 8 (dkpes visualization)."""
 
+from __future__ import annotations
+
 from pathlib import Path
 import shutil
-import base64
-import pandas as pd
+
+from PIL import Image
 
 DATA_DIR = None  # set inside prepare()
 TRAIN_FILE = None  # set inside prepare()
@@ -16,10 +18,8 @@ def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def _encode_image(path: Path) -> str:
-    if not path.exists():
-        return ""
-    return base64.b64encode(path.read_bytes()).decode("utf-8")
+def _write_placeholder_png(target: Path, *, width: int, height: int) -> None:
+    Image.new("RGBA", (max(1, width), max(1, height)), (255, 255, 255, 255)).save(target, format="PNG")
 
 
 def prepare(raw: Path, public: Path, private: Path) -> None:
@@ -44,22 +44,15 @@ def prepare(raw: Path, public: Path, private: Path) -> None:
     shutil.copy2(TEST_FILE, public / TEST_FILE.name)
     print("✓ Copied dkpes_train.csv and dkpes_test.csv")
 
-    sample_df = pd.DataFrame([
-        {"file_name": EXPECTED_FILENAME, "image_base64": ""}
-    ])
-    sample_df.to_csv(public / "sample_submission.csv", index=False)
-    print("✓ Wrote sample_submission.csv")
-
-    encoded = _encode_image(GOLD_IMAGE)
-    answer_df = pd.DataFrame([
-        {"file_name": EXPECTED_FILENAME, "image_base64": encoded}
-    ])
-    answer_df.to_csv(private / "answer.csv", index=False)
-    print("✓ Wrote answer.csv")
-
     if GOLD_IMAGE.exists():
-        shutil.copy2(GOLD_IMAGE, private / GOLD_IMAGE.name)
-        print("✓ Copied gold image for reference")
+        with Image.open(GOLD_IMAGE).convert("RGBA") as gold_img:
+            _write_placeholder_png(public / "sample_submission.png", width=gold_img.width, height=gold_img.height)
+            gold_img.save(private / "result.png", format="PNG")
+        print("✓ Created sample_submission.png")
+        print("✓ Copied result.png")
+    else:
+        print("⚠ Gold image not found; creating blank sample_submission.png.")
+        _write_placeholder_png(public / "sample_submission.png", width=1, height=1)
 
     print("Preparation complete.")
 

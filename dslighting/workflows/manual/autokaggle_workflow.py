@@ -4,6 +4,9 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from dslighting.core.visualization_policy import (
+    resolve_visualization_policy_from_agent_config,
+)
 from dslighting.core.types import StepPlan, TaskContract
 from dslighting.ops.presets.autokaggle import (
     AutoKaggleDeveloperOperator,
@@ -42,6 +45,7 @@ class AutoKaggleWorkflow(BaseWorkflow):
         self.sandbox: SandboxService = services["sandbox"]
 
         sop_config = agent_config.get("autokaggle", {})
+        visualization_policy = resolve_visualization_policy_from_agent_config(agent_config)
 
         validator = DynamicValidationOperator(llm_service=self.llm_service)
         self.operators = {
@@ -51,16 +55,19 @@ class AutoKaggleWorkflow(BaseWorkflow):
                 llm_service=self.llm_service,
                 sandbox_service=self.sandbox,
                 validator=validator,
-                enforce_no_plotting=sop_config.get("enforce_no_plotting", True),
+                visualization_policy=visualization_policy,
             ),
-            "reviewer": AutoKaggleReviewerOperator(llm_service=self.llm_service),
+            "reviewer": AutoKaggleReviewerOperator(
+                llm_service=self.llm_service,
+                visualization_policy=visualization_policy,
+            ),
             "summarizer": AutoKaggleSummarizerOperator(llm_service=self.llm_service),
         }
 
         self.config = {
             "max_attempts_per_phase": sop_config.get("max_attempts_per_phase", 5),
             "success_threshold": sop_config.get("success_threshold", 3.0),
-            "enforce_no_plotting": bool(sop_config.get("enforce_no_plotting", True)),
+            "visualization_policy": visualization_policy.value,
         }
 
     # ---------------------------------------------------------------------

@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from dslighting.benchmark.core.base import BaseBenchmark
+from dslighting.core.visualization_policy import (
+    build_visualization_instruction_text,
+    resolve_visualization_policy_from_agent_config,
+)
 from dslighting.services.llm import LLMService
 from dslighting.services.sandbox import SandboxService
 from dslighting.services.workspace import WorkspaceService
@@ -44,6 +48,7 @@ class DeepAnalyzeWorkflow(BaseWorkflow):
 
         self.max_iterations = agent_config.get("max_iterations", 10)
         self.benchmark = benchmark
+        self.visualization_policy = resolve_visualization_policy_from_agent_config(agent_config)
 
     @staticmethod
     def _extract_code_from_segment(segment: str) -> Optional[str]:
@@ -173,6 +178,7 @@ class DeepAnalyzeWorkflow(BaseWorkflow):
         io_instructions: str,
         data_dir: Path,
         output_path: Path,
+        visualization_guidance: str,
     ) -> str:
         return f"""You are an expert data scientist using the DeepAnalyze model to solve data science tasks.
 
@@ -184,6 +190,9 @@ Input/Output Requirements:
 
 Data Directory: {data_dir}
 Output File: {output_path}
+
+Visualization Policy:
+{visualization_guidance}
 
 Please use the following format to analyze and solve the problem:
 1. Analyze the task in the <Analyze>...</Analyze> tags
@@ -233,6 +242,7 @@ Please begin the first round of analysis."""
             io_instructions=io_instructions,
             data_dir=data_dir,
             output_path=output_path,
+            visualization_guidance=build_visualization_instruction_text(self.visualization_policy),
         )
         conversation_history: List[Dict[str, str]] = [
             {"role": "user", "content": initial_prompt}

@@ -14,7 +14,7 @@ Your task is to analyze urban heat using Kriging interpolation techniques in Pyt
 ## Dataset
 
 [START Dataset Preview: UrbanHeat]
-|-- CensusBlock.geojson
+|-- block.geojson
 |-- Temperature.geojson
 [END Dataset Preview]
 
