@@ -18,6 +18,18 @@ from .shared import (
     apply_env_overrides,
 )
 from .runtime_logging import log_resolved_runtime_config
+from .llm_roles import (
+    ENV_JUDGE_IMAGE_MODEL,
+    ENV_JUDGE_MODEL,
+    ROLE_IMAGE_JUDGE,
+    ROLE_PRIMARY,
+    ROLE_TEXT_JUDGE,
+    resolve_image_judge_llm_config,
+    resolve_llm_config_for_role,
+    resolve_primary_llm_config,
+    resolve_role_model_name,
+    resolve_text_judge_llm_config,
+)
 from .validation import (
     ConfigValidator,
     ValidationError,
@@ -61,7 +73,12 @@ from .versioning import (
 __all__ = [
     # Builder
     "ConfigBuilder",
+    "ENV_JUDGE_IMAGE_MODEL",
+    "ENV_JUDGE_MODEL",
     # Shared utilities
+    "ROLE_IMAGE_JUDGE",
+    "ROLE_PRIMARY",
+    "ROLE_TEXT_JUDGE",
     "VALID_WORKFLOW_NAMES",
     "WORKFLOW_TO_CONFIG_KEY",
     "deep_merge",
@@ -69,7 +86,12 @@ __all__ = [
     "get_config_key_for_workflow",
     "get_workflow_for_benchmark",
     "apply_env_overrides",
+    "resolve_image_judge_llm_config",
+    "resolve_llm_config_for_role",
     "log_resolved_runtime_config",
+    "resolve_primary_llm_config",
+    "resolve_role_model_name",
+    "resolve_text_judge_llm_config",
     # Validation
     "ConfigValidator",
     "ValidationError",
