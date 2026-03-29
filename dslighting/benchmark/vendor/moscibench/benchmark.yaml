@@ -1,0 +1,9 @@
+schema_version: 1
+source_id: moscibench
+contract_id: mle_task_contract/v1
+engine_id: mle
+registry_root: competitions
+default_data_env_var: DSLIGHTING_MOSCIBENCH_DATA
+supports_single_task_loader: true
+legacy_task_prefixes:
+- mosci-

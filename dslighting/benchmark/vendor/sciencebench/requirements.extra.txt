@@ -1,1 +1,14 @@
-
+geopandas
+neurokit2
+mne
+eofs
+cartopy
+rasterio
+pykrige
+rasterstats
+pymatgen
+scanpy
+anndata
+h5py
+xarray
+netCDF4

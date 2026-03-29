@@ -16,9 +16,16 @@ logger = get_logger(__name__)
 class Grader:
     def __init__(self, name: str, grade_fn: str) -> None:
         self.name = name
-        self.grade_fn = import_fn(grade_fn)
+        self._grade_fn_ref = grade_fn
+        self._grade_fn = None
         assert isinstance(self.name, str), "Grader name must be a string."
         assert len(self.name) > 0, "Grader name cannot be empty."
+
+    @property
+    def grade_fn(self):
+        if self._grade_fn is None:
+            self._grade_fn = import_fn(self._grade_fn_ref)
+        return self._grade_fn
 
     def is_lower_better(self, leaderboard: pd.DataFrame) -> bool:
         """

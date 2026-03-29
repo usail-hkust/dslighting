@@ -2,16 +2,16 @@
 LLM-as-judge utilities for benchmark grading.
 
 Two judge types are supported:
-- Image judge : uses a VLM (JUDGE_IMAGE_MODEL) to compare scientific plots.
-- Text judge  : uses a text LLM (JUDGE_MODEL) to evaluate free-form text or code output.
+- Image judge: uses a VLM (JUDGE_IMAGE_MODEL) to compare scientific plots.
+- Text judge: uses a text LLM (JUDGE_MODEL) to evaluate free-form text or code output.
 
-Model configuration is resolved from environment variables:
+Model configuration is resolved through the shared role-based LLM resolver.
+Role-scoped environment variables remain supported:
     JUDGE_MODEL=<model_name>        # text judge
     JUDGE_IMAGE_MODEL=<model_name>  # image judge
 
-The long-term image-judge protocol is structured JSON with rubric-based subscores.
-Legacy `[FINAL SCORE]: <n>` parsing remains temporarily for ScienceBench migration, but
-it is not the primary contract.
+The image-judge protocol is structured JSON with rubric-based subscores.
+Older prompt formats and legacy score parsing are no longer supported.
 """
 
 from __future__ import annotations
@@ -21,14 +21,17 @@ from dataclasses import dataclass
 import io
 import json
 import logging
-import os
-import re
 from typing import Any
 
 import numpy as np
 from PIL import Image
 
-from dslighting.core.config.llm_resolution import load_model_override_map
+from dslighting.core.config.llm_roles import (
+    ENV_JUDGE_IMAGE_MODEL,
+    ENV_JUDGE_MODEL,
+    resolve_image_judge_llm_config,
+    resolve_text_judge_llm_config,
+)
 from dslighting.logging.events import emit_runtime_event
 from dslighting.services.llm.observed_call import (
     completion_with_observability,
@@ -39,16 +42,6 @@ from dslighting.services.llm.observed_call import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Environment variable names
-# ---------------------------------------------------------------------------
-ENV_JUDGE_MODEL = "JUDGE_MODEL"
-ENV_JUDGE_IMAGE_MODEL = "JUDGE_IMAGE_MODEL"
-
-# Default models – overridable via env vars
-DEFAULT_JUDGE_MODEL = "openai/deepseek-ai/DeepSeek-V3.1-Terminus"
-DEFAULT_JUDGE_IMAGE_MODEL = "openai/Qwen/Qwen2.5-VL-72B-Instruct"
-
-# ---------------------------------------------------------------------------
 # Image-judge protocol defaults
 # ---------------------------------------------------------------------------
 IMAGE_SCORE_FIELDS = (
@@ -57,18 +50,32 @@ IMAGE_SCORE_FIELDS = (
     "pattern_fidelity",
     "style_legend",
 )
-LEGACY_BOOLEAN_FIELDS = {
-    "same_type": "chart_type",
-    "correct_axes": "axes_semantics",
-    "correct_pattern": "pattern_fidelity",
-    "correct_style": "style_legend",
-}
 DEFAULT_IMAGE_JUDGE_SAMPLES = 3
 DEFAULT_IMAGE_JUDGE_MIN_VALID_SAMPLES = 2
 DEFAULT_IMAGE_JUDGE_MAX_TOKENS = 256
 DEFAULT_IMAGE_JUDGE_TEMPERATURE = 0.2
-LEGACY_FINAL_SCORE_RE = re.compile(r"\[FINAL SCORE\]\s*:\s*([0-9]{1,3}(?:\.\d+)?)", re.IGNORECASE)
-PLAIN_SCORE_RE = re.compile(r"(?:^|\b)(?:final\s+score|score)\s*[:=]\s*([0-9]{1,3}(?:\.\d+)?)", re.IGNORECASE)
+DEFAULT_IMAGE_JUDGE_MAX_IMAGE_SIDE = 1280
+JSON_MODE_UNSUPPORTED_MARKERS = (
+    "json mode is not supported",
+    "json mode not supported",
+    "response_format is not supported",
+    "response_format not supported",
+    "json_object is not supported",
+)
+_JSON_MODE_UNSUPPORTED_CAPABILITIES: set[tuple[str, str | None, str | None]] = set()
+RETRYABLE_PROVIDER_ERROR_MARKERS = (
+    "internalservererror",
+    "service unavailable",
+    "temporarily unavailable",
+    "request processing failed",
+    "timeout",
+    "timed out",
+    "connection error",
+    "connection reset",
+    "remoteprotocolerror",
+    "ratelimit",
+    "rate limit",
+)
 
 # ---------------------------------------------------------------------------
 # Default prompts
@@ -112,6 +119,8 @@ Return strictly one JSON object with this schema:
   "reason": "one short summary sentence"
 }
 
+The first character of your response must be {.
+The last character of your response must be }.
 Do not output markdown. Do not output any extra text."""
 
 DEFAULT_TEXT_JUDGE_SYSTEM = """\
@@ -140,40 +149,54 @@ class JudgeImageAggregate:
     sample_scores: tuple[float, ...]
     valid_samples: int
     total_samples: int
+    planned_samples: int
     source: str
+
+
+@dataclass(frozen=True)
+class JudgeImageFailure:
+    kind: str
+    request_mode: str
+    error_type: str
+    error_message: str
+    abort_remaining: bool = False
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _resolve_model(env_var: str, default: str) -> str:
-    return os.environ.get(env_var, "").strip() or default
+def _llm_config_to_call_kwargs(config: Any) -> dict[str, Any]:
+    """Convert a resolved shared LLM config into direct LiteLLM call kwargs."""
+    api_keys = config.get_api_keys()
+    return {
+        "model": config.model,
+        "api_key": api_keys[0] if api_keys else None,
+        "api_base": config.api_base,
+        "provider": config.provider,
+    }
 
 
-def _get_litellm_kwargs(model: str) -> dict[str, Any]:
-    """Build LiteLLM call kwargs by looking up the model in LLM_MODEL_CONFIGS."""
-    config = load_model_override_map().get(model, {})
-    kwargs: dict[str, Any] = {"model": model}
-
-    api_keys = config.get("api_keys")
-    api_key = config.get("api_key")
-    if api_keys:
-        kwargs["api_key"] = api_keys[0]
-    elif api_key:
-        kwargs["api_key"] = api_key
-
-    if config.get("api_base"):
-        kwargs["api_base"] = config["api_base"]
-    if config.get("provider"):
-        kwargs["custom_llm_provider"] = config["provider"]
-
-    return kwargs
+def _prepare_judge_image(img: Image.Image) -> Image.Image:
+    prepared = img.convert("RGB")
+    width, height = prepared.size
+    longest_side = max(width, height)
+    if longest_side <= DEFAULT_IMAGE_JUDGE_MAX_IMAGE_SIDE:
+        return prepared
+    scale = DEFAULT_IMAGE_JUDGE_MAX_IMAGE_SIDE / float(longest_side)
+    resized = prepared.resize(
+        (
+            max(1, int(round(width * scale))),
+            max(1, int(round(height * scale))),
+        ),
+        Image.LANCZOS,
+    )
+    return resized
 
 
 def _encode_pil(img: Image.Image) -> str:
     buf = io.BytesIO()
-    img.convert("RGB").save(buf, format="PNG")
+    _prepare_judge_image(img).save(buf, format="PNG", optimize=True, compress_level=9)
     return base64.b64encode(buf.getvalue()).decode()
 
 
@@ -192,11 +215,77 @@ def _supports_response_format(model: str) -> bool:
     return True
 
 
-def _looks_like_legacy_prompt(prompt: str | None) -> bool:
-    if not prompt:
+def _json_mode_capability_key(
+    *,
+    model: str,
+    provider: str | None,
+    api_base: str | None,
+) -> tuple[str, str | None, str | None]:
+    return (model.strip().lower(), (provider or "").strip().lower() or None, (api_base or "").strip().lower() or None)
+
+
+def _is_json_mode_unsupported_cached(
+    *,
+    model: str,
+    provider: str | None,
+    api_base: str | None,
+) -> bool:
+    return _json_mode_capability_key(model=model, provider=provider, api_base=api_base) in _JSON_MODE_UNSUPPORTED_CAPABILITIES
+
+
+def _mark_json_mode_unsupported(
+    *,
+    model: str,
+    provider: str | None,
+    api_base: str | None,
+) -> None:
+    _JSON_MODE_UNSUPPORTED_CAPABILITIES.add(
+        _json_mode_capability_key(model=model, provider=provider, api_base=api_base)
+    )
+
+
+def _is_json_mode_unsupported_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    if "json mode" in message and "not supported" in message:
+        return True
+    if "response_format" in message and ("not supported" in message or "unsupported" in message):
+        return True
+    if "response_format" in message and "invalid parameter" in message:
+        return True
+    return any(marker in message for marker in JSON_MODE_UNSUPPORTED_MARKERS)
+
+
+def _is_retryable_provider_error(exc: Exception) -> bool:
+    try:
+        import litellm.exceptions as litellm_exceptions
+    except ImportError:
+        litellm_exceptions = None
+
+    if litellm_exceptions is not None:
+        retryable_errors = (
+            litellm_exceptions.RateLimitError,
+            litellm_exceptions.ServiceUnavailableError,
+            litellm_exceptions.Timeout,
+            litellm_exceptions.APIConnectionError,
+            litellm_exceptions.InternalServerError,
+        )
+        if isinstance(exc, retryable_errors):
+            return True
+
+        fail_fast_errors = (
+            litellm_exceptions.InvalidRequestError,
+            litellm_exceptions.NotFoundError,
+            litellm_exceptions.AuthenticationError,
+            litellm_exceptions.PermissionDeniedError,
+        )
+        if isinstance(exc, fail_fast_errors):
+            return False
+
+    if _is_json_mode_unsupported_error(exc):
         return False
-    normalized = prompt.lower()
-    return "[final score]" in normalized or "final score is preceded" in normalized
+
+    message = str(exc).lower()
+    return any(marker in message for marker in RETRYABLE_PROVIDER_ERROR_MARKERS)
 
 
 def _build_image_prompt(rubric_supplement: str | None = None) -> str:
@@ -269,31 +358,7 @@ def _parse_json_object_from_text(content: str) -> dict[str, Any]:
     raise json.JSONDecodeError("Could not parse JSON object from response", content, 0)
 
 
-def _extract_legacy_score(content: str) -> float | None:
-    for pattern in (LEGACY_FINAL_SCORE_RE, PLAIN_SCORE_RE):
-        match = pattern.search(content)
-        if match:
-            value = _coerce_number(match.group(1))
-            if value is not None:
-                return _clip_score(value, minimum=0.0, maximum=100.0)
-    return None
-
-
 def _normalize_structured_image_response(parsed: dict[str, Any]) -> dict[str, Any]:
-    if all(key in parsed for key in LEGACY_BOOLEAN_FIELDS):
-        subscores = {
-            target_key: 25 if bool(parsed.get(source_key, False)) else 0
-            for source_key, target_key in LEGACY_BOOLEAN_FIELDS.items()
-        }
-        return {
-            "analysis": {},
-            "subscores": subscores,
-            "score": float(sum(subscores.values())),
-            "confidence": None,
-            "reason": str(parsed.get("reason", "")) if parsed.get("reason") is not None else "",
-            "protocol": "legacy_boolean_json",
-        }
-
     subscores_raw = parsed.get("subscores")
     normalized_subscores: dict[str, int] | None = None
     if isinstance(subscores_raw, dict):
@@ -333,20 +398,7 @@ def _normalize_structured_image_response(parsed: dict[str, Any]) -> dict[str, An
 
 
 def _parse_image_judge_response(content: str) -> dict[str, Any]:
-    try:
-        parsed = _parse_json_object_from_text(content)
-    except json.JSONDecodeError:
-        legacy_score = _extract_legacy_score(content)
-        if legacy_score is not None:
-            return {
-                "analysis": {},
-                "subscores": {field: 0 for field in IMAGE_SCORE_FIELDS},
-                "score": legacy_score,
-                "confidence": None,
-                "reason": "Parsed legacy final score output.",
-                "protocol": "legacy_final_score",
-            }
-        raise
+    parsed = _parse_json_object_from_text(content)
     return _normalize_structured_image_response(parsed)
 
 
@@ -402,29 +454,38 @@ def judge_image_once(
     pred: Image.Image,
     gold: Image.Image,
     *,
-    prompt: str | None = None,
     rubric_supplement: str | None = None,
     sample_index: int | None = None,
     temperature: float = DEFAULT_IMAGE_JUDGE_TEMPERATURE,
     max_tokens: int = DEFAULT_IMAGE_JUDGE_MAX_TOKENS,
-) -> JudgeImageSample | None:
+) -> JudgeImageSample | JudgeImageFailure | None:
     """
     Execute one image-judge sample and return a structured score sample.
 
-    `prompt` is a temporary compatibility escape hatch for older task-local graders.
-    New code should prefer `rubric_supplement`.
+    The judge always uses the structured JSON image protocol.
     """
-    model = _resolve_model(ENV_JUDGE_IMAGE_MODEL, DEFAULT_JUDGE_IMAGE_MODEL)
-    kwargs = _get_litellm_kwargs(model)
+    resolved_config = resolve_image_judge_llm_config()
+    kwargs = _llm_config_to_call_kwargs(resolved_config)
+    model = kwargs["model"]
     if not kwargs.get("api_key"):
         logger.debug("[judge_image_once] JUDGE_IMAGE_MODEL has no api_key, skipping.")
-        return None
+        return JudgeImageFailure(
+            kind="judge_unconfigured",
+            request_mode="unconfigured",
+            error_type="MissingApiKey",
+            error_message="JUDGE_IMAGE_MODEL has no api_key configured.",
+            abort_remaining=True,
+        )
 
-    legacy_prompt = _looks_like_legacy_prompt(prompt)
-    user_prompt = prompt or _build_image_prompt(rubric_supplement)
+    user_prompt = _build_image_prompt(rubric_supplement)
     pred_b64 = _encode_pil(pred)
     gold_b64 = _encode_pil(gold)
-    response_format = None if legacy_prompt or not _supports_response_format(model) else {"type": "json_object"}
+    provider = kwargs.get("provider")
+    api_base = kwargs.get("api_base")
+    json_mode_enabled = (
+        _supports_response_format(model)
+        and not _is_json_mode_unsupported_cached(model=model, provider=provider, api_base=api_base)
+    )
 
     messages = [{
         "role": "user",
@@ -435,11 +496,13 @@ def judge_image_once(
         ],
     }]
 
-    try:
-        result = completion_with_observability(
+    def _call_once(*, use_json_mode: bool, retry_reason: str | None = None):
+        response_format = {"type": "json_object"} if use_json_mode else None
+        request_mode = "json_mode" if use_json_mode else "prompt_enforced_json"
+        return completion_with_observability(
             model=model,
-            provider=kwargs.get("custom_llm_provider"),
-            api_base=kwargs.get("api_base"),
+            provider=provider,
+            api_base=api_base,
             api_key=kwargs.get("api_key"),
             messages=messages,
             response_format=response_format,
@@ -449,12 +512,45 @@ def judge_image_once(
             extra_tags={
                 "judge_kind": "image",
                 "judge_sample_index": sample_index,
-                "judge_protocol": "legacy_prompt" if legacy_prompt else "structured_json",
+                "judge_request_mode": request_mode,
+                "judge_retry_reason": retry_reason,
             },
         )
+
+    request_mode_used = "prompt_enforced_json"
+    try:
+        request_mode_used = "json_mode" if json_mode_enabled else "prompt_enforced_json"
+        result = _call_once(use_json_mode=json_mode_enabled)
     except Exception as exc:
-        logger.warning("[judge_image_once] call failed (%s: %s).", type(exc).__name__, exc)
-        return None
+        if json_mode_enabled and _is_json_mode_unsupported_error(exc):
+            _mark_json_mode_unsupported(model=model, provider=provider, api_base=api_base)
+            logger.info(
+                "[judge_image_once] json mode unsupported for model=%s provider=%s api_base=%s; retrying with prompt-enforced JSON.",
+                model,
+                provider or "unknown",
+                api_base or "unknown",
+            )
+            try:
+                request_mode_used = "prompt_enforced_json"
+                result = _call_once(use_json_mode=False, retry_reason="json_mode_unsupported")
+            except Exception as retry_exc:
+                logger.warning("[judge_image_once] call failed (%s: %s).", type(retry_exc).__name__, retry_exc)
+                return JudgeImageFailure(
+                    kind="provider_transport_error" if _is_retryable_provider_error(retry_exc) else "call_failed",
+                    request_mode=request_mode_used,
+                    error_type=type(retry_exc).__name__,
+                    error_message=str(retry_exc),
+                    abort_remaining=_is_retryable_provider_error(retry_exc),
+                )
+        else:
+            logger.warning("[judge_image_once] call failed (%s: %s).", type(exc).__name__, exc)
+            return JudgeImageFailure(
+                kind="provider_transport_error" if _is_retryable_provider_error(exc) else "call_failed",
+                request_mode=request_mode_used,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+                abort_remaining=_is_retryable_provider_error(exc),
+            )
 
     try:
         response_content = extract_response_content(result.response)
@@ -478,7 +574,13 @@ def judge_image_once(
             error={"type": type(exc).__name__, "message": str(exc)},
         )
         logger.warning("[judge_image_once] validation failed (%s: %s).", type(exc).__name__, exc)
-        return None
+        return JudgeImageFailure(
+            kind="validation_failed",
+            request_mode=request_mode_used,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+            abort_remaining=False,
+        )
 
     sample = JudgeImageSample(
         score=float(normalized["score"]),
@@ -500,6 +602,7 @@ def judge_image_once(
             "judge_protocol": sample.protocol,
             "judge_sample_index": sample_index,
             "judge_confidence": sample.confidence,
+            "judge_request_mode": request_mode_used,
         },
     )
     emit_llm_event_sync(
@@ -512,13 +615,15 @@ def judge_image_once(
             "judge_protocol": sample.protocol,
             "judge_sample_index": sample_index,
             "judge_confidence": sample.confidence,
+            "judge_request_mode": request_mode_used,
         },
     )
     logger.debug(
-        "[judge_image_once] sample=%s score=%.1f protocol=%s reason=%s",
+        "[judge_image_once] sample=%s score=%.1f protocol=%s request_mode=%s reason=%s",
         sample_index,
         sample.score,
         sample.protocol,
+        request_mode_used,
         sample.reason,
     )
     return sample
@@ -528,7 +633,6 @@ def vlm_score(
     pred: Image.Image,
     gold: Image.Image,
     *,
-    prompt: str | None = None,
     rubric_supplement: str | None = None,
     sample_index: int | None = None,
     temperature: float = DEFAULT_IMAGE_JUDGE_TEMPERATURE,
@@ -542,13 +646,12 @@ def vlm_score(
     sample = judge_image_once(
         pred,
         gold,
-        prompt=prompt,
         rubric_supplement=rubric_supplement,
         sample_index=sample_index,
         temperature=temperature,
         max_tokens=max_tokens,
     )
-    return None if sample is None else sample.score
+    return sample.score if isinstance(sample, JudgeImageSample) else None
 
 
 def judge_image(
@@ -556,7 +659,6 @@ def judge_image(
     gold: Image.Image,
     *,
     threshold: float = 60.0,
-    prompt: str | None = None,
     rubric_supplement: str | None = None,
     num_samples: int = DEFAULT_IMAGE_JUDGE_SAMPLES,
     min_valid_samples: int = DEFAULT_IMAGE_JUDGE_MIN_VALID_SAMPLES,
@@ -570,21 +672,52 @@ def judge_image(
     2. Average valid structured scores.
     3. Fall back to pixel scoring only when judge evidence is insufficient.
 
-    `prompt` remains a temporary compatibility escape hatch for older task-local graders.
-    New code should prefer `rubric_supplement`.
+    The judge always uses the structured JSON image protocol.
     """
     valid_samples: list[JudgeImageSample] = []
-    for sample_index in range(1, max(1, num_samples) + 1):
-        sample = judge_image_once(
+    planned_samples = max(1, num_samples)
+    attempted_samples = 0
+    stop_reason: str | None = None
+    stopped_early = False
+    for sample_index in range(1, planned_samples + 1):
+        attempted_samples += 1
+        attempt = judge_image_once(
             pred,
             gold,
-            prompt=prompt,
             rubric_supplement=rubric_supplement,
             sample_index=sample_index,
         )
-        if sample is None:
+        if isinstance(attempt, JudgeImageSample):
+            sample = attempt
+            valid_samples.append(sample)
+        else:
+            failure = attempt
+            if isinstance(failure, JudgeImageFailure) and failure.abort_remaining:
+                stopped_early = True
+                stop_reason = failure.kind
+                logger.info(
+                    "[judge_image] stopping early after sample=%s due to %s in request_mode=%s (%s: %s).",
+                    sample_index,
+                    failure.kind,
+                    failure.request_mode,
+                    failure.error_type,
+                    failure.error_message,
+                )
+                break
+            remaining_samples = planned_samples - sample_index
+            max_possible_valid = len(valid_samples) + remaining_samples
+            if allow_pixel_fallback and max_possible_valid < max(1, min_valid_samples):
+                stopped_early = True
+                stop_reason = "insufficient_remaining_samples"
+                logger.info(
+                    "[judge_image] stopping early after sample=%s because reaching min_valid_samples=%s is impossible (valid=%s remaining=%s).",
+                    sample_index,
+                    max(1, min_valid_samples),
+                    len(valid_samples),
+                    remaining_samples,
+                )
+                break
             continue
-        valid_samples.append(sample)
         emit_runtime_event(
             "judge.image.sample.completed",
             "Image judge sample completed",
@@ -598,6 +731,31 @@ def judge_image(
                 "duration_seconds": sample.duration_seconds,
             },
         )
+        remaining_samples = planned_samples - sample_index
+        if remaining_samples > 0 and len(valid_samples) >= max(1, min_valid_samples):
+            current_sum = float(sum(item.score for item in valid_samples))
+            optimistic_mean = (current_sum + 100.0 * remaining_samples) / (len(valid_samples) + remaining_samples)
+            pessimistic_mean = current_sum / (len(valid_samples) + remaining_samples)
+            if optimistic_mean < threshold:
+                stopped_early = True
+                stop_reason = "threshold_unreachable"
+                logger.info(
+                    "[judge_image] stopping early after sample=%s because threshold=%.1f is unreachable (optimistic_mean=%.1f).",
+                    sample_index,
+                    threshold,
+                    optimistic_mean,
+                )
+                break
+            if pessimistic_mean >= threshold:
+                stopped_early = True
+                stop_reason = "threshold_already_secured"
+                logger.info(
+                    "[judge_image] stopping early after sample=%s because threshold=%.1f is already secured (pessimistic_mean=%.1f).",
+                    sample_index,
+                    threshold,
+                    pessimistic_mean,
+                )
+                break
 
     if len(valid_samples) >= max(1, min_valid_samples):
         final_score = float(np.mean([sample.score for sample in valid_samples]))
@@ -616,7 +774,8 @@ def judge_image(
         final_score=float(_clip_score(final_score, minimum=0.0, maximum=100.0)),
         sample_scores=tuple(sample.score for sample in valid_samples),
         valid_samples=len(valid_samples),
-        total_samples=max(1, num_samples),
+        total_samples=attempted_samples,
+        planned_samples=planned_samples,
         source=source,
     )
     passed = aggregate.final_score >= threshold
@@ -627,23 +786,26 @@ def judge_image(
             "source": aggregate.source,
             "passed": passed,
             "threshold": threshold,
-            "legacy_prompt": bool(prompt and _looks_like_legacy_prompt(prompt)),
+            "stopped_early": stopped_early,
+            "stop_reason": stop_reason,
         },
         metrics={
             "samples_total": aggregate.total_samples,
+            "samples_planned": aggregate.planned_samples,
             "samples_valid": aggregate.valid_samples,
             "final_score": aggregate.final_score,
             "sample_scores": list(aggregate.sample_scores),
         },
     )
     logger.info(
-        "[judge_image] source=%s score=%.1f threshold=%.1f passed=%s valid=%d/%d sample_scores=%s",
+        "[judge_image] source=%s score=%.1f threshold=%.1f passed=%s valid=%d attempted=%d planned=%d sample_scores=%s",
         aggregate.source,
         aggregate.final_score,
         threshold,
         passed,
         aggregate.valid_samples,
         aggregate.total_samples,
+        aggregate.planned_samples,
         list(aggregate.sample_scores),
     )
     return 1.0 if passed else 0.0
@@ -663,8 +825,9 @@ def text_score(
     """
     Call the text LLM judge (JUDGE_MODEL) to score a predicted answer.
     """
-    model = _resolve_model(ENV_JUDGE_MODEL, DEFAULT_JUDGE_MODEL)
-    kwargs = _get_litellm_kwargs(model)
+    resolved_config = resolve_text_judge_llm_config()
+    kwargs = _llm_config_to_call_kwargs(resolved_config)
+    model = kwargs["model"]
     if not kwargs.get("api_key"):
         logger.debug("[text_score] JUDGE_MODEL has no api_key, skipping.")
         return None
@@ -686,7 +849,7 @@ def text_score(
     try:
         result = completion_with_observability(
             model=model,
-            provider=kwargs.get("custom_llm_provider"),
+            provider=kwargs.get("provider"),
             api_base=kwargs.get("api_base"),
             api_key=kwargs.get("api_key"),
             messages=messages,

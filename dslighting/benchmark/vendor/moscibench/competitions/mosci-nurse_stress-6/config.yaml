@@ -1,0 +1,18 @@
+id: mosci-nurse_stress-6
+name: mosci-nurse_stress-6
+competition_type: code
+awards_medals: false
+description: description.md
+task_metadata:
+  source_dataset: raw_MoSciBench
+  source_family: nurse_stress
+  local_task_id: 6
+  global_task_id: 52
+dataset:
+  answers: mosci-nurse_stress-6/prepared/private/answer.csv
+  sample_submission: mosci-nurse_stress-6/prepared/public/sample_submission.csv
+submission_filename: sample_submission.csv
+grader:
+  name: structured_answer
+  grade_fn: file:grade.py:grade
+preparer: file:prepare.py:prepare

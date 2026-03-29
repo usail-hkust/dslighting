@@ -205,9 +205,21 @@ def is_dataset_prepared(competition: Any, grading_only: bool = False, deep: bool
         logger.warning("Answers file does not exist.")
         return False
 
-    if not competition.sample_submission.is_file() and not grading_only:
-        logger.warning("Sample submission file does not exist.")
-        return False
+    if not grading_only:
+        submission_root_kind = (
+            ((getattr(competition, "evaluator_config", None) or {}).get("submission") or {}).get("root_kind")
+        )
+        sample_submission = competition.sample_submission
+        if submission_root_kind == "directory" or sample_submission.is_dir():
+            if not sample_submission.is_dir():
+                logger.warning("Sample submission directory does not exist.")
+                return False
+            if is_empty(sample_submission):
+                logger.warning("Sample submission directory is empty.")
+                return False
+        elif not sample_submission.is_file():
+            logger.warning("Sample submission file does not exist.")
+            return False
 
     # Deep validation checks
     if deep:
@@ -253,7 +265,7 @@ def _validate_csv_files(directory: Path, dir_name: str) -> bool:
     Returns:
         bool: True if all validations pass
     """
-    csv_files = list(directory.glob("*.csv"))
+    csv_files = list(directory.rglob("*.csv"))
 
     if not csv_files:
         logger.warning(f"No CSV files found in {dir_name} directory")
