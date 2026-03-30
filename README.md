@@ -41,13 +41,17 @@
 
 ---
 
+## News 2025.03
+
+- DSLighting now officially supports benchmark evaluation for [DACode (EMNLP 2024)](https://github.com/yiyihum/da-code), [DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main), [MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench), [MLE-Bench](https://github.com/openai/mle-bench/), and [ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench).
+
 ## New in v2.7.9 (Current)
 
 | Feature | Description |
 |---------|-------------|
-| **Benchmark Mode** | Supports DABench and MLEBench benchmark families for agent evaluation |
+| **Benchmark Mode** | Officially supports DABench, DACode, MLEBench, MoSciBench, and ScienceAgentBench / ScienceBench benchmark families for agent evaluation |
 | **DAG Mode** | Enhanced Directed Acyclic Graph (DAG) runtime for workflow orchestration |
-| **Web UI** | Experimental and under active refactoring (not part of stable API surface) |
+| **Web UI** | No longer supported in this repository |
 
 ## What DSLighting Is
 
@@ -410,7 +414,7 @@ config = ConfigBuilder().build_config(
     model="gpt-4o",
 )
 
-benchmark = DSBenchmark("dabench", data_dir="/path/to/dabench-data")
+benchmark = DSBenchmark("dabench", data_dir="/path/to/dabench")
 result = benchmark.run(config=config)
 
 print(result.results_path)
@@ -421,7 +425,195 @@ print(result.metadata_path)
 If you rely on `.env` values or `LLM_MODEL_CONFIGS`, build the config with `ConfigBuilder` first.
 Passing a bare `DSLightingConfig()` no longer triggers benchmark-side LLM env fallback.
 
-Supported benchmark families include DABench and MLEBench variants.
+Supported benchmark families include DABench, DACode, MLEBench variants, MoSciBench, and ScienceBench.
+
+### DABench
+
+- Download the prepared dataset release from [Google Drive](https://drive.google.com/file/d/1gDeGDTrBU_43-JXf5n1TSVkoNZX1z9KE/view?usp=drive_link).
+- Upstream benchmark and citation link: [InfiAgent / DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main).
+
+Point `data_dir` to the extracted DABench root directory that contains the `dabench-*` task folders, or set:
+
+```bash
+export DSLIGHTING_DABENCH_DATA=/path/to/dabench
+```
+
+Then run it with `DSBenchmark`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
+)
+
+benchmark = DSBenchmark("dabench", data_dir="/path/to/dabench")
+result = benchmark.run(config=config)
+
+print(result.results_path)
+print(result.metadata_path)
+```
+
+Details, including a reusable launcher script, are available in [examples/benchmark/dabench/README.md](examples/benchmark/dabench/README.md).
+
+### DACode
+
+- Download the prepared dataset release from [Google Drive](https://drive.google.com/file/d/1PYwTW2IXSBKRlX57bZE9inOjlpn2zNoV/view?usp=drive_link).
+- Upstream benchmark and citation link: [DA-Code (EMNLP 2024)](https://github.com/yiyihum/da-code).
+
+Point `data_dir` to the prepared DACode root directory that contains the `dacode-*` task folders, or set:
+
+```bash
+export DSLIGHTING_DACODE_DATA=/path/to/dacode
+```
+
+Then run it with `DSBenchmark`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
+)
+
+benchmark = DSBenchmark("dacode", data_dir="/path/to/dacode")
+result = benchmark.run(config=config)
+
+print(result.results_path)
+print(result.metadata_path)
+```
+
+Details, including a reusable launcher script, are available in [examples/benchmark/dacode/README.md](examples/benchmark/dacode/README.md).
+
+### MLE-Bench
+
+- Upstream benchmark and dataset instructions: [openai/mle-bench](https://github.com/openai/mle-bench/).
+
+If you want to run MLE-Bench with DSLighting, follow the upstream repository instructions to download and prepare the dataset first. Then point `data_dir` to your local MLE-Bench data root, or set:
+
+```bash
+export DSLIGHTING_MLEBENCH_DATA=/path/to/mlebench
+```
+
+Then run it with `DSBenchmark`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
+)
+
+benchmark = DSBenchmark("mlebench", data_dir="/path/to/mlebench")
+result = benchmark.run(config=config)
+
+print(result.results_path)
+print(result.metadata_path)
+```
+
+### MoSciBench
+
+- Download the prepared dataset release from [Google Drive](https://drive.google.com/file/d/1FBdHRzOk9nTXhXEq0MJaIa2-DqTffeGX/view?usp=drive_link).
+- Upstream benchmark and citation link: [MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench).
+
+The public release is deduplicated for distribution size. Some public inputs are shared across tasks in the same family, so they are stored once under `metadata/` instead of being duplicated in every task folder.
+
+For DSLighting benchmark runs, use the `competitions/` directory as `data_dir`. If you want each task folder to be fully self-contained for batch runs, first copy the shared family data from `metadata/` back into each `competitions/*/prepared/public/`.
+
+Quick expansion script:
+
+```bash
+DATA_ROOT=/path/to/moscibench
+
+for family_dir in "$DATA_ROOT"/metadata/mosci-*; do
+  family=$(basename "$family_dir")
+  src="$family_dir/prepared/public/"
+  [ -d "$src" ] || continue
+
+  for public_dir in "$DATA_ROOT"/competitions/"${family}"-*/prepared/public; do
+    [ -d "$public_dir" ] || continue
+    rsync -a "$src" "$public_dir/"
+  done
+done
+```
+
+After expansion, point `data_dir` to `competitions/`, or set:
+
+```bash
+export DSLIGHTING_MOSCIBENCH_DATA=/path/to/moscibench/competitions
+```
+
+Then run it with `DSBenchmark`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
+)
+
+benchmark = DSBenchmark("moscibench", data_dir="/path/to/moscibench/competitions")
+result = benchmark.run(config=config)
+
+print(result.results_path)
+print(result.metadata_path)
+```
+
+Details, including a reusable launcher script, are available in [examples/benchmark/moscibench/README.md](examples/benchmark/moscibench/README.md).
+
+### ScienceAgentBench / ScienceBench
+
+- Download the prepared dataset release from [Google Drive](https://drive.google.com/file/d/1kj_A0-qQyFVhE_bqm8LBddv7rGfBQyoM/view?usp=drive_link).
+- Upstream benchmark and citation link: [ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench).
+
+ScienceAgentBench task directories are already self-contained. Point `data_dir` to the extracted root directory that contains `sciencebench-*` task folders, or set:
+
+```bash
+export DSLIGHTING_SCIENCEBENCH_DATA=/path/to/scienceagentbench
+```
+
+Then run it with `DSBenchmark`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="aide",
+    model="gpt-4o",
+)
+
+benchmark = DSBenchmark("sciencebench", data_dir="/path/to/scienceagentbench")
+result = benchmark.run(config=config)
+
+print(result.results_path)
+print(result.metadata_path)
+```
+
+Details, including a reusable launcher script and extra dependency notes, are available in [examples/benchmark/sciencebench/README.md](examples/benchmark/sciencebench/README.md).
 
 If `DSBenchmark` raises an import error (for example missing `pandas`), install the missing package first:
 
