@@ -41,9 +41,12 @@
 
 ---
 
-## News 2025.03
+<details>
+<summary><strong>News 2025.03</strong> · <a href="#benchmarks">跳转到 Benchmarks</a></summary>
 
-- DSLighting 现已正式支持以下 benchmark 评测集：[DACode (EMNLP 2024)](https://github.com/yiyihum/da-code)、[DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main)、[MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench)、[MLE-Bench](https://github.com/openai/mle-bench/)、[ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench)。
+DSLighting 现已正式支持以下 benchmark 评测集：[DACode (EMNLP 2024)](https://github.com/yiyihum/da-code)、[DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main)、[MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench)、[MLE-Bench](https://github.com/openai/mle-bench/)、[ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench)。
+
+</details>
 
 ## v2.7.9（当前版本）
 
