@@ -5,6 +5,7 @@ import logging
 import shutil
 import uuid
 import json
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -463,8 +464,23 @@ class DSLightingRunner:
         self.benchmark = None
         self.run_records: list[dict[str, Any]] = []
         self.registry_grader = RegistryGrader()
+        self._llm_runtime_limits_lock = threading.RLock()
+        self._llm_runtime_limit_signature: tuple[int | None, tuple[tuple[str, int], ...]] | None = None
+        self._llm_runtime_limit_source_task: str | None = None
 
         logger.info("DSLightingRunner is ready to evaluate tasks.")
+
+    @staticmethod
+    def _format_llm_runtime_limit_signature(
+        signature: tuple[int | None, tuple[tuple[str, int], ...]] | None,
+    ) -> dict[str, Any]:
+        if signature is None:
+            return {"llm_global_max_concurrency": None, "llm_model_quotas": {}}
+        global_cap, model_items = signature
+        return {
+            "llm_global_max_concurrency": global_cap,
+            "llm_model_quotas": dict(model_items),
+        }
 
     def register_workflow(self, name: str, factory: BaseWorkflowFactory | type[BaseWorkflowFactory]) -> None:
         """
@@ -670,6 +686,7 @@ class DSLightingRunner:
 
         dag_runtime_options = config_parser.parse_dag_options(runtime_hints)
         self._configure_llm_runtime_limits(
+            task_id=task.task_id,
             task_config=task_config, dag_options=dag_runtime_options
         )
         log_resolved_runtime_config(
@@ -972,6 +989,7 @@ class DSLightingRunner:
     def _configure_llm_runtime_limits(
         self,
         *,
+        task_id: str,
         task_config: DSLightingConfig,
         dag_options: DagRuntimeOptions,
     ) -> None:
@@ -1009,12 +1027,51 @@ class DSLightingRunner:
         else:
             global_cap = configured_global_cap
 
-        if global_cap is None and not model_quotas:
-            return
-        LLMService.configure_concurrency_limits(
+        normalized_global_cap, normalized_model_quotas = LLMService.normalize_concurrency_limits(
             global_max_concurrency=global_cap,
             model_quotas=model_quotas,
         )
+        signature = (
+            normalized_global_cap,
+            tuple(sorted(normalized_model_quotas.items())),
+        )
+
+        with self._llm_runtime_limits_lock:
+            if self._llm_runtime_limit_signature is None:
+                LLMService.configure_concurrency_limits(
+                    global_max_concurrency=normalized_global_cap,
+                    model_quotas=normalized_model_quotas,
+                )
+                self._llm_runtime_limit_signature = signature
+                self._llm_runtime_limit_source_task = task_id
+                logger.info(
+                    "Configured run-scoped LLM concurrency limits | task=%s global=%s model_quotas=%s",
+                    task_id,
+                    normalized_global_cap,
+                    normalized_model_quotas,
+                )
+                return
+
+            if signature == self._llm_runtime_limit_signature:
+                return
+
+            first_task_id = self._llm_runtime_limit_source_task or "<unknown>"
+            raise ConfigurationError(
+                "Conflicting task-level LLM concurrency settings detected within the same run.",
+                error_code="CFG-003",
+                details={
+                    "first_task_id": first_task_id,
+                    "first_limits": self._format_llm_runtime_limit_signature(
+                        self._llm_runtime_limit_signature
+                    ),
+                    "conflicting_task_id": task_id,
+                    "conflicting_limits": self._format_llm_runtime_limit_signature(signature),
+                },
+                suggestion=(
+                    "Use a single llm_global_max_concurrency/llm_model_quotas profile per run "
+                    "or split tasks with different limits into separate runs."
+                ),
+            )
 
     def _build_dag_actor(
         self,

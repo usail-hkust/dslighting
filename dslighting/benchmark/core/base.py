@@ -287,6 +287,10 @@ class BaseBenchmark(AbstractBenchmark):
         adaptive_decrease_factor: float = 0.7,
         adaptive_min_concurrency: Optional[int] = None,
         adaptive_max_concurrency: Optional[int] = None,
+        enable_task_rate_limiting: Optional[bool] = None,
+        llm_task_start_rate: Optional[float] = None,
+        sandbox_task_start_rate: Optional[float] = None,
+        task_rate_burst_factor: Optional[float] = None,
         enable_dual_token_bucket: bool = False,
         llm_token_rate: Optional[float] = None,
         sandbox_token_rate: Optional[float] = None,
@@ -336,10 +340,14 @@ class BaseBenchmark(AbstractBenchmark):
             adaptive_decrease_factor: Adaptive decrease factor.
             adaptive_min_concurrency: Adaptive minimum concurrency.
             adaptive_max_concurrency: Adaptive maximum concurrency.
-            enable_dual_token_bucket: Whether to enable dual token bucket.
-            llm_token_rate: LLM token rate.
-            sandbox_token_rate: Sandbox token rate.
-            token_bucket_burst: Token bucket burst.
+            enable_task_rate_limiting: Whether to enable task start rate limiting.
+            llm_task_start_rate: Task start rate limiter for expected LLM pressure.
+            sandbox_task_start_rate: Task start rate limiter for expected sandbox pressure.
+            task_rate_burst_factor: Burst factor for task start rate limiting.
+            enable_dual_token_bucket: Deprecated alias for enable_task_rate_limiting.
+            llm_token_rate: Deprecated alias for llm_task_start_rate.
+            sandbox_token_rate: Deprecated alias for sandbox_task_start_rate.
+            token_bucket_burst: Deprecated alias for task_rate_burst_factor.
             warmup_rounds: Number of warmup rounds.
             **kwargs: Additional keyword arguments.
         """
@@ -417,6 +425,14 @@ class BaseBenchmark(AbstractBenchmark):
             runtime_kwargs["adaptive_min_concurrency"] = adaptive_min_concurrency
         if adaptive_max_concurrency is not None:
             runtime_kwargs["adaptive_max_concurrency"] = adaptive_max_concurrency
+        if enable_task_rate_limiting is not None:
+            runtime_kwargs["enable_task_rate_limiting"] = enable_task_rate_limiting
+        if llm_task_start_rate is not None:
+            runtime_kwargs["llm_task_start_rate"] = llm_task_start_rate
+        if sandbox_task_start_rate is not None:
+            runtime_kwargs["sandbox_task_start_rate"] = sandbox_task_start_rate
+        if task_rate_burst_factor is not None:
+            runtime_kwargs["task_rate_burst_factor"] = task_rate_burst_factor
         if enable_dual_token_bucket:
             runtime_kwargs["enable_dual_token_bucket"] = enable_dual_token_bucket
         if llm_token_rate is not None:

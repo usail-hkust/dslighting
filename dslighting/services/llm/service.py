@@ -69,6 +69,37 @@ class LLMService:
     _global_cost_mutex = threading.RLock()
 
     @classmethod
+    def normalize_concurrency_limits(
+        cls,
+        *,
+        global_max_concurrency: int | None = None,
+        model_quotas: dict[str, Any] | None = None,
+    ) -> tuple[int | None, dict[str, int]]:
+        """Normalize concurrency limits into a stable, comparable representation."""
+        normalized_global = cls._normalize_positive_int(global_max_concurrency)
+        normalized_model_limits: dict[str, int] = {}
+        for raw_model, raw_cap in (model_quotas or {}).items():
+            model_name = cls._normalize_model_name(raw_model)
+            cap = cls._normalize_positive_int(raw_cap)
+            if not model_name or cap is None:
+                continue
+            normalized_model_limits[model_name] = cap
+        return normalized_global, normalized_model_limits
+
+    @classmethod
+    def _concurrency_limit_signature(
+        cls,
+        *,
+        global_max_concurrency: int | None = None,
+        model_quotas: dict[str, Any] | None = None,
+    ) -> tuple[int | None, tuple[tuple[str, int], ...]]:
+        normalized_global, normalized_model_limits = cls.normalize_concurrency_limits(
+            global_max_concurrency=global_max_concurrency,
+            model_quotas=model_quotas,
+        )
+        return normalized_global, tuple(sorted(normalized_model_limits.items()))
+
+    @classmethod
     def configure_concurrency_limits(
         cls,
         *,
@@ -83,19 +114,23 @@ class LLMService:
             model_quotas: Per-model in-flight request caps.
         """
         with cls._concurrency_mutex:
-            normalized_global = cls._normalize_positive_int(global_max_concurrency)
-            if normalized_global is not None:
-                cls._global_limit = normalized_global
+            normalized_global, normalized_model_limits = cls.normalize_concurrency_limits(
+                global_max_concurrency=global_max_concurrency,
+                model_quotas=model_quotas,
+            )
+            previous_signature = (
+                cls._global_limit,
+                tuple(sorted(cls._model_limits.items())),
+            )
+            next_signature = (
+                normalized_global,
+                tuple(sorted(normalized_model_limits.items())),
+            )
+            if next_signature == previous_signature:
+                return
 
-            if model_quotas is not None:
-                updated_model_limits: dict[str, int] = {}
-                for raw_model, raw_cap in model_quotas.items():
-                    model_name = cls._normalize_model_name(raw_model)
-                    cap = cls._normalize_positive_int(raw_cap)
-                    if not model_name or cap is None:
-                        continue
-                    updated_model_limits[model_name] = cap
-                cls._model_limits = updated_model_limits
+            cls._global_limit = normalized_global
+            cls._model_limits = normalized_model_limits
 
             # asyncio.Semaphore is loop-bound; reset caches so each event loop
             # lazily gets its own semaphore objects.

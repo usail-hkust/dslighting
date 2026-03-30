@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import os
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -66,10 +67,10 @@ class RuntimeSchedulerOptions:
         adaptive_decrease_factor: Concurrency decrease factor for adaptive scaling.
         adaptive_min_concurrency: Minimum concurrency for adaptive scaling.
         adaptive_max_concurrency: Maximum concurrency for adaptive scaling.
-        enable_dual_token_bucket: Whether to enable dual token bucket.
-        llm_token_rate: LLM token rate.
-        sandbox_token_rate: Sandbox token rate.
-        token_bucket_burst: Token bucket burst capacity.
+        enable_task_rate_limiting: Whether to enable task start rate limiting.
+        llm_task_start_rate: Task start rate limiter derived from expected LLM pressure.
+        sandbox_task_start_rate: Task start rate limiter derived from expected sandbox pressure.
+        task_rate_burst_factor: Burst factor for task start rate limiting.
         warmup_rounds: Number of warmup rounds.
         enable_monitoring: Whether to enable monitoring.
         exp_name: Experiment name for monitoring.
@@ -109,6 +110,10 @@ class RuntimeSchedulerOptions:
     adaptive_decrease_factor: float = 0.85
     adaptive_min_concurrency: Optional[int] = None
     adaptive_max_concurrency: Optional[int] = None
+    enable_task_rate_limiting: Optional[bool] = None
+    llm_task_start_rate: Optional[float] = None
+    sandbox_task_start_rate: Optional[float] = None
+    task_rate_burst_factor: Optional[float] = None
     enable_dual_token_bucket: bool = False
     llm_token_rate: Optional[float] = None
     sandbox_token_rate: Optional[float] = None
@@ -284,26 +289,126 @@ class RuntimeSchedulerOptions:
         if self.adaptive_max_concurrency < self.adaptive_min_concurrency:
             self.adaptive_max_concurrency = self.adaptive_min_concurrency
 
-        self.enable_dual_token_bucket = bool(self.enable_dual_token_bucket)
-        if self.llm_token_rate is not None:
+        legacy_task_rate_enabled = bool(self.enable_dual_token_bucket)
+        if self.enable_task_rate_limiting is None:
+            self.enable_task_rate_limiting = legacy_task_rate_enabled
+        else:
+            self.enable_task_rate_limiting = bool(self.enable_task_rate_limiting)
+            if legacy_task_rate_enabled and not self.enable_task_rate_limiting:
+                raise ValueError(
+                    "Conflicting task rate limiting options: "
+                    "enable_task_rate_limiting=False but enable_dual_token_bucket=True."
+                )
+        if legacy_task_rate_enabled:
+            logger.warning(
+                "enable_dual_token_bucket is deprecated; use enable_task_rate_limiting instead."
+            )
+        self.enable_dual_token_bucket = self.enable_task_rate_limiting
+
+        legacy_llm_task_rate = self.llm_token_rate
+        if self.llm_task_start_rate is not None and legacy_llm_task_rate is not None:
             try:
-                llm_rate = float(self.llm_token_rate)
+                if float(self.llm_task_start_rate) != float(legacy_llm_task_rate):
+                    raise ValueError(
+                        "Conflicting task rate options: "
+                        "llm_task_start_rate and llm_token_rate must match when both are set."
+                    )
+            except (TypeError, ValueError) as exc:
+                if isinstance(exc, ValueError) and "Conflicting task rate options" in str(exc):
+                    raise
+        effective_llm_task_rate = (
+            self.llm_task_start_rate
+            if self.llm_task_start_rate is not None
+            else legacy_llm_task_rate
+        )
+        if legacy_llm_task_rate is not None:
+            logger.warning(
+                "llm_token_rate is deprecated; use llm_task_start_rate instead."
+            )
+        if effective_llm_task_rate is not None:
+            try:
+                llm_rate = float(effective_llm_task_rate)
             except (TypeError, ValueError):
                 llm_rate = 0.0
-            self.llm_token_rate = llm_rate if llm_rate > 0 else None
-        if self.sandbox_token_rate is not None:
+            self.llm_task_start_rate = llm_rate if llm_rate > 0 else None
+        else:
+            self.llm_task_start_rate = None
+        self.llm_token_rate = self.llm_task_start_rate
+
+        legacy_sandbox_task_rate = self.sandbox_token_rate
+        if self.sandbox_task_start_rate is not None and legacy_sandbox_task_rate is not None:
             try:
-                sandbox_rate = float(self.sandbox_token_rate)
+                if float(self.sandbox_task_start_rate) != float(legacy_sandbox_task_rate):
+                    raise ValueError(
+                        "Conflicting task rate options: "
+                        "sandbox_task_start_rate and sandbox_token_rate must match when both are set."
+                    )
+            except (TypeError, ValueError) as exc:
+                if isinstance(exc, ValueError) and "Conflicting task rate options" in str(exc):
+                    raise
+        effective_sandbox_task_rate = (
+            self.sandbox_task_start_rate
+            if self.sandbox_task_start_rate is not None
+            else legacy_sandbox_task_rate
+        )
+        if legacy_sandbox_task_rate is not None:
+            logger.warning(
+                "sandbox_token_rate is deprecated; use sandbox_task_start_rate instead."
+            )
+        if effective_sandbox_task_rate is not None:
+            try:
+                sandbox_rate = float(effective_sandbox_task_rate)
             except (TypeError, ValueError):
                 sandbox_rate = 0.0
-            self.sandbox_token_rate = sandbox_rate if sandbox_rate > 0 else None
+            self.sandbox_task_start_rate = sandbox_rate if sandbox_rate > 0 else None
+        else:
+            self.sandbox_task_start_rate = None
+        self.sandbox_token_rate = self.sandbox_task_start_rate
 
+        legacy_burst = self.token_bucket_burst
+        if self.task_rate_burst_factor is not None and legacy_burst != 2.0:
+            try:
+                if float(self.task_rate_burst_factor) != float(legacy_burst):
+                    raise ValueError(
+                        "Conflicting task rate options: "
+                        "task_rate_burst_factor and token_bucket_burst must match when both are set."
+                    )
+            except (TypeError, ValueError) as exc:
+                if isinstance(exc, ValueError) and "Conflicting task rate options" in str(exc):
+                    raise
+        effective_burst = (
+            self.task_rate_burst_factor
+            if self.task_rate_burst_factor is not None
+            else legacy_burst
+        )
+        if legacy_burst != 2.0:
+            logger.warning(
+                "token_bucket_burst is deprecated; use task_rate_burst_factor instead."
+            )
         try:
-            burst = float(self.token_bucket_burst)
+            burst = float(2.0 if effective_burst is None else effective_burst)
         except (TypeError, ValueError):
             burst = 2.0
-        self.token_bucket_burst = max(1.0, burst)
+        self.task_rate_burst_factor = max(1.0, burst)
+        self.token_bucket_burst = self.task_rate_burst_factor
         self.warmup_rounds = max(0, int(self.warmup_rounds or 0))
+
+        if (
+            problem_count > 1
+            and self.scheduler_policy == "full_parallel"
+            and self.queue_policy != "fifo"
+            and self.max_concurrency >= problem_count
+        ):
+            logger.warning(
+                "queue_policy=%r does not affect admission queue ordering when "
+                "scheduler_policy='full_parallel' and max_concurrency=%d >= problem_count=%d; "
+                "all tasks are submitted immediately and only the initial coroutine submission order remains. "
+                "Use scheduler_policy='balanced' or set max_concurrency below problem_count "
+                "to make queue ordering materially affect scheduling.",
+                self.queue_policy,
+                self.max_concurrency,
+                problem_count,
+            )
         return self
 
 
@@ -342,6 +447,13 @@ class BenchmarkRuntimeScheduler:
             mem_probe_interval_seconds=self.options.gpu_memory_probe_interval_seconds,
             allocation_poll_interval_seconds=self.options.allocator_poll_interval_seconds,
         )
+        if not self.allocator.has_gpu:
+            logger.info(
+                "No GPU detected (gpu_ids=%r, CUDA_VISIBLE_DEVICES=%r). "
+                "All gpu_* parameters are ignored. Running in CPU-only mode.",
+                self.options.gpu_ids,
+                os.environ.get("CUDA_VISIBLE_DEVICES"),
+            )
         # Use AdmissionController for admission control logic
         self._admission_controller = AdmissionController(
             options=self.options,
@@ -353,17 +465,17 @@ class BenchmarkRuntimeScheduler:
 
         self._sandbox_token_bucket: Optional[AsyncTokenBucket] = None
         self._llm_token_bucket: Optional[AsyncTokenBucket] = None
-        if self.options.enable_dual_token_bucket:
-            sandbox_rate = self.options.sandbox_token_rate or float(max(1, self._cpu_worker_pool_size))
+        if self.options.enable_task_rate_limiting:
+            sandbox_rate = self.options.sandbox_task_start_rate or float(max(1, self._cpu_worker_pool_size))
             llm_fallback = self.options.llm_max_concurrency or self.options.max_concurrency
-            llm_rate = self.options.llm_token_rate or float(max(1, llm_fallback))
+            llm_rate = self.options.llm_task_start_rate or float(max(1, llm_fallback))
             self._sandbox_token_bucket = AsyncTokenBucket(
                 rate_per_second=sandbox_rate,
-                burst_tokens=max(1.0, sandbox_rate * self.options.token_bucket_burst),
+                burst_tokens=max(1.0, sandbox_rate * self.options.task_rate_burst_factor),
             )
             self._llm_token_bucket = AsyncTokenBucket(
                 rate_per_second=llm_rate,
-                burst_tokens=max(1.0, llm_rate * self.options.token_bucket_burst),
+                burst_tokens=max(1.0, llm_rate * self.options.task_rate_burst_factor),
             )
 
     # Delegate admission control properties to AdmissionController
@@ -858,10 +970,13 @@ class BenchmarkRuntimeScheduler:
         """
         return {
             "queue_policy": self.options.queue_policy,
+            "admission_queue_enabled": self.options.max_concurrency < len(self.problems),
             "workload_mode": self.options.workload_mode,
             "sandbox_memory_mode": self.options.sandbox_memory_mode,
             "sandbox_memory_token_gb": self.allocator.token_size_gb,
             "gpu_reserved_memory_gb": self.options.gpu_reserved_memory_gb,
+            "gpu_available": self.allocator.has_gpu,
+            "cpu_only_mode": not self.allocator.has_gpu,
             "gpu_slots": self.allocator.slot_snapshot(),
             "gpu_token_capacity": self.allocator.token_capacity_snapshot(),
             "gpu_inflight": self.allocator.inflight_snapshot(),
@@ -873,6 +988,14 @@ class BenchmarkRuntimeScheduler:
             "admission_limit": self._admission_limit,
             "active_tasks": self._active_tasks,
             "cpu_inflight": self._cpu_inflight,
+            "task_rate_limiting": {
+                "enabled": self.options.enable_task_rate_limiting,
+                "sandbox_task_start_rate": self.options.sandbox_task_start_rate,
+                "llm_task_start_rate": self.options.llm_task_start_rate,
+                "task_rate_burst_factor": self.options.task_rate_burst_factor,
+                "wait_events": dict(self._token_wait_events),
+                "wait_seconds": dict(self._token_wait_seconds),
+            },
             "token_bucket": {
                 "enabled": self.options.enable_dual_token_bucket,
                 "sandbox_rate": self.options.sandbox_token_rate,

@@ -23,9 +23,6 @@ class AdmissionController:
         self,
         options: RuntimeSchedulerOptions,
         cpu_worker_pool_size: int,
-        token_bucket_rate: Optional[float] = None,
-        llm_token_rate: Optional[float] = None,
-        token_bucket_burst: float = 2.0,
     ):
         self.options = options
         self._admission = asyncio.Semaphore(options.max_concurrency)
