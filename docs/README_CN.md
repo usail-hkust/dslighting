@@ -42,9 +42,11 @@
 ---
 
 <details>
-<summary><strong>News 2025.03</strong> · <a href="#benchmarks">跳转到 Benchmarks</a></summary>
+<summary><strong>News 2026.03</strong> · <a href="#benchmarks">跳转到 Benchmarks</a></summary>
 
 DSLighting 现已正式支持以下 benchmark 评测集：[DACode (EMNLP 2024)](https://github.com/yiyihum/da-code)、[DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main)、[MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench)、[MLE-Bench](https://github.com/openai/mle-bench/)、[ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench)。
+
+通过 `DSBenchmark`，只需几行代码就可以运行 benchmark 评测。
 
 </details>
 

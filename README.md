@@ -42,9 +42,11 @@
 ---
 
 <details>
-<summary><strong>News 2025.03</strong> · <a href="#benchmarks">Jump to Benchmarks</a></summary>
+<summary><strong>News 2026.03</strong> · <a href="#benchmarks">Jump to Benchmarks</a></summary>
 
 DSLighting now officially supports benchmark evaluation for [DACode (EMNLP 2024)](https://github.com/yiyihum/da-code), [DABench (ICML 2024)](https://github.com/InfiAgent/InfiAgent/tree/main), [MoSciBench (ICLR 2026)](https://github.com/usail-hkust/MoSciBench), [MLE-Bench](https://github.com/openai/mle-bench/), and [ScienceAgentBench (ICLR 2025)](https://github.com/OSU-NLP-Group/ScienceAgentBench).
+
+Run benchmark evaluations with just a few lines of code through `DSBenchmark`.
 
 </details>
 
