@@ -56,11 +56,12 @@ Run benchmark evaluations with just a few lines of code through `DSBenchmark`.
 |---------|-------------|
 | **Benchmark Mode** | Officially supports DABench, DACode, MLEBench, MoSciBench, and ScienceAgentBench / ScienceBench benchmark families for agent evaluation |
 | **DAG Mode** | Enhanced Directed Acyclic Graph (DAG) runtime for workflow orchestration |
-| **Web UI** | No longer supported in this repository |
+| ~~**Web UI**~~ | Development is currently paused, and the Web UI is no longer supported in this repository |
 
 ## What DSLighting Is
 
-DSLighting is an LLM-driven data science execution framework. It supports:
+DSLighting is an LLM-driven data science execution framework.
+DSLighting is an LLM-driven autonomous data science execution engine that turns task descriptions and datasets into iterative code generation, execution, evaluation, and refinement workflows. It supports:
 
 - task-oriented agent execution (`run_agent`, `Agent`)
 - benchmark evaluation (`DSBenchmark`)

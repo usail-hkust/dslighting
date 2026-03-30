@@ -56,11 +56,12 @@ DSLighting 现已正式支持以下 benchmark 评测集：[DACode (EMNLP 2024)](
 |---------|-------------|
 | **Benchmark Mode** | 正式支持 DABench、DACode、MLEBench、MoSciBench、ScienceAgentBench / ScienceBench 等 benchmark 评测集 |
 | **DAG Mode** | 增强的有向无环图（DAG）编排运行时 |
-| **Web UI** | 当前仓库已不再支持 |
+| ~~**Web UI**~~ | 当前已暂停开发，且该仓库不再支持 Web UI |
 
 ## DSLighting 是什么
 
-DSLighting 是一个 LLM 驱动的数据科学执行框架，支持：
+DSLighting 是一个 LLM 驱动的数据科学执行框架。
+DSLighting 是一个由 LLM 驱动的自治数据科学执行引擎，可以将任务描述和数据集转化为迭代式的代码生成、执行、评估与改进工作流。它支持：
 
 - 面向任务的 Agent 执行（`run_agent`、`Agent`）
 - 基准评测（`DSBenchmark`）
