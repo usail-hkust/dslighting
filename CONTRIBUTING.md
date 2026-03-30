@@ -17,6 +17,10 @@ We welcome feature suggestions! Please open an issue to discuss your ideas.
 4. Add or update tests as necessary.
 5. Submit a pull request.
 
+### Contributor Recognition
+Authors who make substantial contributions to major features may be added to the
+project's contributor list, subject to maintainer review and final approval.
+
 ## Coding Standards
 
 We use the following tools to maintain code quality:
