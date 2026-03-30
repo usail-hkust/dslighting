@@ -101,6 +101,13 @@ class MultilevelFeedbackQueuePolicy(BaseQueuePolicy):
             else:
                 long_queue.append((idx, problem))
 
+        logger.info(
+            "Multi-level feedback queue: short=%d, medium=%d, long=%d",
+            len(short_queue),
+            len(medium_queue),
+            len(long_queue),
+        )
+
         # Schedule with priority to short tasks
         result: List[ProblemTuple] = []
         round_robin_counter = 0
@@ -127,11 +134,6 @@ class MultilevelFeedbackQueuePolicy(BaseQueuePolicy):
                 while long_queue:
                     result.append(long_queue.popleft())
                 break
-
-        logger.info(
-            f"Multi-level feedback queue: short={len(short_queue)}, "
-            f"medium={len(medium_queue)}, long={len(long_queue)}"
-        )
 
         return result
 

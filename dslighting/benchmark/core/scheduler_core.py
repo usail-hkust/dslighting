@@ -145,6 +145,21 @@ class RuntimeSchedulerOptions:
             queue_policy = "fifo"
         self.queue_policy = queue_policy
 
+        # Auto-promote: a non-fifo queue_policy only has effect when there is an admission
+        # queue (max_concurrency < problem_count). If the user requested ordered scheduling
+        # but left scheduler_policy at the default "full_parallel" (which sets
+        # max_concurrency = problem_count, bypassing the queue), silently promote to
+        # "balanced" so the requested ordering actually takes effect.
+        if queue_policy != "fifo" and policy == "full_parallel" and self.max_concurrency is None:
+            policy = "balanced"
+            self.scheduler_policy = policy
+            logger.info(
+                "queue_policy=%r requires an admission queue to take effect; "
+                "scheduler_policy automatically promoted from 'full_parallel' to 'balanced'. "
+                "Set scheduler_policy explicitly to suppress this promotion.",
+                queue_policy,
+            )
+
         workload_mode = (self.workload_mode or "auto").strip().lower()
         if workload_mode not in {"auto", "dabench_fast", "conservative"}:
             workload_mode = "auto"
@@ -1068,6 +1083,7 @@ class BenchmarkRuntimeScheduler:
 
         profile = self.build_profile(problem, fallback_idx, retry_state=retry_state)
 
+        _queue_start = time.monotonic()
         await self._reserve_admission_slot()
 
         sem: Optional[asyncio.Semaphore] = None
@@ -1096,7 +1112,7 @@ class BenchmarkRuntimeScheduler:
             self._release_admission_slot()
             raise
 
-        waited = 0.0
+        waited = time.monotonic() - _queue_start
         assignment = RuntimeAssignment(
             task_id=profile.task_id,
             assigned_device=assigned_device,

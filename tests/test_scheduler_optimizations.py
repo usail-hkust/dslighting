@@ -78,21 +78,28 @@ def test_async_runner_accepts_new_task_rate_kwargs():
     assert eval_kwargs == {"custom_eval_kwarg": "kept"}
 
 
-def test_runtime_scheduler_options_warns_when_queue_policy_loses_admission_queue_effect(caplog):
-    with caplog.at_level(logging.WARNING):
-        RuntimeSchedulerOptions(queue_policy="lpt_backfill").normalize(problem_count=5)
+def test_runtime_scheduler_options_auto_promotes_to_balanced_when_queue_policy_set(caplog):
+    # When a non-fifo queue_policy is requested without an explicit max_concurrency,
+    # full_parallel would make the ordering meaningless; normalize() should auto-promote
+    # scheduler_policy to "balanced" so the queue policy actually takes effect.
+    with caplog.at_level(logging.INFO):
+        options = RuntimeSchedulerOptions(queue_policy="lpt_backfill").normalize(problem_count=5)
 
-    assert "does not affect admission queue ordering" in caplog.text
+    assert options.scheduler_policy == "balanced"
+    assert "automatically promoted" in caplog.text
 
 
-def test_runtime_scheduler_options_skips_queue_warning_when_explicit_cap_enables_queueing(caplog):
-    with caplog.at_level(logging.WARNING):
-        RuntimeSchedulerOptions(
+def test_runtime_scheduler_options_skips_promotion_when_explicit_concurrency_cap_set(caplog):
+    # When max_concurrency is set explicitly, the user has manually configured the
+    # admission queue, so auto-promotion should not occur.
+    with caplog.at_level(logging.INFO):
+        options = RuntimeSchedulerOptions(
             queue_policy="lpt_backfill",
             max_concurrency=2,
         ).normalize(problem_count=5)
 
-    assert "does not affect admission queue ordering" not in caplog.text
+    assert options.scheduler_policy == "full_parallel"
+    assert "automatically promoted" not in caplog.text
 
 
 def test_scheduler_logs_cpu_only_mode_when_no_gpu(monkeypatch, caplog):

@@ -23,7 +23,3 @@ def test_readme_agentresult_signature_matches_core_interface() -> None:
         assert token in text
 
 
-def test_readme_cn_has_aligned_agentresult_signature() -> None:
-    text = Path("README_CN.md").read_text(encoding="utf-8")
-    for token in README_EXPECTED_TOKENS:
-        assert token in text

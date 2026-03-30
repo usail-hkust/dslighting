@@ -1,4 +1,5 @@
 from dslighting.core.application.agent_config_builder import AgentConfigBuilder
+from dslighting.core.visualization_policy import VisualizationPolicy
 
 
 def _make_builder(workflow_name: str, init_kwargs: dict):
@@ -20,19 +21,19 @@ def _make_builder(workflow_name: str, init_kwargs: dict):
     )
 
 
-def test_non_autokaggle_enforce_no_plotting_goes_to_search() -> None:
+def test_enforce_no_plotting_false_sets_visualization_allow() -> None:
     builder = _make_builder("aide", {"max_iterations": 2})
     config = builder.build(task_id="task1", run_kwargs={"enforce_no_plotting": False})
 
     assert config.agent.search.max_iterations == 2
-    assert config.agent.search.enforce_no_plotting is False
+    assert config.agent.visualization.policy == VisualizationPolicy.ALLOW
 
 
-def test_autokaggle_enforce_no_plotting_goes_to_autokaggle() -> None:
+def test_autokaggle_enforce_no_plotting_false_sets_visualization_allow() -> None:
     builder = _make_builder("autokaggle", {})
     config = builder.build(task_id="task1", run_kwargs={"enforce_no_plotting": False})
 
-    assert config.agent.autokaggle.enforce_no_plotting is False
+    assert config.agent.visualization.policy == VisualizationPolicy.ALLOW
 
 
 def test_runtime_kwargs_override_init_kwargs_and_unconsumed_go_to_parameters() -> None:
