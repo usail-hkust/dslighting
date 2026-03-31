@@ -144,6 +144,10 @@ class SchedulerConfig(BaseModel):
     enable_file_sharing: bool = True
     checkpoint_resume_enabled: bool = False
     run_id: Optional[str] = None
+    enable_task_rate_limiting: Optional[bool] = None
+    llm_task_start_rate: Optional[float] = None
+    sandbox_task_start_rate: Optional[float] = None
+    task_rate_burst_factor: Optional[float] = None
 
     def to_runtime_options(self) -> "RuntimeSchedulerOptions":
         """Convert scheduler settings to RuntimeSchedulerOptions."""
@@ -174,6 +178,10 @@ class SchedulerConfig(BaseModel):
             enable_file_sharing=self.enable_file_sharing,
             checkpoint_resume_enabled=self.checkpoint_resume_enabled,
             run_id=self.run_id,
+            enable_task_rate_limiting=self.enable_task_rate_limiting,
+            llm_task_start_rate=self.llm_task_start_rate,
+            sandbox_task_start_rate=self.sandbox_task_start_rate,
+            task_rate_burst_factor=self.task_rate_burst_factor,
         )
 
 
