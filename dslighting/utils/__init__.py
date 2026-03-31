@@ -96,6 +96,21 @@ from dslighting.logging import (
     LoggingController,
 )
 
+from dslighting.utils.package_detector import (
+    PackageDetector,
+    detect_and_save_packages,
+)
+
+from dslighting.utils.data_preloader import (
+    DatasetPreloader,
+    preload_datasets_async,
+)
+
+from dslighting.utils.file_monitor import (
+    FileSharedMonitor,
+    get_file_monitor,
+)
+
 __all__ = [
     # defaults
     "DEFAULT_WORKFLOW",

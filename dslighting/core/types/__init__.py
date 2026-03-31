@@ -8,8 +8,6 @@ Type definitions including:
 - Configuration types (LLMConfig, TaskConfig, etc.)
 """
 
-from typing import TYPE_CHECKING
-
 # ========== Task Types ==========
 from dslighting.core.types.task import (
     TaskDefinition,
@@ -33,16 +31,15 @@ from dslighting.core.types.formats import (
     DecomposedPlan,
 )
 
-# ========== Configuration Types (TYPE_CHECKING only for type hints) ==========
-if TYPE_CHECKING:
-    from dslighting.config import (
-        LLMConfig,
-        SandboxConfig,
-        TaskConfig,
-        RunConfig,
-        DagRuntimeConfig,
-        AgentSearchConfig,
-    )
+# ========== Configuration Types ==========
+from dslighting.config import (
+    LLMConfig,
+    SandboxConfig,
+    TaskConfig,
+    RunConfig,
+    DagRuntimeConfig,
+    AgentSearchConfig,
+)
 
 __all__ = [
     # Task types

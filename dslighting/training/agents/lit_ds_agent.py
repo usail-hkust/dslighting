@@ -1,8 +1,7 @@
 """
-DSLighting Training Agent - 包装 DSAT Workflows
-
-将 DSAT workflows 包装为 Agent-Lightning 的 LitAgent
+DSLighting Training Agent - wraps DSLighting workflows as Agent-Lightning LitAgents.
 """
+import asyncio
 from typing import Any, Dict
 
 try:
@@ -13,28 +12,24 @@ except ImportError as exc:
         "Install it to use dslighting.training agents."
     ) from exc
 
-try:
-    from dsat.workflows.factory import get_workflow
-except ImportError:
-    get_workflow = None
-
+from dslighting.core.application.agent_app_service import AgentAppService
 from dslighting.training.rewards.base import RewardEvaluator
 
 
 class LitDSAgent(agl.LitAgent[Dict[str, Any]]):
     """
-    将 DSAT workflow 包装为 Agent-Lightning 训练 Agent
+    Wraps a DSLighting workflow as an Agent-Lightning training agent.
 
     Parameters
     ----------
     workflow_name : str
-        DSAT workflow 名称 (e.g., "aide", "autokaggle", "data_interpreter")
+        DSLighting workflow name (e.g., "aide", "autokaggle", "data_interpreter").
     workflow_config : Dict[str, Any]
-        Workflow 配置参数
+        Workflow init kwargs forwarded to AgentAppService (e.g., max_iterations).
     reward_evaluator : RewardEvaluator
-        奖励评估器
+        Reward evaluator used to score the workflow result.
     max_steps : int, default=100
-        最大执行步数
+        Maximum execution steps passed to the workflow.
     """
 
     def __init__(
@@ -54,91 +49,80 @@ class LitDSAgent(agl.LitAgent[Dict[str, Any]]):
         self,
         task: Dict[str, Any],
         resources: agl.NamedResources,
-        rollout: agl.Rollout
+        rollout: agl.Rollout,
     ) -> float:
         """
-        执行 workflow rollout
+        Execute a workflow rollout for the given task.
 
         Parameters
         ----------
         task : Dict[str, Any]
-            任务字典，包含:
-            - task_id: str
-            - data_dir: str
-            - metadata: dict
+            Task dict with keys: task_id, data_dir, description (optional),
+            output (optional), metadata (optional).
         resources : agl.NamedResources
-            训练资源，包含:
-            - "main_llm": agl.LLM
+            Training resources; expects "main_llm": agl.LLM.
         rollout : agl.Rollout
-            Rollout 上下文
+            Rollout context.
 
         Returns
         -------
         float
-            最终奖励值
+            Final reward value (0.0 on failure).
         """
-        # 1. 从 resources 获取 LLM
         llm: agl.LLM = resources["main_llm"]
 
-        # 2. 发送消息：开始 rollout
-        agl.emit_message(f"[{self.workflow_name}] Starting rollout for task {task.get('task_id')}")
-
-        if get_workflow is None:
-            agl.emit_exception(ImportError("DSAT not available"))
-            return 0.0
-
-        # 3. 更新 workflow 配置使用训练 LLM
-        workflow_config = self.workflow_config.copy()
-        workflow_config.update({
-            "llm_config": {
-                "model": llm.model,
-                "api_base": llm.endpoint,
-                "api_key": llm.api_key or "dummy-key",
-                "temperature": llm.sampling_parameters.get("temperature", 0.7),
-            },
-            "max_steps": self.max_steps,
-        })
-
-        # 4. 创建 DSAT workflow
-        workflow = get_workflow(
-            workflow_name=self.workflow_name,
-            config=workflow_config
+        agl.emit_message(
+            f"[{self.workflow_name}] Starting rollout for task {task.get('task_id')}"
         )
 
-        # 5. 执行 workflow
+        init_kwargs = {**self.workflow_config, "max_steps": self.max_steps}
+
+        service = AgentAppService(
+            workflow_name=self.workflow_name,
+            model=llm.model,
+            api_key=llm.api_key or None,
+            api_keys=None,
+            api_base=llm.endpoint or None,
+            provider=None,
+            temperature=llm.sampling_parameters.get("temperature", 0.7),
+            timeout=None,
+            keep_workspace=False,
+            sandbox_backend=None,
+            sandbox_backend_type=None,
+            sandbox_timeout=None,
+            sandbox_api_key=None,
+            init_kwargs=init_kwargs,
+        )
+
         try:
-            result = workflow.run(
-                task_id=task["task_id"],
-                data_dir=task["data_dir"],
+            result = asyncio.run(
+                service.run(
+                    task_id=task.get("task_id"),
+                    data=task["data_dir"],
+                    task=task.get("description", ""),
+                    output=task.get("output", "submission.csv"),
+                    kwargs=task.get("metadata", {}),
+                )
             )
 
-            # 6. 发送中间奖励（如果有）
-            if hasattr(result, "intermediate_scores"):
-                for step, score in enumerate(result.intermediate_scores):
-                    agl.emit_reward(score)
+            reward = self.reward_evaluator.evaluate(result=result, task=task)
 
-            # 7. 使用 reward_evaluator 计算最终奖励
-            reward = self.reward_evaluator.evaluate(
-                result=result,
-                task=task,
+            agl.emit_object(
+                {
+                    "workflow": self.workflow_name,
+                    "task_id": task.get("task_id"),
+                    "success": result.success,
+                    "score": result.score,
+                    "reward": reward,
+                }
             )
-
-            # 8. 发送结构化数据
-            agl.emit_object({
-                "workflow": self.workflow_name,
-                "task_id": task["task_id"],
-                "final_score": result.score if hasattr(result, "score") else None,
-                "steps_taken": len(result.history) if hasattr(result, "history") else 0,
-                "reward": reward,
-            })
 
             return reward
 
         except Exception as e:
-            # 捕获异常并记录
             agl.emit_exception(e)
-            agl.emit_message(f"[{self.workflow_name}] Rollout failed: {str(e)}")
-            return 0.0  # 失败返回零奖励
+            agl.emit_message(f"[{self.workflow_name}] Rollout failed: {e}")
+            return 0.0
 
 
 __all__ = ["LitDSAgent"]
