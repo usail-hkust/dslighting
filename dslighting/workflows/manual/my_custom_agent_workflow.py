@@ -7,7 +7,7 @@ My Custom Agent Workflow - 内置自定义 Agent
 
 from dslighting.workflows.base import BaseWorkflow
 from dslighting.state.search.journal import JournalState, Node, MetricValue, maximize_from_lower_is_better
-from dslighting.services.data_analyzer import DataAnalyzer
+from dslighting.core.data.perception.runtime import DataPerceptionRuntime
 from dslighting.prompts.workflows.aide import create_improve_prompt, create_debug_prompt
 from dslighting.prompts.common import create_draft_prompt
 from dslighting.state.context import summarize_repetitive_logs
@@ -41,7 +41,7 @@ class MyCustomAgentWorkflow(BaseWorkflow):
         self.llm_service = services["llm"]
         self.sandbox_service = services["sandbox"]
         self.workspace_service = services.get("workspace")
-        self.data_analyzer: Optional[DataAnalyzer] = services.get("data_analyzer")
+        self.data_perception: Optional[DataPerceptionRuntime] = services.get("data_perception")
         self.state: JournalState = services["state"]
 
         # 获取所有操作器
@@ -56,7 +56,7 @@ class MyCustomAgentWorkflow(BaseWorkflow):
         logger.info(f"  - LLM 模型: {self.llm_service.model}")
         logger.info(f"  - LLM 温度: {self.llm_service.temperature}")
         logger.info(f"  - Sandbox 超时: {self.sandbox_service.timeout}s")
-        logger.info(f"  - 数据分析器: {'已启用' if self.data_analyzer else '未启用'}")
+        logger.info(f"  - 数据感知: {'已启用' if self.data_perception else '未启用'}")
         logger.info(f"  - 最大迭代次数: {agent_config.get('max_iterations', 5)}")
         logger.info(f"="*80)
 
@@ -106,21 +106,21 @@ class MyCustomAgentWorkflow(BaseWorkflow):
         logger.info(f"阶段 1: 数据分析")
         logger.info(f"{'─'*80}")
 
-        if self.data_analyzer:
+        if self.data_perception:
             try:
-                data_report = self.data_analyzer.analyze(
+                data_report = self.data_perception.analyze(
                     data_dir,
                     output_path.name,
                     task_id=inferred_task_id,
                 )
-                logger.info(f"✓ 数据分析完成")
+                logger.info(f"✓ 数据感知完成")
                 logger.debug(f"数据报告摘要:\n{data_report[:500]}...")
             except Exception as e:
-                logger.warning(f"数据分析失败: {e}")
+                logger.warning(f"数据感知失败: {e}")
                 data_report = ""
         else:
             data_report = ""
-            logger.info("数据分析器未启用，跳过数据分析")
+            logger.info("数据感知未启用，跳过数据分析")
 
         # 构建任务上下文
         task_context = {

@@ -12,7 +12,6 @@ _LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
         "ProcessIsolatedNotebookExecutor",
     ),
     "WorkspaceService": ("dslighting.services.workspace", "WorkspaceService"),
-    "DataAnalyzer": ("dslighting.services.data_analyzer", "DataAnalyzer"),
     "VDBService": ("dslighting.services.vdb", "VDBService"),
 }
 

@@ -488,9 +488,22 @@ def _build_debug_event(
 ):
     if session is None or not session.enabled:
         return None
+
+    # Check for an active section_map from DataPerceptionRuntime.analyze().
+    from dslighting.debug.section_map_context import get_section_map
+    section_map = get_section_map()
+
     payload_refs = {}
     for label, (kind, body) in (payloads or {}).items():
-        payload_refs[label] = session.store_payload(kind=kind, body=body)
+        payload_ref = session.store_payload(kind=kind, body=body)
+        # If this is a request_messages payload and we have an active section_map,
+        # store the section_map separately and link it via section_map_ref.
+        if kind == "request_messages" and section_map is not None:
+            from dataclasses import replace
+            section_map_ref = session.store_payload(kind="section_map", body=section_map)
+            payload_ref = replace(payload_ref, section_map_ref=section_map_ref.ref)
+        payload_refs[label] = payload_ref
+
     context = get_effective_debug_context(session.session_id)
     return DebugEvent(
         schema_version=session.config.schema_version,

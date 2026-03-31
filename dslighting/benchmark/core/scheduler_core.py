@@ -1206,8 +1206,8 @@ class BenchmarkRuntimeScheduler:
             cache_entries = 0
             cache_size_mb = 0.0
             try:
-                from dslighting.services.data_analyzer import DataAnalyzer
-                cache_stats = DataAnalyzer.get_cache_stats()
+                from dslighting.core.data.perception.cache import DataPerceptionCache
+                cache_stats = DataPerceptionCache.get_cache_stats()
                 if cache_stats:
                     cache_hit_rate = cache_stats.get('hit_rate', 0.0)
                     cache_entries = cache_stats.get('entries', 0)

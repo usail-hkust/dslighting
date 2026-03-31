@@ -242,9 +242,9 @@ class BaseBenchmark(AbstractBenchmark):
         )
         return any(marker in text for marker in markers)
 
-    def _warmup_data_analyzer_cache(self, rounds: int) -> Dict[str, Any]:
+    def _warmup_perception_cache(self, rounds: int) -> Dict[str, Any]:
         """Warmup DataAnalyzer cache based on known benchmark problem layout."""
-        return self._runner._warmup_data_analyzer_cache(rounds)
+        return self._runner._warmup_perception_cache(rounds)
 
     async def _run_evaluation_async(self, eval_fn: Callable, **kwargs: Any):
         """Run the entire benchmark evaluation asynchronously."""

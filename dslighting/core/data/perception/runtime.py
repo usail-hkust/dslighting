@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import traceback
+from dataclasses import asdict
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -13,7 +15,7 @@ import pandas as pd
 
 from dslighting.benchmark.grading.models import SubmissionArtifactContract, SubmissionEntrySpec
 from dslighting.core.types.task import TaskType
-from dslighting.utils.constants import DEFAULT_CACHE_MAX_ENTRIES
+from dslighting.utils.constants import DEFAULT_CACHE_MAX_ENTRIES, DEFAULT_DATA_PERCEPTION_ANALYZER_VERSION
 from dslighting.utils.submission_contract import (
     build_tag_contract_reminder,
     extract_submission_tag_contract,
@@ -21,15 +23,35 @@ from dslighting.utils.submission_contract import (
     normalize_submission_tag_contract,
 )
 
+from .budget import PromptBudgetManager
 from .cache import DataPerceptionCache
+from .models import AgentDataContext
+from .renderers.prompt import PromptReportRenderer, RenderProfile
 from .request import DataPerceptionRequest
 from .service import DataPerceptionService
+
+from dslighting.debug.section_map_context import clear_section_map, set_section_map
 
 logger = logging.getLogger(__name__)
 
 
 class DataPerceptionRuntime:
-    """Config-bound runtime used by main execution paths instead of DataAnalyzer."""
+    """Config-bound runtime used by main execution paths.
+
+    Main call flow (section-aware, no post-render string appending):
+        analyze_data()  →  service.build_base_context()
+                        →  _enrich_submission_sections(context)
+                        →  budget.apply(context, profile="data_report")
+                        →  renderer.render(context, profile="data_report")
+                        →  str
+
+        analyze()       →  service.build_base_context()
+                        →  _enrich_submission_sections(context)
+                        →  _enrich_io_requirements(context, ...)
+                        →  budget.apply(context, profile="combined_report")
+                        →  renderer.render(context, profile="combined_report")
+                        →  str
+    """
 
     def __init__(
         self,
@@ -37,7 +59,7 @@ class DataPerceptionRuntime:
         cache_enabled: bool = True,
         cache_dir: Optional[Path] = None,
         cache_max_entries: int = DEFAULT_CACHE_MAX_ENTRIES,
-        analyzer_version: str = "analyzer_v2",
+        analyzer_version: str = DEFAULT_DATA_PERCEPTION_ANALYZER_VERSION,
         profile: str = "balanced",
         max_artifacts: int = 12,
         max_report_chars: Optional[int] = 14000,
@@ -59,6 +81,11 @@ class DataPerceptionRuntime:
             cache_max_entries=cache_max_entries,
             analyzer_version=analyzer_version,
         )
+        self._renderer = PromptReportRenderer()
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def analyze(
         self,
@@ -69,18 +96,34 @@ class DataPerceptionRuntime:
         task_id: Optional[str] = None,
         submission_context: Optional[Dict[str, Any]] = None,
     ) -> str:
-        report = self.analyze_data(
+        """Return combined data + I/O report for agent consumption (combined_report profile)."""
+        normalized = self._normalize_submission_context(submission_context)
+        request = self.build_request(
             data_dir,
             task_type=task_type,
             task_id=task_id,
-            submission_context=submission_context,
+            submission_context=normalized,
         )
-        report += self.generate_io_instructions(
-            output_filename,
-            optimization_context,
-            submission_context=submission_context,
+        context = self._build_enriched_context(
+            request,
+            normalized,
+            task_type=task_type,
+            output_filename=output_filename,
+            optimization_context=optimization_context,
+            include_io=True,
         )
-        return report
+        budget = PromptBudgetManager(
+            max_report_chars=self.max_report_chars,
+            renderer=self._renderer,
+        )
+        context = budget.apply(context, profile="combined_report")
+        result = self._renderer.render_with_map(context, profile="combined_report")
+        # Propagate section_map to debug observability via context variable.
+        set_section_map([asdict(span) for span in result.section_map])
+        try:
+            return result.text
+        finally:
+            clear_section_map()
 
     def analyze_data(
         self,
@@ -89,30 +132,32 @@ class DataPerceptionRuntime:
         task_id: Optional[str] = None,
         submission_context: Optional[Dict[str, Any]] = None,
     ) -> str:
-        normalized_submission_context = self._normalize_submission_context(submission_context)
+        """Return data-only report (data_report profile, no I/O instructions)."""
+        normalized = self._normalize_submission_context(submission_context)
         request = self.build_request(
             data_dir,
             task_type=task_type,
             task_id=task_id,
-            submission_context=normalized_submission_context,
+            submission_context=normalized,
         )
-        report = DataPerceptionService(request, cache=self._cache).build_report()
-        artifact_analysis = self._analyze_submission_artifact_requirements(
-            normalized_submission_context
+        context = self._build_enriched_context(
+            request,
+            normalized,
+            task_type=task_type,
+            include_io=False,
         )
-        if artifact_analysis:
-            report += f"## Submission Artifact Requirements\n{artifact_analysis}\n\n"
-        if task_type == "kaggle":
-            contract = self._coerce_submission_artifact_contract(normalized_submission_context)
-            submission_analysis = ""
-            if contract is None or contract.root_kind == "file":
-                submission_analysis = self._analyze_kaggle_submission_format(
-                    data_dir,
-                    submission_context=normalized_submission_context,
-                )
-            if submission_analysis:
-                report += f"## Submission Format Requirements\n{submission_analysis}\n\n"
-        return report
+        budget = PromptBudgetManager(
+            max_report_chars=self.max_report_chars,
+            renderer=self._renderer,
+        )
+        context = budget.apply(context, profile="data_report")
+        result = self._renderer.render_with_map(context, profile="data_report")
+        # Propagate section_map to debug observability via context variable.
+        set_section_map([asdict(span) for span in result.section_map])
+        try:
+            return result.text
+        finally:
+            clear_section_map()
 
     def build_request(
         self,
@@ -135,6 +180,68 @@ class DataPerceptionRuntime:
             enable_database_inspection=self.enable_database_inspection,
             tabular_tolerant_fallback=self.tabular_tolerant_fallback,
         )
+
+    # ------------------------------------------------------------------
+    # Internal enrichment pipeline
+    # ------------------------------------------------------------------
+
+    def _build_enriched_context(
+        self,
+        request: DataPerceptionRequest,
+        submission_context: Dict[str, Any],
+        *,
+        task_type: Optional[TaskType],
+        output_filename: str = "",
+        optimization_context: bool = False,
+        include_io: bool,
+    ) -> AgentDataContext:
+        """Build base context from service, then enrich with critical sections."""
+        service = DataPerceptionService(request, cache=self._cache)
+        context = service.build_base_context()
+
+        # Enrich submission sections
+        artifact_req = self._analyze_submission_artifact_requirements(submission_context)
+        fmt_full = ""
+        fmt_compact = ""
+        if task_type == "kaggle":
+            contract = self._coerce_submission_artifact_contract(submission_context)
+            if contract is None or contract.root_kind == "file":
+                fmt_full = self._analyze_kaggle_submission_format(
+                    request.data_dir, submission_context=submission_context
+                )
+                fmt_compact = self._build_compact_submission_format(
+                    request.data_dir, submission_context=submission_context
+                )
+
+        context = replace(
+            context,
+            submission_artifact_requirements=artifact_req,
+            submission_format_requirements_full=fmt_full,
+            submission_format_requirements_compact=fmt_compact,
+        )
+
+        # Enrich I/O requirements (only for combined_report profile)
+        if include_io and output_filename:
+            io_full = self.generate_io_instructions(
+                output_filename,
+                optimization_context,
+                submission_context=submission_context,
+            )
+            io_compact = self._build_compact_io_instructions(
+                output_filename,
+                submission_context=submission_context,
+            )
+            context = replace(
+                context,
+                io_requirements_full=io_full,
+                io_requirements_compact=io_compact,
+            )
+
+        return context
+
+    # ------------------------------------------------------------------
+    # I/O instructions
+    # ------------------------------------------------------------------
 
     @staticmethod
     def generate_io_instructions(
@@ -226,6 +333,35 @@ You MUST follow these file system rules precisely. Failure to do so will cause a
 
 **IMPORTANT:** These path requirements are non-negotiable and must be followed exactly.
 """
+
+    @staticmethod
+    def _build_compact_io_instructions(
+        output_filename: str,
+        submission_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Compact version of I/O instructions: filename/directory only, no examples."""
+        contract = DataPerceptionRuntime._coerce_submission_artifact_contract(submission_context)
+        if contract is not None:
+            output_filename = contract.output_submission_path.name
+
+        if contract is not None and contract.root_kind == "directory":
+            required_entries = DataPerceptionRuntime._render_directory_entry_lines(contract.entries)
+            return (
+                f"\n--- CRITICAL I/O REQUIREMENTS ---\n\n"
+                f"- Input files: current working directory (./)\n"
+                f"- Output: create directory `{output_filename}` in ./\n"
+                f"- Required files inside:\n{required_entries}\n"
+            )
+
+        return (
+            f"\n--- CRITICAL I/O REQUIREMENTS ---\n\n"
+            f"- Input files: current working directory (./)\n"
+            f"- Output file: `{output_filename}` in ./\n"
+        )
+
+    # ------------------------------------------------------------------
+    # Submission analysis helpers (unchanged logic, moved from analyze_data)
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _normalize_submission_context(submission_context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -470,6 +606,40 @@ Please inspect this file directly and preserve its structure exactly.
 **CRITICAL:** Your final submission file MUST match the format of `{sample_submission_file.name}`.
 (Automatic format analysis failed; inspect the sample file manually.)
 """)
+
+    def _build_compact_submission_format(
+        self,
+        data_dir: Path,
+        submission_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Compact version: filename + required columns only, no preview/dtypes."""
+        context = self._normalize_submission_context(submission_context)
+        sample_file = self._find_sample_submission(data_dir, submission_context=context)
+        if not sample_file:
+            return ""
+
+        suffix = sample_file.suffix.lower()
+        try:
+            if suffix in {".csv", ".tsv"}:
+                sep = "\t" if suffix == ".tsv" else ","
+                sample_df = pd.read_csv(sample_file, sep=sep, nrows=1)
+                required_columns = sample_df.columns.tolist()
+                return (
+                    f"**CRITICAL:** Match `{sample_file.name}` exactly.\n"
+                    f"- Required columns (in order): `{required_columns}`\n"
+                )
+            if suffix == ".npy":
+                try:
+                    arr = np.load(sample_file, mmap_mode="r", allow_pickle=False)
+                except ValueError:
+                    arr = np.load(sample_file, mmap_mode="r", allow_pickle=True)
+                return (
+                    f"**CRITICAL:** Match `{sample_file.name}` — shape `{tuple(int(d) for d in arr.shape)}`, "
+                    f"dtype `{arr.dtype}`.\n"
+                )
+        except Exception:
+            pass
+        return f"**CRITICAL:** Match `{sample_file.name}` format exactly.\n"
 
     def _find_sample_submission(
         self,

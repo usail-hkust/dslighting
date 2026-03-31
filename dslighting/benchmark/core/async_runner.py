@@ -289,7 +289,7 @@ class AsyncEvaluationRunner:
         }
         return await fn(problem, eval_fn=eval_fn, **accepted_kwargs)
 
-    def _warmup_data_analyzer_cache(self, rounds: int) -> Dict[str, Any]:
+    def _warmup_perception_cache(self, rounds: int) -> Dict[str, Any]:
         """Warmup DataAnalyzer cache.
 
         Args:
@@ -311,13 +311,13 @@ class AsyncEvaluationRunner:
             from dslighting.config import DSLightingConfig
             from dslighting.services.data_analysis_provider import create_data_perception_runtime
         except Exception as exc:
-            logger.debug("DataAnalyzer warmup unavailable: %s", exc)
+            logger.debug("Perception cache warmup unavailable: %s", exc)
             return {
                 "enabled": False,
                 "rounds": rounds,
                 "warmed_entries": 0,
                 "elapsed_seconds": 0.0,
-                "note": "DataAnalyzer import failed",
+                "note": "data perception import failed",
             }
 
         data_root = getattr(self.benchmark, "data_dir", None)
@@ -374,7 +374,7 @@ class AsyncEvaluationRunner:
                     )
                     warmed_entries += 1
                 except Exception as exc:
-                    logger.debug("DataAnalyzer warmup skipped for %s: %s", task_id, exc)
+                    logger.debug("Perception cache warmup skipped for %s: %s", task_id, exc)
 
         elapsed = max(0.0, time.perf_counter() - started)
         return {
@@ -499,10 +499,10 @@ class AsyncEvaluationRunner:
         runtime_options.run_id = self._normalize_run_id(runtime_options.run_id)
         if runtime_options.checkpoint_resume_enabled and not runtime_options.run_id:
             runtime_options.run_id = str(uuid.uuid4())[:8]
-        warmup_stats = self._warmup_data_analyzer_cache(runtime_options.warmup_rounds)
+        warmup_stats = self._warmup_perception_cache(runtime_options.warmup_rounds)
         if warmup_stats.get("enabled"):
             logger.info(
-                "DataAnalyzer warmup complete: rounds=%s warmed_entries=%s elapsed=%.3fs",
+                "Perception cache warmup complete: rounds=%s warmed_entries=%s elapsed=%.3fs",
                 warmup_stats.get("rounds"),
                 warmup_stats.get("warmed_entries"),
                 warmup_stats.get("elapsed_seconds", 0.0),

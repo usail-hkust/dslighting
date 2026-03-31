@@ -14,7 +14,7 @@ from .samplers import DatabaseSampler, DocumentSampler, TabularSampler
 
 
 class DataPerceptionService:
-    """Inspect agent-visible files and render a structured report."""
+    """Inspect agent-visible files and build a structured AgentDataContext."""
 
     def __init__(
         self,
@@ -33,7 +33,13 @@ class DataPerceptionService:
         self._document = DocumentSampler(preview_lines=request.document_preview_lines)
         self._database = DatabaseSampler()
 
-    def inspect(self) -> AgentDataContext:
+    def build_base_context(self) -> AgentDataContext:
+        """Return an un-enriched, un-budgeted AgentDataContext.
+
+        The context contains only what the service discovers: inventory and artifact
+        summaries. Critical sections (submission requirements, I/O requirements) and
+        render policy are set by DataPerceptionRuntime after this call returns.
+        """
         inventory = self._load_inventory()
         summaries = [self._load_or_summarize_artifact(descriptor) for descriptor in inventory.artifacts]
         inventory = DataInventory(
@@ -44,18 +50,31 @@ class DataPerceptionService:
         )
         if self._cache is not None:
             self._cache.put_inventory(self.request, inventory)
-        context = AgentDataContext(
+        return AgentDataContext(
             request=self.request,
             inventory=inventory,
             summaries=summaries,
             detail_artifacts=[summary.descriptor.relative_path for summary in summaries],
         )
+
+    def inspect(self) -> AgentDataContext:
+        """Return a budgeted AgentDataContext (no critical section enrichment).
+
+        Kept for internal use and tests that only need the base + budget step.
+        For the full pipeline, prefer DataPerceptionRuntime.analyze_data().
+        """
+        context = self.build_base_context()
         return self._budget.apply(context)
 
     def render_prompt(self, context: AgentDataContext) -> str:
         return self._renderer.render(context)
 
     def build_report(self) -> str:
+        """Convenience helper for tests and one-off calls.
+
+        For the main execution path, use DataPerceptionRuntime.analyze_data() instead,
+        which properly enriches critical sections and applies the two-phase budget.
+        """
         context = self.inspect()
         return self.render_prompt(context)
 

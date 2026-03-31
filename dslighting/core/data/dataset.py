@@ -717,7 +717,7 @@ class DataLoader:
         """
         Get the comprehensive data report that Agent sees.
 
-        This method uses the same DataAnalyzer service that Agent uses,
+        This method uses the same DataPerceptionRuntime that Agent uses,
         ensuring consistency with what the Agent receives.
 
         Args:
@@ -741,7 +741,7 @@ class DataLoader:
             if runtime is None:
                 return self.show()
 
-            # Use the same task type string used by runner/data analyzer.
+            # Use the same task type string used by the execution/runtime path.
             task_type = self.info.task_type if self.info.task_type else None
 
             # Generate the full report (data + I/O instructions)
@@ -756,7 +756,7 @@ class DataLoader:
             return report
 
         except ImportError as e:
-            logger.error(f"Failed to import DataAnalyzer service: {e}", exc_info=True)
+            logger.error(f"Failed to import DataPerceptionRuntime service: {e}", exc_info=True)
             logger.info("Falling back to basic dataset display")
             return self.show()
 

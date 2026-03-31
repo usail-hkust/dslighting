@@ -97,7 +97,12 @@ class HumanStructuredFormatter:
                 )
                 if self.profile != "summary":
                     payload = payload_store.get(payload_ref.ref)
-                    lines.extend(self._render_payload(label=label, payload=payload))
+                    lines.extend(self._render_payload(
+                        label=label,
+                        payload=payload,
+                        payload_ref=payload_ref,
+                        payload_store=payload_store,
+                    ))
 
         return "\n".join(lines)
 
@@ -141,7 +146,12 @@ class HumanStructuredFormatter:
             )
             if self.profile != "summary":
                 payload = payload_store.get(payload_ref.ref)
-                lines.extend(self._render_payload(label=label, payload=payload))
+                lines.extend(self._render_payload(
+                    label=label,
+                    payload=payload,
+                    payload_ref=payload_ref,
+                    payload_store=payload_store,
+                ))
         return "\n".join(lines)
 
     def _render_standard_fields(self, event) -> list[str]:
@@ -225,21 +235,92 @@ class HumanStructuredFormatter:
                 lines.append(f"  Error: {json.dumps(remaining, ensure_ascii=False, sort_keys=True, default=str)}")
         return lines
 
-    def _render_payload(self, *, label: str, payload: Any) -> list[str]:
+    def _render_payload(
+        self,
+        *,
+        label: str,
+        payload: Any,
+        payload_ref=None,
+        payload_store=None,
+    ) -> list[str]:
         if label == "request_messages" and isinstance(payload, list):
-            lines: list[str] = []
-            for idx, item in enumerate(payload, start=1):
-                role = "unknown"
-                content = item
-                if isinstance(item, dict):
-                    role = str(item.get("role", "unknown"))
-                    content = item.get("content", "")
-                lines.append(f"    [{idx}] {role}:")
-                lines.extend(self._render_request_content(content))
-            return lines
+            section_map = self._resolve_section_map(payload_ref, payload_store)
+            return self._render_request_messages(payload, section_map=section_map)
         if label.endswith("response_body") and isinstance(payload, dict):
             return self._render_response_payload(payload)
         return self._indent_lines(self._stringify(payload), prefix="    ")
+
+    def _resolve_section_map(self, payload_ref: Any, payload_store: Any) -> list | None:
+        """Retrieve the section_map associated with a request_messages payload ref."""
+        if payload_ref is None or payload_store is None:
+            return None
+        section_map_ref = getattr(payload_ref, "section_map_ref", None)
+        if not section_map_ref:
+            return None
+        try:
+            return payload_store.get(section_map_ref)
+        except Exception:
+            return None
+
+    def _render_request_messages(
+        self,
+        messages: list,
+        *,
+        section_map: list | None,
+    ) -> list[str]:
+        lines: list[str] = []
+        for idx, item in enumerate(messages, start=1):
+            role = "unknown"
+            content = item
+            if isinstance(item, dict):
+                role = str(item.get("role", "unknown"))
+                content = item.get("content", "")
+            lines.append(f"    [{idx}] {role}:")
+            lines.extend(self._render_request_content_with_map(content, section_map=section_map))
+        return lines
+
+    def _render_request_content_with_map(
+        self,
+        content: Any,
+        *,
+        section_map: list | None,
+    ) -> list[str]:
+        """Render request content; use section_map for structured preview if available."""
+        if not isinstance(content, list):
+            text = content if isinstance(content, str) else None
+            if text and section_map:
+                return self._render_text_with_section_map(text, section_map)
+            return self._indent_lines(self._stringify(content), prefix="      ")
+
+        lines: list[str] = []
+        image_idx = 0
+        for item in content:
+            if not isinstance(item, dict):
+                lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
+                continue
+
+            item_type = item.get("type")
+            if item_type == "text":
+                text = str(item.get("text", ""))
+                if section_map:
+                    lines.extend(self._render_text_with_section_map(text, section_map))
+                else:
+                    lines.extend(self._indent_lines(self._stringify(text), prefix="      "))
+                continue
+
+            if item_type == "image_url":
+                image_idx += 1
+                image_url = item.get("image_url", {})
+                if isinstance(image_url, dict) and image_url.get("kind") == "inline_base64_image":
+                    mime_type = image_url.get("mime_type", "unknown")
+                    approx_chars = image_url.get("approx_chars", 0)
+                    lines.append(
+                        f"      [image {image_idx}] inline_base64_image mime={mime_type} chars={approx_chars}"
+                    )
+                    continue
+
+            lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
+        return lines or self._indent_lines(self._stringify(content), prefix="      ")
 
     def _render_response_payload(self, payload: dict[str, Any]) -> list[str]:
         lines: list[str] = []
@@ -262,6 +343,7 @@ class HumanStructuredFormatter:
         return lines or self._indent_lines(self._stringify(payload), prefix="    ")
 
     def _render_request_content(self, content: Any) -> list[str]:
+        """Legacy path used for non-request_messages payloads."""
         if not isinstance(content, list):
             return self._indent_lines(self._stringify(content), prefix="      ")
 
@@ -290,6 +372,110 @@ class HumanStructuredFormatter:
 
             lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
         return lines or self._indent_lines(self._stringify(content), prefix="      ")
+
+    # ------------------------------------------------------------------
+    # Section-map-aware structured preview
+    # ------------------------------------------------------------------
+
+    _CRITICAL_SECTION_NAMES = frozenset({
+        "Submission Artifact Requirements",
+        "Submission Format Requirements",
+        "CRITICAL I/O REQUIREMENTS",
+    })
+    _FOLDABLE_SECTION_NAMES = frozenset({"Data Schema Analysis"})
+    # Fallback header patterns for when section_map is unavailable
+    _FALLBACK_CRITICAL_HEADERS = (
+        "## Submission Artifact Requirements",
+        "## Submission Format Requirements",
+        "--- CRITICAL I/O REQUIREMENTS ---",
+    )
+
+    def _render_text_with_section_map(self, text: str, section_map: list) -> list[str]:
+        """Render text using section_map spans: preserve critical, fold Data Schema Analysis."""
+        if len(text) <= self.max_inline_chars:
+            return self._indent_lines(text, prefix="      ")
+
+        lines: list[str] = []
+        total_chars = len(text)
+        prev_end = 0
+        folded_count = 0
+        folded_chars = 0
+
+        for span in section_map:
+            name = span.get("name") if isinstance(span, dict) else getattr(span, "name", "")
+            start = span.get("start") if isinstance(span, dict) else getattr(span, "start", 0)
+            end = span.get("end") if isinstance(span, dict) else getattr(span, "end", 0)
+            critical = span.get("critical") if isinstance(span, dict) else getattr(span, "critical", False)
+            foldable = span.get("foldable") if isinstance(span, dict) else getattr(span, "foldable", False)
+
+            # Render any gap between spans
+            if prev_end < start:
+                gap = text[prev_end:start]
+                if gap.strip():
+                    lines.extend(self._indent_lines(gap, prefix="      "))
+
+            section_text = text[start:end]
+            if critical or not foldable:
+                lines.extend(self._indent_lines(section_text, prefix="      "))
+            else:
+                # Fold: show first line only + summary
+                first_line = section_text.split("\n", 1)[0]
+                lines.append(f"      {first_line}")
+                lines.append(f"      ... [folded section '{name}' / {len(section_text)} chars omitted for console preview]")
+                folded_count += 1
+                folded_chars += len(section_text)
+
+            prev_end = end
+
+        # Any trailing text after last span
+        if prev_end < total_chars:
+            trailing = text[prev_end:]
+            if trailing.strip():
+                lines.extend(self._indent_lines(trailing, prefix="      "))
+
+        if folded_count:
+            lines.append(
+                f"      ... [total: {folded_count} section(s) folded / "
+                f"{folded_chars} chars omitted for console preview]"
+            )
+        return lines
+
+    def _render_text_fallback_structured(self, text: str) -> list[str]:
+        """Fallback structured preview when section_map is unavailable.
+
+        Preserves critical headers and surrounding text; truncates middle sections.
+        Not a formal contract — section_map path is preferred.
+        """
+        if len(text) <= self.max_inline_chars:
+            return self._indent_lines(text, prefix="      ")
+
+        # Find critical header positions
+        critical_ranges: list[tuple[int, int]] = []
+        for header in self._FALLBACK_CRITICAL_HEADERS:
+            pos = text.find(header)
+            if pos == -1:
+                continue
+            # Keep from header to next ## header or end (up to 2000 chars)
+            next_section = len(text)
+            for h in ("## ", "--- "):
+                idx = text.find(h, pos + len(header))
+                if idx != -1 and idx < next_section:
+                    next_section = idx
+            critical_ranges.append((pos, min(next_section, pos + 2000)))
+
+        if not critical_ranges:
+            return self._indent_lines(
+                text[:self.max_inline_chars] + "\n... [truncated — no section_map available]",
+                prefix="      ",
+            )
+
+        # Show beginning + critical sections
+        lines: list[str] = []
+        lines.extend(self._indent_lines(text[:min(500, len(text))], prefix="      "))
+        lines.append("      ... [middle sections omitted — no section_map available]")
+        for start, end in sorted(set(critical_ranges)):
+            lines.extend(self._indent_lines(text[start:end], prefix="      "))
+        return lines
 
     def _stringify(self, value: Any) -> str:
         if isinstance(value, str):

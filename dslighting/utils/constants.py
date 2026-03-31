@@ -103,6 +103,13 @@ LLM_HTTP_CLIENT_TIMEOUT: Final[int] = 120
 """Timeout for LLM HTTP client connections in seconds."""
 
 # =============================================================================
+# Data Perception
+# =============================================================================
+
+DEFAULT_DATA_PERCEPTION_ANALYZER_VERSION: Final[str] = "analyzer_v2"
+"""Default analyzer version string used by DataPerceptionRuntime and DataPerceptionCache."""
+
+# =============================================================================
 # Data Analysis Limits
 # =============================================================================
 

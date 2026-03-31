@@ -24,6 +24,11 @@ class DataPerceptionCache:
     _memory_cache: "OrderedDict[str, dict[str, Any]]" = OrderedDict()
     _key_locks: dict[str, threading.Lock] = {}
 
+    # Class-level telemetry counters (shared across all instances)
+    _global_cache_hits_memory: int = 0
+    _global_cache_hits_disk: int = 0
+    _global_cache_misses: int = 0
+
     def __init__(
         self,
         *,
@@ -42,6 +47,29 @@ class DataPerceptionCache:
         with cls._cache_lock:
             cls._memory_cache.clear()
             cls._key_locks.clear()
+            cls._global_cache_hits_memory = 0
+            cls._global_cache_hits_disk = 0
+            cls._global_cache_misses = 0
+
+    @classmethod
+    def get_cache_stats(cls) -> dict[str, Any]:
+        """Return telemetry stats for the in-memory cache (mirrors DataAnalyzer interface)."""
+        with cls._cache_lock:
+            total_hits = cls._global_cache_hits_memory + cls._global_cache_hits_disk
+            total_accesses = total_hits + cls._global_cache_misses
+            hit_rate = (total_hits / total_accesses) if total_accesses > 0 else 0.0
+            size_bytes = sum(
+                len(json.dumps(v, ensure_ascii=False).encode("utf-8"))
+                for v in cls._memory_cache.values()
+            )
+            return {
+                "hits_memory": cls._global_cache_hits_memory,
+                "hits_disk": cls._global_cache_hits_disk,
+                "misses": cls._global_cache_misses,
+                "hit_rate": round(hit_rate, 4),
+                "entries": len(cls._memory_cache),
+                "size_mb": round(size_bytes / (1024 * 1024), 4),
+            }
 
     def get_inventory(self, request: DataPerceptionRequest) -> DataInventory | None:
         if not self.enabled:
@@ -148,16 +176,25 @@ class DataPerceptionCache:
     def _read_payload(self, cache_key: str) -> dict[str, Any] | None:
         cached = self._memory_get(cache_key)
         if cached is not None:
+            with self._cache_lock:
+                DataPerceptionCache._global_cache_hits_memory += 1
             return cached
 
         key_lock = self._get_key_lock(cache_key)
         with key_lock:
             cached = self._memory_get(cache_key)
             if cached is not None:
+                with self._cache_lock:
+                    DataPerceptionCache._global_cache_hits_memory += 1
                 return cached
             payload = self._disk_read(cache_key)
             if payload is not None:
                 self._memory_put(cache_key, payload)
+                with self._cache_lock:
+                    DataPerceptionCache._global_cache_hits_disk += 1
+            else:
+                with self._cache_lock:
+                    DataPerceptionCache._global_cache_misses += 1
             return payload
 
     def _write_payload(self, cache_key: str, payload: dict[str, Any]) -> None:

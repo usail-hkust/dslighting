@@ -1,4 +1,4 @@
-"""Structured data perception runtime for agent-facing dataset introspection."""
+"""Structured data perception runtime for agent-facing dataset understanding."""
 
 from .models import AgentDataContext, ArtifactDescriptor, ArtifactSummary, DataInventory
 from .request import DataPerceptionRequest

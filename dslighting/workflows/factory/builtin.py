@@ -26,10 +26,7 @@ from dslighting.core.visualization_policy import (
     should_force_noninteractive_backend,
 )
 from dslighting.services.llm import LLMService
-from dslighting.services.data_analysis_provider import (
-    create_data_analyzer,
-    create_data_perception_runtime,
-)
+from dslighting.services.data_analysis_provider import create_data_perception_runtime
 from dslighting.services.sandbox import SandboxService
 from dslighting.services.vdb import VDBService
 from dslighting.services.workspace import WorkspaceService
@@ -323,7 +320,7 @@ class MyCustomAgentWorkflowFactory(BaseWorkflowFactory):
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
-        data_analyzer = create_data_analyzer(config)
+        data_perception = create_data_perception_runtime(config)
         state = JournalState()
         operators = {
             "generate": GenerateCodeAndPlanOperator(llm_service=llm_service),
@@ -334,7 +331,7 @@ class MyCustomAgentWorkflowFactory(BaseWorkflowFactory):
             "llm": llm_service,
             "sandbox": sandbox_service,
             "workspace": workspace,
-            "data_analyzer": data_analyzer,
+            "data_perception": data_perception,
             "state": state,
         }
         return MyCustomAgentWorkflow(

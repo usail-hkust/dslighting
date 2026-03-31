@@ -60,3 +60,4 @@ class PayloadRef:
     chars_len: int
     reused: bool = False
     preview: str | None = None
+    section_map_ref: str | None = None
