@@ -1,10 +1,8 @@
 import json
 from pathlib import Path
 import shutil
-import pandas as pd
 
-GOLD_DIR = Path(__file__).resolve().parents[2] / "raw_dacode" / "gold" / "dm-csv-049"
-SKIP_FROM_PUBLIC = {"README.md"}
+SKIP_FROM_PUBLIC = {"README.md", "result.json", "result.csv"}
 
 
 def prepare(raw: Path, public: Path, private: Path):
@@ -15,24 +13,12 @@ def prepare(raw: Path, public: Path, private: Path):
         if f.is_file() and f.name not in SKIP_FROM_PUBLIC:
             shutil.copy2(f, public / f.name)
 
-    gold_src = GOLD_DIR / "result.json"
-    if gold_src.exists():
-        with open(gold_src, 'r') as f:
-            data = json.load(f)
+    raw_result = raw / "result.json"
+    if raw_result.exists():
+        shutil.copy2(raw_result, private / "answer.json")
 
-        rows = []
-        for key, values in data.items():
-            if isinstance(values, list) and len(values) > 0:
-                val = values[0]
-            else:
-                val = values
-            rows.append({key: val})
-
-        if rows:
-            df = pd.DataFrame(rows)
-            df.to_csv(private / "answer.csv", index=False)
-
-            with open(private / "answer.csv", 'r') as f:
-                header_line = f.readline()
-            with open(public / "sample_submission.csv", "w") as f:
-                f.write(header_line)
+        with open(raw_result, "r", encoding="utf-8") as f:
+            answer_data = json.load(f)
+        sample_data = {key: [] for key in answer_data.keys()}
+        with open(public / "sample_submission.json", "w", encoding="utf-8") as f:
+            json.dump(sample_data, f, indent=2)

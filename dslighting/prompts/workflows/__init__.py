@@ -19,6 +19,7 @@ __all__ = [
     # AIDE workflow
     "create_improve_prompt",
     "create_debug_prompt",
+    "create_react_prompt",
     # AutoKaggle workflow
     "get_deconstructor_prompt",
     "get_phase_planner_prompt",

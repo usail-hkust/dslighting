@@ -1,6 +1,6 @@
 # plot-line-006
 
-From the Climate Change Dataset, create a line graph showing global seasonal average temperature changes as instructed in tips.txt and formatted according to plot.yaml. Save the graph as result.png
+From the Climate Change Dataset, create a line graph showing global seasonal average temperature changes as instructed in tips.txt and formatted according to plot.yaml.
 
 ## Output Requirements
 
@@ -10,9 +10,9 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -21,11 +21,9 @@ Inside that directory, you must create exactly these three files:
 ## About Dataset
 
 ### Context
-
 This dataset was created to provide a comprehensive and easy-to-read list of international football matches, which was not readily available. The collection includes detailed results for various matches for reference and analysis.
 
 ### Content
-
 This dataset contains **47,126** results of international football matches from the first official match in 1872 up to 2024. The matches range from FIFA World Cup to FIFI Wild Cup to regular friendly matches. The dataset strictly includes men's full internationals and excludes Olympic Games or matches involving a nation's B-team, U-23, or league select teams.
 
 `results.csv` includes the following columns:
@@ -63,7 +61,6 @@ Note on team and country names: The current name of the team is used for home an
 For country names, the name at the time of the match is used. For example, when Ghana played in Accra, Gold Coast in the 1950s, it is considered a home match for Ghana, even though the country name at that time was Gold Coast. This is indicated by the `neutral` column, which states FALSE for those matches, meaning they were not at a neutral venue.
 
 ### Acknowledgements
-
 The data is gathered from several sources, including Wikipedia, rsssf.com, and individual football associations' websites.
 
 ### Inspiration
@@ -103,9 +100,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -131,7 +128,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -152,14 +149,14 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+np.save("<numeric_payload_artifact_path>", data_values.reshape(1, -1))
 ```

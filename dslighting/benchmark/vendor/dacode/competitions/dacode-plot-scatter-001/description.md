@@ -8,9 +8,9 @@ Analyze the Netflix dataset (`netflix.csv`). For each genre, find the title(s) w
 
 You must create a **submission directory** containing exactly three files:
 
-- `result.png` - The final rendered plot image
-- `plot.json` - Structured plot metadata
-- `result.npy` - Numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 The exact directory name will be provided at runtime in the CRITICAL I/O REQUIREMENTS section.
 
@@ -19,7 +19,6 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 ## Dataset Background
 
 ## About Dataset
-
 Here's a brief description of each column:
 
 1. **title:** The title of the movie or TV show.
@@ -48,9 +47,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -76,7 +75,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -97,11 +96,11 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 For scatter plots, save the **x and y coordinate pairs** as a **2D array with shape `(N, 2)`**, where N = number of scatter points:
 
@@ -111,5 +110,5 @@ For scatter plots, save the **x and y coordinate pairs** as a **2D array with sh
 x_values = np.arange(len(best))        # shape (N,)
 y_values = best['imdb_score'].values   # shape (N,)
 data_values = np.column_stack([x_values, y_values])  # shape: (N, 2)
-np.save(f"{output_dir}/result.npy", data_values)
+np.save("<numeric_payload_artifact_path>", data_values)
 ```

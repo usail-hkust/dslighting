@@ -1,6 +1,4 @@
-Structure of the DataFrame df_1
-
-- Feature: The name of the data column from the original DataFrame cars_df.
+Structure of the DataFrame df_1 - Feature: The name of the data column from the original DataFrame cars_df.
 - Type: The data type of the column after processing. Since the columns have been converted to lowercase strings and stripped of whitespace, the data type for these string columns is listed as object, which is a common representation for strings in pandas.
 - Unique: The number of unique entries found in each column after cleaning. This helps in understanding the variety or diversity of data within each column.
 - Sample: A sample value from each column that gives a quick insight into what kind of data each column holds. This sample is specifically selected as the first non-null value found in a random sample of 100 values from the column.

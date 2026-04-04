@@ -1,3 +1,1 @@
-# Data Wrangling 095
-
-Traverse multiple Olympic-related database tables to calculate the total medal count rankings for each country in each Olympic Games. Merge the data into a complete table and save the results.
+# Data Wrangling 095 Traverse multiple Olympic-related database tables to calculate the total medal count rankings for each country in each Olympic Games. Merge the data into a complete table and save the results.

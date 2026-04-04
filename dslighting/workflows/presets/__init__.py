@@ -14,6 +14,7 @@ try:
     from dslighting.workflows.search.aide_workflow import AIDEWorkflow
     from dslighting.workflows.search.automind_workflow import AutoMindWorkflow
     from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
+    from dslighting.workflows.search.react_workflow import ReActWorkflow
 
     # 创建别名（为了向后兼容和简化命名）
     AIDE = AIDEWorkflow
@@ -23,6 +24,7 @@ try:
     DSAgent = DSAgentWorkflow
     AutoMind = AutoMindWorkflow
     AFlow = AFlowWorkflow
+    ReAct = ReActWorkflow
 
 except ImportError as e:
     # 如果 workflows 不可用，提供占位符
@@ -33,6 +35,7 @@ except ImportError as e:
     DSAgent = None
     AutoMind = None
     AFlow = None
+    ReAct = None
     AIDEWorkflow = None
     AutoKaggleWorkflow = None
     DataInterpreterWorkflow = None
@@ -40,6 +43,7 @@ except ImportError as e:
     DSAgentWorkflow = None
     AutoMindWorkflow = None
     AFlowWorkflow = None
+    ReActWorkflow = None
 
 __all__ = [
     # 手动 workflows
@@ -51,6 +55,7 @@ __all__ = [
     # 搜索 workflows
     "AutoMind",
     "AFlow",
+    "ReAct",
     # 完整类名
     "AIDEWorkflow",
     "AutoKaggleWorkflow",
@@ -59,4 +64,5 @@ __all__ = [
     "DSAgentWorkflow",
     "AutoMindWorkflow",
     "AFlowWorkflow",
+    "ReActWorkflow",
 ]

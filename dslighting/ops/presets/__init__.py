@@ -37,6 +37,7 @@ from dslighting.ops.presets.aflow import (
     ReviseResponse,
 )
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
+from dslighting.ops.presets.react import ReActOperator
 from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
 from dslighting.ops.presets.autokaggle import (
     TaskDeconstructionOperator,
@@ -60,6 +61,8 @@ __all__ = [
     # AutoMind operators
     "ComplexityScorerOperator",
     "PlanDecomposerOperator",
+    # ReAct operator
+    "ReActOperator",
     # DSAgent operators
     "DevelopPlanOperator",
     "ExecutePlanOperator",

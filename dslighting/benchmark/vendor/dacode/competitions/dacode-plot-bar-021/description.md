@@ -10,9 +10,9 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -21,11 +21,9 @@ Inside that directory, you must create exactly these three files:
 ## About Dataset
 
 ### Context
-
 The year 2020 is behind us, therefore, many summaries of this pandemic year are created, e.g. in the form of rankings.
 
 ### Content
-
 The data was obtained by means of web scraping, i.e. data download with the use of programming code based on the website code. In this case, the "rvest" package from the R programming language was used along with the "SelectorGadet" browser add-on to facilitate work with the website.
 
 ---
@@ -49,9 +47,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -77,7 +75,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -98,14 +96,14 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+np.save("<numeric_payload_artifact_path>", data_values.reshape(1, -1))
 ```

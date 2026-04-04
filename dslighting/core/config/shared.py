@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # Valid workflow names - shared constant
 VALID_WORKFLOW_NAMES = frozenset({
     "aide", "autokaggle", "data_interpreter",
-    "automind", "dsagent", "deepanalyze"
+    "automind", "dsagent", "deepanalyze", "react"
 })
 
 # Workflow to config key mapping - shared constant
@@ -25,6 +25,7 @@ WORKFLOW_TO_CONFIG_KEY = {
     "deepanalyze": "agent.search",
     "automind": "workflow.params",
     "dsagent": "workflow.params",
+    "react": "workflow.params",
 }
 
 

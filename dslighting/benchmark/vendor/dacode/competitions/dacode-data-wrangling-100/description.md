@@ -1,3 +1,1 @@
-# Data Wrangling 100
-
-Generate a list of industry groups showing the number of companies and their total carbon footprints for the latest year. Sort the list by footprint from highest to lowest. Save the results.
+# Data Wrangling 100 Generate a list of industry groups showing the number of companies and their total carbon footprints for the latest year. Sort the list by footprint from highest to lowest. Save the results.

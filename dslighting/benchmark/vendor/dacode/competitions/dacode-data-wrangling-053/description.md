@@ -1,3 +1,1 @@
-# Data Wrangling 053
-
-Apply the DENSE_RANK window function to rank each movie within its director's collection based on 'vote_average'. Rank all movies by their ratings among the films directed by the same person. Save the formatted data.
+# Data Wrangling 053 Apply the DENSE_RANK window function to rank each movie within its director's collection based on 'vote_average'. Rank all movies by their ratings among the films directed by the same person. Save the formatted data.

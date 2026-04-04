@@ -1,3 +1,1 @@
-# Data Wrangling 007
-
-Ensure consistency by standardizing the terms and descriptions in the 'Gear Box' and 'Drive Type' fields, so that different terminologies referring to the same types of gearboxes and drive systems are unified. Save the final dataset.
+# Data Wrangling 007 Ensure consistency by standardizing the terms and descriptions in the 'Gear Box' and 'Drive Type' fields, so that different terminologies referring to the same types of gearboxes and drive systems are unified. Save the final dataset.

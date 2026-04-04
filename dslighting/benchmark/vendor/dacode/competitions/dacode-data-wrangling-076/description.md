@@ -1,3 +1,1 @@
-# Data Wrangling 076
-
-Generate a report listing the top five assignments by total donation amounts. For each assignment, include the assignment name, region, total rounded donation amount, and donor type. Fill the results.
+# Data Wrangling 076 Generate a report listing the top five assignments by total donation amounts. For each assignment, include the assignment name, region, total rounded donation amount, and donor type. Fill the results.

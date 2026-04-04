@@ -50,6 +50,7 @@ WORKFLOW_ALIASES = {
     "dsagent": "dsagent",
     "automind": "automind",
     "aflow": "aflow",
+    "react": "react",
 }
 
 
@@ -113,7 +114,7 @@ class Agent(AgentInterface):
         if workflow_key not in WORKFLOW_ALIASES:
             raise ConfigurationError(
                 f"Unknown workflow: {workflow}. "
-                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow",
+                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow, react",
                 error_code="CFG-002",
             )
 

@@ -10,9 +10,9 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -21,11 +21,9 @@ Inside that directory, you must create exactly these three files:
 ## About Dataset
 
 ### Context
-
 The World Happiness Report is a landmark survey of the state of global happiness. The first report was published in 2012, the second in 2013, the third in 2015, and the fourth in the 2016 Update. The World Happiness 2017, which ranks 155 countries by their happiness levels, was released at the United Nations at an event celebrating International Day of Happiness on March 20th. The report continues to gain global recognition as governments, organizations and civil society increasingly use happiness indicators to inform their policy-making decisions. Leading experts across fields – economics, psychology, survey analysis, national statistics, health, public policy and more – describe how measurements of well-being can be used effectively to assess the progress of nations. The reports review the state of happiness in the world today and show how the new science of happiness explains personal and national variations in happiness.** **
 
 ### Content
-
 The happiness scores and rankings use data from the Gallup World Poll. The scores are based on answers to the main life evaluation question asked in the poll. This question, known as the Cantril ladder, asks respondents to think of a ladder with the best possible life for them being a 10 and the worst possible life being a 0 and to rate their own current lives on that scale. The scores are from nationally representative samples for the years 2013-2016 and use the Gallup weights to make the estimates representative. The columns following the happiness score estimate the extent to which each of six factors – economic production, social support, life expectancy, freedom, absence of corruption, and generosity – contribute to making life evaluations higher in each country than they are in Dystopia, a hypothetical country that has values equal to the world’s lowest national averages for each of the six factors. They have no impact on the total score reported for each country, but they do explain why some countries rank higher than others.
 
 ### Inspiration
@@ -65,9 +63,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -93,7 +91,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -114,14 +112,14 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+np.save("<numeric_payload_artifact_path>", data_values.reshape(1, -1))
 ```

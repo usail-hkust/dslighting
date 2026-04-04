@@ -1,5 +1,1 @@
-# di-text-026
-
-As a data scientist for a video game analytics company, examine the data to find the top 3 years with the highest number of game releases, and also provide the number of games released each year from 2008 to 2010.
-
-Output fields: Top 3 year had the most game release, 2008-2010
+# di-text-026 As a data scientist for a video game analytics company, examine the data to find the top 3 years with the highest number of game releases, and also provide the number of games released each year from 2008 to 2010. Output fields: Top 3 year had the most game release, 2008-2010

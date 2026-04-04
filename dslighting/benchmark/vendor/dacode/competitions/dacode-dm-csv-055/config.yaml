@@ -6,7 +6,7 @@ description: description.md
 task_type: kaggle
 dataset:
   answers: dacode-dm-csv-055/prepared/private/answer.csv
-  sample_submission: dacode-dm-csv-055/prepared/public/result.csv
+  sample_submission: dacode-dm-csv-055/prepared/public/sample_submission.csv
 grader:
   name: compare_csv
   grade_fn: file:grade.py:grade

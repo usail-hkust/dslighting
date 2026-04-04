@@ -1,5 +1,1 @@
-# di-text-035
-
-Analyze the dataset to identify variables that are strongly correlated with the "satisfaction" variable (absolute correlation > 0.4). Report the variables with strong positive and negative correlations.
-
-Output fields: Strong Positively Correlated, Strong Negatively Correlated
+# di-text-035 Analyze the dataset to identify variables that are strongly correlated with the "satisfaction" variable (absolute correlation > 0.4). Report the variables with strong positive and negative correlations. Output fields: Strong Positively Correlated, Strong Negatively Correlated

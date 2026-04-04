@@ -1,10 +1,4 @@
-## About Dataset
-
-# DVD rental database to demonstrate the features of PostgreSQL.
-
-## There are 15 tables in the DVD Rental database:
-
-* actor – stores actors data including first name and last name.
+## About Dataset # DVD rental database to demonstrate the features of PostgreSQL. ## There are 15 tables in the DVD Rental database: * actor – stores actors data including first name and last name.
 * film – stores film data such as title, release year, length, rating, etc.
 * film_actor – stores the relationships between films and actors.
 * category – stores film’s categories data.

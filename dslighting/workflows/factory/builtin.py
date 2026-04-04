@@ -21,6 +21,7 @@ from dslighting.ops.llm.basic import (
 from dslighting.ops.presets import AFlowReviewOperator, AFlowReviseOperator, ScEnsembleOperator
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
 from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
+from dslighting.react_validation import validate_react_operator_params
 from dslighting.core.visualization_policy import (
     resolve_visualization_policy_from_config,
     should_force_noninteractive_backend,
@@ -43,6 +44,8 @@ from dslighting.workflows.manual.my_custom_agent_workflow import MyCustomAgentWo
 from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
 from dslighting.workflows.search.aide_workflow import AIDEWorkflow
 from dslighting.workflows.search.automind_workflow import AutoMindWorkflow
+from dslighting.workflows.search.react_context_manager import build_react_context_config
+from dslighting.workflows.search.react_workflow import ReActWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +120,60 @@ def _resolve_rag_settings(config: Any, workflow_name: str) -> tuple[bool, str]:
             error_code="CFG-002",
         )
     return enable_rag, case_dir
+
+
+def _resolve_react_settings(config: Any) -> tuple[int, int, int, int, Any]:
+    params = getattr(config.workflow, "params", None) or {}
+    max_steps = params.get("max_steps", 10)
+    obs_max_tokens = params.get("obs_max_tokens", 4000)
+    obs_head_tokens = params.get("obs_head_tokens", 2000)
+    obs_tail_tokens = params.get("obs_tail_tokens", 2000)
+    raw_context = params.get("context")
+
+    def _coerce_positive_int(value: Any, field_name: str) -> int:
+        try:
+            coerced = int(value)
+        except (TypeError, ValueError):
+            raise ConfigurationError(
+                f"`react.{field_name}` must be an integer",
+                error_code="CFG-002",
+            ) from None
+        if coerced <= 0:
+            raise ConfigurationError(
+                f"`react.{field_name}` must be > 0",
+                error_code="CFG-002",
+            )
+        return coerced
+
+    try:
+        context_config = build_react_context_config(raw_context)
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError(
+            f"Invalid `react.context`: {exc}",
+            error_code="CFG-002",
+        ) from None
+
+    max_steps_value = _coerce_positive_int(max_steps, "max_steps")
+    obs_max_tokens_value = _coerce_positive_int(obs_max_tokens, "obs_max_tokens")
+    obs_head_tokens_value = _coerce_positive_int(obs_head_tokens, "obs_head_tokens")
+    obs_tail_tokens_value = _coerce_positive_int(obs_tail_tokens, "obs_tail_tokens")
+
+    try:
+        validate_react_operator_params(
+            obs_max_tokens=obs_max_tokens_value,
+            obs_head_tokens=obs_head_tokens_value,
+            obs_tail_tokens=obs_tail_tokens_value,
+        )
+    except ValueError as exc:
+        raise ConfigurationError(str(exc), error_code="CFG-002") from None
+
+    return (
+        max_steps_value,
+        obs_max_tokens_value,
+        obs_head_tokens_value,
+        obs_tail_tokens_value,
+        context_config,
+    )
 
 
 class AIDEWorkflowFactory(BaseWorkflowFactory):
@@ -366,6 +423,45 @@ class AFlowWorkflowFactory(BaseWorkflowFactory):
             operators={},
             services=services,
             agent_config=agent_config,
+            benchmark=benchmark,
+        )
+
+
+class ReActWorkflowFactory(BaseWorkflowFactory):
+    def _get_workflow_name(self) -> str:
+        return "react"
+
+    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> ReActWorkflow:
+        workspace_base = None
+        if config.workflow and config.workflow.params:
+            workspace_base = config.workflow.params.get("workspace_base_dir")
+        workspace = WorkspaceService(run_name=config.run.run_name, base_dir=workspace_base)
+        llm_service = LLMService(config=config.llm)
+        sandbox_service = _create_sandbox_service(workspace, config)
+
+        max_steps, obs_max_tokens, obs_head_tokens, obs_tail_tokens, context_config = _resolve_react_settings(config)
+
+        from dslighting.ops.presets.react import ReActOperator
+        operators = {
+            "react": ReActOperator(
+                llm_service=llm_service,
+                max_steps=max_steps,
+                obs_max_tokens=obs_max_tokens,
+                obs_head_tokens=obs_head_tokens,
+                obs_tail_tokens=obs_tail_tokens,
+            ),
+            "execute": ExecuteAndTestOperator(sandbox_service=sandbox_service),
+        }
+        services = {
+            "llm": llm_service,
+            "sandbox": sandbox_service,
+            "workspace": workspace,
+            "react_context_config": context_config,
+        }
+        return ReActWorkflow(
+            operators=operators,
+            services=services,
+            agent_config=config.agent.model_dump(),
             benchmark=benchmark,
         )
 

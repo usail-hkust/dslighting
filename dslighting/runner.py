@@ -42,6 +42,7 @@ from dslighting.workflows.factory import (
     DeepAnalyzeWorkflowFactory,
     DynamicWorkflowFactory,
     MyCustomAgentWorkflowFactory,
+    ReActWorkflowFactory,
 )
 
 # Import AFlow workflow for type checking
@@ -424,6 +425,7 @@ WORKFLOW_FACTORIES: dict[str, type[BaseWorkflowFactory]] = {
     "aflow": AFlowWorkflowFactory,
     "deepanalyze": DeepAnalyzeWorkflowFactory,
     "my_custom_agent": MyCustomAgentWorkflowFactory,
+    "react": ReActWorkflowFactory,
 }
 
 TASK_ADAPTER_CLASSES: dict[TaskType, type[BaseTaskAdapter]] = {

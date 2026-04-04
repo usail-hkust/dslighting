@@ -1,3 +1,1 @@
-# Data Wrangling 001
-
-Clean the dataset by deleting records with null values or a total_gross of 0. Preserve the columns genre, release_year, total_gross, and inflation_adjusted_gross. Organize the data by grouping the same genres together and sorting them by release_year in ascending order. Save the cleaned dataset.
+# Data Wrangling 001 Clean the dataset by deleting records with null values or a total_gross of 0. Preserve the columns genre, release_year, total_gross, and inflation_adjusted_gross. Organize the data by grouping the same genres together and sorting them by release_year in ascending order. Save the cleaned dataset.

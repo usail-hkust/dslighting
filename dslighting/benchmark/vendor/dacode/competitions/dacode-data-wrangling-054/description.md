@@ -1,5 +1,1 @@
-## About Dataset
-
-This dataset contains the results and participants of every WWE, WWF, WWWF, ECW, NXT, and WCW match. This data extends from January 25, 1963 to the present day.
-
-This dataset also uses many primary and secondary keys, so it makes for great practice while learning SQL and data architecture.
+## About Dataset This dataset contains the results and participants of every WWE, WWF, WWWF, ECW, NXT, and WCW match. This data extends from January 25, 1963 to the present day. This dataset also uses many primary and secondary keys, so it makes for great practice while learning SQL and data architecture.

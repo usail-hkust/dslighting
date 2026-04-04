@@ -1,3 +1,1 @@
-# Data Wrangling 075
-
-Identify the most common categories for the oldest businesses on each continent. For categories with more than 5 businesses, provide the continent, category, and count. Ensure to fill your findings.
+# Data Wrangling 075 Identify the most common categories for the oldest businesses on each continent. For categories with more than 5 businesses, provide the continent, category, and count. Ensure to fill your findings.

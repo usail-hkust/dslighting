@@ -1,3 +1,1 @@
-# di-csv-032
-
-Identify the customers who placed orders in 1998 with a total amount exceeding $15,000. Record their customerID, companyName, and total_amount. Sort the results in descending order based on total_amount.
+# di-csv-032 Identify the customers who placed orders in 1998 with a total amount exceeding $15,000. Record their customerID, companyName, and total_amount. Sort the results in descending order based on total_amount.

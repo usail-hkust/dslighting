@@ -1,22 +1,22 @@
 # plot-scatter-005
 
-Calculate the Pearson correlation coefficient between the standardized Average Playtime and standardized Positive Ratings using the Steam Store Games dataset. Filter the data to only include games with positive ratings and positive playtime. Plot the results in a scatter plot following plot.yaml requirements and save it as result.png
+Calculate the Pearson correlation coefficient between the standardized Average Playtime and standardized Positive Ratings using the Steam Store Games dataset. Filter the data to only include games with positive ratings and positive playtime. Plot the results in a scatter plot following plot.yaml requirements and
 
 ## Output Requirements
 
 You must create a **submission directory** containing exactly three files:
 
-- `result.png` - The final rendered plot image
-- `plot.json` - Structured plot metadata  
-- `result.npy` - Numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 The exact directory name will be provided at runtime in the CRITICAL I/O REQUIREMENTS section.
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -38,9 +38,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -66,7 +66,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -87,11 +87,11 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 For scatter plots, save the **x and y coordinate pairs** as a **2D array with shape `(N, 2)`**, where N = number of scatter points:
 
@@ -99,5 +99,5 @@ For scatter plots, save the **x and y coordinate pairs** as a **2D array with sh
 # x_values: sequential indices (0, 1, 2, ..., N-1) — the scatter point positions on x-axis
 # y_values: the corresponding y-axis values (e.g., IMDb scores)
 data_values = np.column_stack([x_values, y_values])  # shape: (N, 2)
-np.save(f"{output_dir}/result.npy", data_values)
+np.save("<numeric_payload_artifact_path>", data_values)
 ```

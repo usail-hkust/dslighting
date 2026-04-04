@@ -11,6 +11,7 @@ from .builtin import (
     DeepAnalyzeWorkflowFactory,
     MyCustomAgentWorkflowFactory,
     AFlowWorkflowFactory,
+    ReActWorkflowFactory,
     DynamicWorkflowFactory,
 )
 
@@ -33,5 +34,6 @@ __all__ = [
     "DeepAnalyzeWorkflowFactory",
     "MyCustomAgentWorkflowFactory",
     "AFlowWorkflowFactory",
+    "ReActWorkflowFactory",
     "DynamicWorkflowFactory",
 ]

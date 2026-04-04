@@ -1,5 +1,1 @@
-# di-text-032
-
-Analyze the data to select the most appropriate upper price limit for paid gaming apps from 10, 25, and 40 dollars. Additionally, compare the price ranges of various app categories to determine whether the price range for paid entertainment apps is 'lower' or 'higher.'
-
-Output fields: upper bound($), Paid entertainment apps' price range
+# di-text-032 Analyze the data to select the most appropriate upper price limit for paid gaming apps from 10, 25, and 40 dollars. Additionally, compare the price ranges of various app categories to determine whether the price range for paid entertainment apps is 'lower' or 'higher.' Output fields: upper bound($), Paid entertainment apps' price range

@@ -1,6 +1,6 @@
 # plot-pie-017
 
-Analyze the Google Play Store Apps dataset to calculate the ratio of free to paid apps. Clean the dataset by handling missing values, removing rows with missing data, replacing “Varies with device” in the Size column with NaN, and standardizing the Size and Installs columns. Specifically, convert sizes to numerical values (e.g., replace ‘k’ and ‘M’ with 10^3 and 10^6) and remove commas and plus signs from Installs. Create a pie chart based on the app type distribution and save it as ‘result.png’
+Analyze the Google Play Store Apps dataset to calculate the ratio of free to paid apps. Clean the dataset by handling missing values, removing rows with missing data, replacing “Varies with device” in the Size column with NaN, and standardizing the Size and Installs columns. Specifically, convert sizes to numerical values (e.g., replace ‘k’ and ‘M’ with 10^3 and 10^6) and remove commas and plus signs from Installs. Create a pie chart based on the app type distribution and
 
 ## Output Requirements
 
@@ -10,9 +10,9 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -21,11 +21,9 @@ Inside that directory, you must create exactly these three files:
 ## About Dataset
 
 ### Context
-
 While many public datasets (on Kaggle and the like) provide Apple App Store data, there are not many counterpart datasets available for Google Play Store apps anywhere on the web. On digging deeper, I found out that iTunes App Store page deploys a nicely indexed appendix-like structure to allow for simple and easy web scraping. On the other hand, Google Play Store uses sophisticated modern-day techniques (like dynamic page load) using JQuery making scraping more challenging.
 
 ### Content
-
 Each app (row) has values for catergory, rating, size, and more.
 
 ---
@@ -46,9 +44,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -74,7 +72,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -95,14 +93,14 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+np.save("<numeric_payload_artifact_path>", data_values.reshape(1, -1))
 ```

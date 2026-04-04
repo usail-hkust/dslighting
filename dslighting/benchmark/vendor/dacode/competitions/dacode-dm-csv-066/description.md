@@ -1,14 +1,10 @@
 # dm-csv-066
 
 ## Instruction
-
 For each of the top 10 cities with the most orders, retrieve the necessary data for each timestamp of the order stages.
 
 ## About Dataset
-
-The SQL query can be described in text as follows:
-
-1. Select the customer city, converting it to uppercase.
+The SQL query can be described in text as follows: 1. Select the customer city, converting it to uppercase.
 2. Calculate the average time between the order approval and the order purchase.
 3. Calculate the average time between the order being approved and delivered to the carrier.
 4. Calculate the average time between the order being delivered to the carrier and delivered to the customer.

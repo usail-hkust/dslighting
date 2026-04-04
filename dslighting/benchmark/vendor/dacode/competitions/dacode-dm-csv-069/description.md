@@ -1,31 +1,7 @@
 # dm-csv-069
 
 ## Instruction
-
 Identify the top 5 airports that attract the most business class passengers.
 
 ## About Dataset
-
-This SQL query retrieves the top 5 airports based on the number of flights departing from them, specifically for flights where the fare condition is 'Business'. Here's a step-by-step explanation:
-
-1. **Join `airports_data` and `flights`**:
-    - It joins the `airports_data` table (`ad`) with the `flights` table (`f`) on the `airport_code` from `airports_data` matching the `departure_airport` from `flights`.
-
-2. **Join with `seats`**:
-    - It further joins this result with the `seats` table (`s`) on the `aircraft_code` from `seats` matching the `aircraft_code` from `flights`.
-
-3. **Grouping**:
-    - It groups the results by the `airport_name` from `airports_data`.
-
-4. **Filter with `HAVING`**:
-    - It applies a filter to only include records where the `fare_conditions` in the `seats` table is 'Business'.
-
-5. **Count and Sort**:
-    - It counts the number of flights for each airport and orders the results in descending order based on the count.
-
-6. **Limit**:
-    - It limits the results to the top 5 airports.
-
-### Text Description
-
-The query retrieves the names of the top 5 airports with the highest number of flights departing where the fare condition is 'Business'. It joins the `airports_data` table with the `flights` and `seats` tables, groups the results by airport name, filters for 'Business' fare conditions, counts the number of flights for each airport, and orders the results in descending order of the count. The final output includes the top 5 airports based on this criteria.
+This SQL query retrieves the top 5 airports based on the number of flights departing from them, specifically for flights where the fare condition is 'Business'. Here's a step-by-step explanation: 1. **Join `airports_data` and `flights`**: - It joins the `airports_data` table (`ad`) with the `flights` table (`f`) on the `airport_code` from `airports_data` matching the `departure_airport` from `flights`. 2. **Join with `seats`**: - It further joins this result with the `seats` table (`s`) on the `aircraft_code` from `seats` matching the `aircraft_code` from `flights`. 3. **Grouping**: - It groups the results by the `airport_name` from `airports_data`. 4. **Filter with `HAVING`**: - It applies a filter to only include records where the `fare_conditions` in the `seats` table is 'Business'. 5. **Count and Sort**: - It counts the number of flights for each airport and orders the results in descending order based on the count. 6. **Limit**: - It limits the results to the top 5 airports. ### Text Description The query retrieves the names of the top 5 airports with the highest number of flights departing where the fare condition is 'Business'. It joins the `airports_data` table with the `flights` and `seats` tables, groups the results by airport name, filters for 'Business' fare conditions, counts the number of flights for each airport, and orders the results in descending order of the count. The final output includes the top 5 airports based on this criteria.

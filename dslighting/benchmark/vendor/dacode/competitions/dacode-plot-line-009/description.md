@@ -1,6 +1,6 @@
 # plot-line-009
 
-Using the Daily Temperature of Major Cities dataset, plot the yearly average temperatures (in Celsius) for Karachi and Islamabad from 1995 to 2019. Follow the instructions in tips.txt and adhere to the formatting guidelines in plot.yaml. Save the chart as result.png
+Using the Daily Temperature of Major Cities dataset, plot the yearly average temperatures (in Celsius) for Karachi and Islamabad from 1995 to 2019. Follow the instructions in tips.txt and adhere to the formatting guidelines in plot.yaml.
 
 ## Output Requirements
 
@@ -10,9 +10,9 @@ The exact directory name will be provided at runtime in the CRITICAL I/O REQUIRE
 
 Inside that directory, you must create exactly these three files:
 
-- `result.png` - the final rendered plot image
-- `plot.json` - structured plot metadata
-- `result.npy` - numeric plot payload extracted from the figure
+- rendered plot image artifact
+- structured plot metadata JSON artifact
+- numeric payload artifact extracted from the figure
 
 ---
 
@@ -21,7 +21,6 @@ Inside that directory, you must create exactly these three files:
 ## About Dataset
 
 ### Context
-
 Global warming is the ongoing rise of the average temperature of the Earth's climate system and has been demonstrated by direct temperature measurements and by measurements of various effects of the warming - Wikipedia
 
 So a dataset on the temperature of major cities of the world will help analyze the same. Also weather information is helpful for a lot of data science tasks like sales forecasting, logistics etc.** **
@@ -29,11 +28,9 @@ So a dataset on the temperature of major cities of the world will help analyze t
 Thanks to University of Dayton, the dataset is available as separate txt files for each city** **[here](http://academic.udayton.edu/kissock/http/Weather/default.htm). The data is available for research and non-commercial purposes only.. Please refer to** **[this page](http://academic.udayton.edu/kissock/http/Weather/default.htm)for license.
 
 ### Content
-
 Daily level average temperature values is present in** **`city_temperature.csv` file
 
 ### Acknowledgements
-
 University of Dayton for making this dataset available in the first place!
 
 Photo credits:** **[James Day](https://unsplash.com/@jamesday?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText) on Unsplash
@@ -67,9 +64,9 @@ Your chart output **must** match these values exactly.
 
 ## Output File Format Details
 
-### `plot.json` — Required Keys
+### Metadata JSON — Required Keys
 
-Your `plot.json` MUST use **exactly** these keys (the same schema as `sample_plot.json` in your workspace):
+The metadata JSON artifact MUST use **exactly** these keys (the same schema as the sample metadata file in your workspace):
 
 ```json
 {
@@ -95,7 +92,7 @@ import json, numpy as np
 
 fig, ax = plt.subplots(figsize=(...))
 # --- your plotting code here ---
-fig.savefig(f"{output_dir}/result.png")
+fig.savefig("<rendered_plot_artifact_path>")
 
 # Extract plot metadata
 plot_meta = {
@@ -116,14 +113,14 @@ plot_meta = {
     "xtick_labels": [t.get_text() for t in ax.get_xticklabels()],
     "ytick_labels": [t.get_text() for t in ax.get_yticklabels()],
 }
-with open(f"{output_dir}/plot.json", "w") as f:
+with open("<metadata_json_artifact_path>", "w") as f:
     json.dump(plot_meta, f)
 ```
 
-### `result.npy` — Required Shape
+### Numeric Payload — Required Shape
 
 Save the **primary numeric data** of the plot (bar heights, line y-values, pie sizes, scatter y-values) as a **2D array with shape `(1, N)`**, where N = number of data points:
 
 ```python
-np.save(f"{output_dir}/result.npy", data_values.reshape(1, -1))
+np.save("<numeric_payload_artifact_path>", data_values.reshape(1, -1))
 ```

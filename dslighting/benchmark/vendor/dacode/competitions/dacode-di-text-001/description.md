@@ -1,14 +1,7 @@
-# di-text-001
-
-Use the mean to fill in missing values, then identify the countries with the highest and lowest population densities in the dataset.
+# di-text-001 Use the mean to fill in missing values, then identify the countries with the highest and lowest population densities in the dataset.
 
 ## About Dataset
-
-This comprehensive dataset provides a wealth of information about** ** **all countries worldwide** , covering a wide range of indicators and attributes. It encompasses demographic statistics, economic indicators, environmental factors, healthcare metrics, education statistics, and much more. With every country represented, this dataset offers a complete global perspective on various aspects of nations, enabling in-depth analyses and cross-country comparisons.
-
-# Key Features
-
-- **Country** : Name of the country.
+This comprehensive dataset provides a wealth of information about** ** **all countries worldwide** , covering a wide range of indicators and attributes. It encompasses demographic statistics, economic indicators, environmental factors, healthcare metrics, education statistics, and much more. With every country represented, this dataset offers a complete global perspective on various aspects of nations, enabling in-depth analyses and cross-country comparisons. # Key Features - **Country** : Name of the country.
 - **Density (P/Km2)** : Population density measured in persons per square kilometer.
 - **Abbreviation** : Abbreviation or code representing the country.
 - **Agricultural Land (%)** : Percentage of land area used for agricultural purposes.

@@ -84,6 +84,7 @@ def list_workflows() -> None:
         ("AutoKaggle", "Competition-solving workflow"),
         ("DataInterpreter", "EDA and analysis workflow"),
         ("DeepAnalyze", "Deep analysis workflow"),
+        ("ReAct", "Reasoning + acting workflow with strict tags"),
         ("DSAgent", "Structured operator workflow"),
         ("AutoMind", "Planning workflow with knowledge retrieval"),
         ("AFlow", "Meta-optimization workflow"),

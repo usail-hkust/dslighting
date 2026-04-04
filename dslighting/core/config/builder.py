@@ -35,6 +35,10 @@ from dslighting.core.visualization_policy import (
     coerce_visualization_policy,
     consume_visualization_policy,
 )
+from dslighting.react_validation import validate_react_operator_params
+from dslighting.workflows.search.react_context_manager import (
+    normalize_react_context_params,
+)
 
 # Import shared config utilities
 from dslighting.core.config.shared import (
@@ -75,6 +79,9 @@ class ConfigBuilder:
 
     # Workflow to config key mapping (imported from shared module)
     WORKFLOW_TO_CONFIG_KEY: ClassVar[Dict[str, str]] = WORKFLOW_TO_CONFIG_KEY
+    _REACT_PARAM_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {"max_steps", "obs_max_tokens", "obs_head_tokens", "obs_tail_tokens", "context"}
+    )
 
     def build_config(
         self,
@@ -214,10 +221,16 @@ class ConfigBuilder:
         remaining_kwargs = {}
 
         for key, value in kwargs.items():
-            if key in ['aide', 'autokaggle', 'data_interpreter', 'automind', 'dsagent', 'deepanalyze']:
+            if key in ['aide', 'autokaggle', 'data_interpreter', 'automind', 'dsagent', 'deepanalyze', 'react']:
                 # Nested dictionary format (v1.9.0+)
                 if isinstance(value, dict):
                     workflow_specific_params[key] = value
+                elif key == "react":
+                    raise ConfigurationError(
+                        "`react` must be a dict when provided, e.g. "
+                        "`react={'max_steps': 12, 'obs_max_tokens': 1200, 'context': {'keep_recent_turns': 14}}`.",
+                        error_code="CFG-002",
+                    )
             else:
                 remaining_kwargs[key] = value
 
@@ -243,6 +256,11 @@ class ConfigBuilder:
             elif wf_name == 'deepanalyze':
                 # DeepAnalyze parameters → agent.search
                 config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
+            elif wf_name == 'react':
+                # ReAct parameters → workflow.params
+                config.setdefault("workflow", {}).setdefault("params", {}).update(
+                    self._normalize_react_params(wf_params, source="react")
+                )
 
         # ========== Common parameters ==========
         if workflow is not None:
@@ -301,6 +319,9 @@ class ConfigBuilder:
         flat_visualization_policy = consume_visualization_policy(remaining_kwargs)
         if flat_visualization_policy is not None:
             config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = flat_visualization_policy
+
+        if workflow == "react":
+            self._reject_legacy_react_flat_kwargs(remaining_kwargs)
 
         # Warn about unused kwargs (legacy flat parameter format no longer supported)
         if remaining_kwargs:
@@ -397,6 +418,80 @@ class ConfigBuilder:
         """
         return deep_merge(base, update)
 
+    def _normalize_react_params(
+        self,
+        params: Dict[str, Any],
+        *,
+        source: str,
+    ) -> Dict[str, Any]:
+        if not isinstance(params, dict):
+            raise ConfigurationError(
+                f"`{source}` must be a dictionary",
+                error_code="CFG-002",
+            )
+
+        unknown = sorted(key for key in params if key not in self._REACT_PARAM_KEYS)
+        if unknown:
+            raise ConfigurationError(
+                f"Unknown ReAct parameters in `{source}`: {unknown}. "
+                f"Allowed keys: {sorted(self._REACT_PARAM_KEYS)}",
+                error_code="CFG-002",
+            )
+
+        normalized: Dict[str, Any] = {}
+        for key, value in params.items():
+            if key == "context":
+                try:
+                    normalized[key] = normalize_react_context_params(value)
+                except (TypeError, ValueError) as exc:
+                    raise ConfigurationError(
+                        f"Invalid `{source}.context`: {exc}",
+                        error_code="CFG-002",
+                    ) from None
+                continue
+            try:
+                coerced = int(value)
+            except (TypeError, ValueError):
+                raise ConfigurationError(
+                    f"`{source}.{key}` must be an integer",
+                    error_code="CFG-002",
+                ) from None
+            if coerced <= 0:
+                raise ConfigurationError(
+                    f"`{source}.{key}` must be > 0",
+                    error_code="CFG-002",
+                )
+            normalized[key] = coerced
+
+        obs_max_tokens = normalized.get("obs_max_tokens", 4000)
+        obs_head_tokens = normalized.get("obs_head_tokens", 2000)
+        obs_tail_tokens = normalized.get("obs_tail_tokens", 2000)
+        try:
+            validate_react_operator_params(
+                obs_max_tokens=obs_max_tokens,
+                obs_head_tokens=obs_head_tokens,
+                obs_tail_tokens=obs_tail_tokens,
+            )
+        except ValueError as exc:
+            raise ConfigurationError(str(exc), error_code="CFG-002") from None
+        return normalized
+
+    def _reject_legacy_react_flat_kwargs(self, remaining_kwargs: Dict[str, Any]) -> None:
+        invalid_flat = sorted(key for key in self._REACT_PARAM_KEYS if key in remaining_kwargs)
+        if invalid_flat:
+            raise ConfigurationError(
+                "ReAct parameters must be passed via workflow namespace, e.g. "
+                "`react={'max_steps': 12, 'obs_max_tokens': 1200, 'context': {'keep_recent_turns': 14}}`. "
+                f"Invalid flat keys: {invalid_flat}",
+                error_code="CFG-002",
+            )
+
+        if "react" in remaining_kwargs:
+            raise ConfigurationError(
+                "`react` must be a dict namespace, not a flat runtime parameter.",
+                error_code="CFG-002",
+            )
+
     def _validate_config_dict(self, config_dict: Dict[str, Any]) -> None:
         """Validate configuration dictionary structure and types.
 
@@ -424,6 +519,44 @@ class ConfigBuilder:
                     details={"workflow_name": workflow_name, "valid_workflows": list(VALID_WORKFLOW_NAMES)},
                     suggestion=f"Use one of the valid workflow names: {', '.join(sorted(VALID_WORKFLOW_NAMES))}"
                 )
+            if workflow_name == "react":
+                workflow_params = config_dict.get("workflow", {}).get("params", {}) or {}
+                run_parameters = config_dict.get("run", {}).get("parameters", {}) or {}
+                if not isinstance(workflow_params, dict):
+                    raise ConfigurationError(
+                        "`workflow.params` must be a dictionary for workflow='react'",
+                        error_code="CFG-002",
+                    )
+
+                allowed_keys = set(self._REACT_PARAM_KEYS) | {"workspace_base_dir"}
+                unknown = sorted(key for key in workflow_params if key not in allowed_keys)
+                if unknown:
+                    raise ConfigurationError(
+                        f"Unknown workflow.params keys for workflow='react': {unknown}. "
+                        f"Allowed keys: {sorted(allowed_keys)}",
+                        error_code="CFG-002",
+                    )
+
+                react_params = {
+                    key: value for key, value in workflow_params.items() if key in self._REACT_PARAM_KEYS
+                }
+                self._normalize_react_params(react_params, source="workflow.params")
+
+                invalid_run_keys = []
+                if "react" in run_parameters:
+                    invalid_run_keys.append("run.parameters.react")
+                invalid_run_keys.extend(
+                    f"run.parameters.{key}"
+                    for key in self._REACT_PARAM_KEYS
+                    if key in run_parameters
+                )
+                if invalid_run_keys:
+                    raise ConfigurationError(
+                        "Legacy ReAct runtime parameter paths are no longer supported. "
+                        "Use `workflow.params` instead. "
+                        f"Invalid keys: {sorted(invalid_run_keys)}",
+                        error_code="CFG-002",
+                    )
 
         # Validate LLM config mutual exclusion
         llm_config = config_dict.get("llm", {})
@@ -476,6 +609,19 @@ class ConfigBuilder:
             "debug_prob": (float, "debug_prob"),
             "max_debug_depth": (int, "max_debug_depth"),
             "max_attempts_per_phase": (int, "max_attempts_per_phase"),
+            "max_steps": (int, "max_steps"),
+            "obs_max_tokens": (int, "obs_max_tokens"),
+            "obs_head_tokens": (int, "obs_head_tokens"),
+            "obs_tail_tokens": (int, "obs_tail_tokens"),
+            "max_history_chars": (int, "max_history_chars"),
+            "keep_recent_turns": (int, "keep_recent_turns"),
+            "max_observation_chars": (int, "max_observation_chars"),
+            "summary_trigger_turns": (int, "summary_trigger_turns"),
+            "summary_max_chars": (int, "summary_max_chars"),
+            "recent_observation_window": (int, "recent_observation_window"),
+            "max_feedback_chars": (int, "max_feedback_chars"),
+            "max_feedback_retries": (int, "max_feedback_retries"),
+            "keep_latest_feedback_only": (_coerce_bool, "keep_latest_feedback_only"),
             "enforce_no_plotting": (_coerce_bool, "enforce_no_plotting"),
             VISUALIZATION_POLICY_KEY: (coerce_visualization_policy, VISUALIZATION_POLICY_KEY),
             "enabled": (_coerce_bool, "enabled"),
@@ -507,6 +653,15 @@ class ConfigBuilder:
         data_analysis_config = coerced.get("data_analysis", {})
         if isinstance(data_analysis_config, dict):
             sections.append(data_analysis_config)
+
+        workflow_config = coerced.get("workflow", {})
+        if isinstance(workflow_config, dict) and workflow_config.get("name") == "react":
+            workflow_params = workflow_config.get("params", {})
+            if isinstance(workflow_params, dict):
+                sections.append(workflow_params)
+                react_context = workflow_params.get("context", {})
+                if isinstance(react_context, dict):
+                    sections.append(react_context)
 
         for section in sections:
             for key, (coercer, _) in type_mappings.items():

@@ -1,3 +1,1 @@
-# Data Wrangling 020
-
-Identify the top five days of the month with the highest number of earthquakes across all data. Save these days (as numbers, e.g., 11 for the 11th) along with their earthquake counts.
+# Data Wrangling 020 Identify the top five days of the month with the highest number of earthquakes across all data. Save these days (as numbers, e.g., 11 for the 11th) along with their earthquake counts.

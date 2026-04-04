@@ -1,5 +1,1 @@
-# di-text-027
-
-As part of an epidemiology research project, identify the counties with the highest and lowest average annual diagnosed cases. Provide the county names in the format ‘Bullock County, Alabama’.
-
-Output fields: Fewest average annual cases diagnosed County, Most average annual cases diagnosed County
+# di-text-027 As part of an epidemiology research project, identify the counties with the highest and lowest average annual diagnosed cases. Provide the county names in the format ‘Bullock County, Alabama’. Output fields: Fewest average annual cases diagnosed County, Most average annual cases diagnosed County

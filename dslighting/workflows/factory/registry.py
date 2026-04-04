@@ -14,6 +14,7 @@ from .builtin import (
     DeepAnalyzeWorkflowFactory,
     MyCustomAgentWorkflowFactory,
     AFlowWorkflowFactory,
+    ReActWorkflowFactory,
 )
 
 
@@ -29,6 +30,7 @@ class WorkflowRegistry:
             "autokaggle": AutoKaggleWorkflowFactory,
             "deepanalyze": DeepAnalyzeWorkflowFactory,
             "aflow": AFlowWorkflowFactory,
+            "react": ReActWorkflowFactory,
             "my_custom_agent": MyCustomAgentWorkflowFactory,
         }
         for factory_class in self._factory_classes.values():

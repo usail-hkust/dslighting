@@ -1,5 +1,1 @@
-# di-text-031
-
-Examine the data to identify the trend in the count of paid apps with increasing price, answering with "increase" or "decrease." Choose an appropriate upper price limit for apps from 10, 30, and 60 dollars that reflects the majority of app prices and a reasonable maximum.
-
-Output fields: correlation, upper bound($)
+# di-text-031 Examine the data to identify the trend in the count of paid apps with increasing price, answering with "increase" or "decrease." Choose an appropriate upper price limit for apps from 10, 30, and 60 dollars that reflects the majority of app prices and a reasonable maximum. Output fields: correlation, upper bound($)

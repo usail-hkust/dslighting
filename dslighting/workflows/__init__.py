@@ -47,6 +47,7 @@ try:
         DeepAnalyzeWorkflowFactory,
         MyCustomAgentWorkflowFactory,
         AFlowWorkflowFactory,
+        ReActWorkflowFactory,
         DynamicWorkflowFactory,
     )
 
@@ -59,6 +60,7 @@ try:
         DSAgent,
         AutoMind,
         AFlow,
+        ReAct,
         AIDEWorkflow,
         AutoKaggleWorkflow,
         DataInterpreterWorkflow,
@@ -66,6 +68,7 @@ try:
         DSAgentWorkflow,
         AutoMindWorkflow,
         AFlowWorkflow,
+        ReActWorkflow,
     )
 
     # Import all search strategies
@@ -106,6 +109,7 @@ except ImportError as e:
     DeepAnalyzeWorkflowFactory = None  # type: ignore
     MyCustomAgentWorkflowFactory = None  # type: ignore
     AFlowWorkflowFactory = None  # type: ignore
+    ReActWorkflowFactory = None  # type: ignore
     DynamicWorkflowFactory = None  # type: ignore
     AIDE = None  # type: ignore
     AutoKaggle = None  # type: ignore
@@ -114,6 +118,7 @@ except ImportError as e:
     DSAgent = None  # type: ignore
     AutoMind = None  # type: ignore
     AFlow = None  # type: ignore
+    ReAct = None  # type: ignore
     AIDEWorkflow = None  # type: ignore
     AutoKaggleWorkflow = None  # type: ignore
     DataInterpreterWorkflow = None  # type: ignore
@@ -121,6 +126,7 @@ except ImportError as e:
     DSAgentWorkflow = None  # type: ignore
     AutoMindWorkflow = None  # type: ignore
     AFlowWorkflow = None  # type: ignore
+    ReActWorkflow = None  # type: ignore
     SearchStrategy = None  # type: ignore
     GreedyStrategy = None  # type: ignore
     BeamSearchStrategy = None  # type: ignore
@@ -153,6 +159,7 @@ __all__ = [
     "DeepAnalyzeWorkflowFactory",
     "MyCustomAgentWorkflowFactory",
     "AFlowWorkflowFactory",
+    "ReActWorkflowFactory",
     "DynamicWorkflowFactory",
     # presets
     "AIDE",
@@ -162,6 +169,7 @@ __all__ = [
     "DSAgent",
     "AutoMind",
     "AFlow",
+    "ReAct",
     "AIDEWorkflow",
     "AutoKaggleWorkflow",
     "DataInterpreterWorkflow",
@@ -169,6 +177,7 @@ __all__ = [
     "DSAgentWorkflow",
     "AutoMindWorkflow",
     "AFlowWorkflow",
+    "ReActWorkflow",
     # strategies
     "SearchStrategy",
     "GreedyStrategy",

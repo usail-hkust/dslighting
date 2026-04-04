@@ -200,3 +200,70 @@ def truncate_output(
 
     logger.warning(f"Output truncated from {len(output)} to {max_chars} characters.")
     return head + truncation_notice + tail
+
+
+def hard_truncate_chars(
+    output: str,
+    max_chars: int,
+    *,
+    marker_template: str = "\n...[TRUNCATED {omitted} chars]...\n",
+) -> str:
+    """
+    Strictly truncate text to at most ``max_chars`` characters.
+
+    Unlike ``truncate_output()``, this helper is intended for prompt-budget
+    enforcement. The returned string is guaranteed to satisfy
+    ``len(result) <= max_chars``.
+    """
+    if not output or max_chars <= 0:
+        return ""
+
+    if len(output) <= max_chars:
+        return output
+
+    if max_chars <= 3:
+        return "." * max_chars
+
+    omitted = len(output) - max_chars
+    marker = marker_template.format(omitted=max(0, omitted))
+    if len(marker) >= max_chars:
+        return output[: max_chars - 3] + "..."
+
+    remaining = max_chars - len(marker)
+    head_size = remaining // 2
+    tail_size = remaining - head_size
+    return output[:head_size] + marker + output[-tail_size:]
+
+
+def hard_truncate_head_tail(
+    output: str,
+    max_chars: int,
+    *,
+    head_ratio: float = 0.5,
+    marker_template: str = "\n...[TRUNCATED {omitted} chars]...\n",
+) -> str:
+    """
+    Strictly truncate text while preserving configurable head/tail proportions.
+
+    This is useful for long observations where both the beginning and end are
+    informative. The return value is always ``<= max_chars`` characters.
+    """
+    if not output or max_chars <= 0:
+        return ""
+
+    if len(output) <= max_chars:
+        return output
+
+    if max_chars <= 3:
+        return "." * max_chars
+
+    ratio = min(max(head_ratio, 0.0), 1.0)
+    omitted = len(output) - max_chars
+    marker = marker_template.format(omitted=max(0, omitted))
+    if len(marker) >= max_chars:
+        return output[: max_chars - 3] + "..."
+
+    remaining = max_chars - len(marker)
+    head_size = int(remaining * ratio)
+    tail_size = remaining - head_size
+    return output[:head_size] + marker + output[-tail_size:]

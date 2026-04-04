@@ -1,3 +1,1 @@
-# di-text-012
-
-Analyze the dataset to determine which main category ('category_1') contains the highest-selling product, and identify the sub-categories ('category_2') of the top two highest-selling products.
+# di-text-012 Analyze the dataset to determine which main category ('category_1') contains the highest-selling product, and identify the sub-categories ('category_2') of the top two highest-selling products.

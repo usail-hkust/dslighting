@@ -14,13 +14,8 @@ def prepare(raw: Path, public: Path, private: Path):
         placeholder_df = pd.DataFrame([first_vals] * len(df), columns=df.columns)
         placeholder_df.to_csv(public / 'sample_submission.csv', index=False)
 
-    if (raw / 'test.csv').exists():
-        shutil.copy2(raw / 'test.csv', public / 'test.csv')
-
-    for train_name in ['train.csv', 'other_names.csv']:
-        if (raw / train_name).exists():
-            shutil.copy2(raw / train_name, public / 'train.csv')
-            break
-
-    if (raw / 'README.md').exists():
-        shutil.copy2(raw / 'README.md', public / 'README.md')
+    for f in raw.iterdir():
+        if f.name == gold_file.name:
+            continue
+        if f.suffix == '.csv' or f.name == 'README.md':
+            shutil.copy2(f, public / f.name)

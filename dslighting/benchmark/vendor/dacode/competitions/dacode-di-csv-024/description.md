@@ -1,3 +1,1 @@
-# di-csv-024
-
-Please evaluate the Students' Academic Performance Dataset to identify whether the variables in sample_relation.csv have a positive or negative effect on student success. Mark 1 under the respective column for a positive impact and 0 for a negative impact.
+# di-csv-024 Please evaluate the Students' Academic Performance Dataset to identify whether the variables in sample_relation.csv have a positive or negative effect on student success. Mark 1 under the respective column for a positive impact and 0 for a negative impact.

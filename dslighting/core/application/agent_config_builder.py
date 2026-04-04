@@ -15,10 +15,20 @@ from dslighting.config import (
 from dslighting.core.config.llm_resolution import build_llm_config
 from dslighting.core.visualization_policy import consume_visualization_policy
 from dslighting.error import ConfigurationError
+from dslighting.react_validation import validate_react_operator_params
+from dslighting.workflows.search.react_context_manager import (
+    normalize_react_context_params,
+)
 
 
 class AgentConfigBuilder:
     """Map Agent inputs/kwargs into a normalized DSLightingConfig."""
+    _WORKFLOW_PARAMS_WORKFLOWS = {"automind", "dsagent", "react"}
+    _RAG_WORKFLOWS = {"automind", "dsagent"}
+    _RAG_KEYS = {"enable_rag", "case_dir"}
+    _REACT_PARAM_KEYS = {"max_steps", "obs_max_tokens", "obs_head_tokens", "obs_tail_tokens", "context"}
+    _VALID_SANDBOX_BACKENDS = {"local", "e2b", "ds_sandbox"}
+    _VALID_DS_SANDBOX_BACKEND_TYPES = {"docker", "local"}
 
     def __init__(
         self,
@@ -85,7 +95,7 @@ class AgentConfigBuilder:
         self._apply_data_analysis_overrides(config, merged)
         self._apply_sandbox_overrides(config, merged)
 
-        if self.workflow_name in self._RAG_WORKFLOWS:
+        if self.workflow_name in self._WORKFLOW_PARAMS_WORKFLOWS:
             namespaced = merged.pop(self.workflow_name, None)
             if namespaced is not None:
                 if not isinstance(namespaced, dict):
@@ -93,16 +103,29 @@ class AgentConfigBuilder:
                         f"`{self.workflow_name}` must be a dict when provided",
                         error_code="CFG-002",
                     )
-                config.workflow.params.update(namespaced)
+                if self.workflow_name == "react":
+                    config.workflow.params.update(self._normalize_react_params(namespaced))
+                else:
+                    config.workflow.params.update(namespaced)
 
-            invalid_flat = sorted(key for key in self._RAG_KEYS if key in merged)
-            if invalid_flat:
-                raise ConfigurationError(
-                    "RAG parameters must be passed via workflow namespace, e.g. "
-                    f"`{self.workflow_name}={{'enable_rag': True, 'case_dir': './experience_replay'}}`. "
-                    f"Invalid flat keys: {invalid_flat}",
-                    error_code="CFG-002",
-                )
+            if self.workflow_name in self._RAG_WORKFLOWS:
+                invalid_flat = sorted(key for key in self._RAG_KEYS if key in merged)
+                if invalid_flat:
+                    raise ConfigurationError(
+                        "RAG parameters must be passed via workflow namespace, e.g. "
+                        f"`{self.workflow_name}={{'enable_rag': True, 'case_dir': './experience_replay'}}`. "
+                        f"Invalid flat keys: {invalid_flat}",
+                        error_code="CFG-002",
+                    )
+            elif self.workflow_name == "react":
+                invalid_flat = sorted(key for key in self._REACT_PARAM_KEYS if key in merged)
+                if invalid_flat:
+                    raise ConfigurationError(
+                        "ReAct parameters must be passed via workflow namespace, e.g. "
+                        "`react={'max_steps': 12, 'obs_max_tokens': 1200, 'context': {'keep_recent_turns': 14}}`. "
+                        f"Invalid flat keys: {invalid_flat}",
+                        error_code="CFG-002",
+                    )
 
         visualization_policy = consume_visualization_policy(merged)
         if visualization_policy is not None:
@@ -122,10 +145,56 @@ class AgentConfigBuilder:
             config.run.parameters.update(merged)
 
         return config
-    _RAG_WORKFLOWS = {"automind", "dsagent"}
-    _RAG_KEYS = {"enable_rag", "case_dir"}
-    _VALID_SANDBOX_BACKENDS = {"local", "e2b", "ds_sandbox"}
-    _VALID_DS_SANDBOX_BACKEND_TYPES = {"docker", "local"}
+
+    def _normalize_react_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        unknown = sorted(key for key in params if key not in self._REACT_PARAM_KEYS)
+        if unknown:
+            raise ConfigurationError(
+                f"Unknown ReAct parameters: {unknown}. "
+                f"Allowed keys: {sorted(self._REACT_PARAM_KEYS)}",
+                error_code="CFG-002",
+            )
+
+        normalized: Dict[str, Any] = {}
+        for key, value in params.items():
+            if key == "context":
+                try:
+                    normalized[key] = normalize_react_context_params(value)
+                except (TypeError, ValueError) as exc:
+                    raise ConfigurationError(
+                        f"Invalid `react.context`: {exc}",
+                        error_code="CFG-002",
+                    ) from None
+                continue
+            try:
+                coerced = int(value)
+            except (TypeError, ValueError):
+                raise ConfigurationError(
+                    f"`react.{key}` must be an integer",
+                    error_code="CFG-002",
+                ) from None
+            if coerced <= 0:
+                raise ConfigurationError(
+                    f"`react.{key}` must be > 0",
+                    error_code="CFG-002",
+                )
+            normalized[key] = coerced
+
+        obs_max_tokens = normalized.get("obs_max_tokens", 4000)
+        obs_head_tokens = normalized.get("obs_head_tokens", 2000)
+        obs_tail_tokens = normalized.get("obs_tail_tokens", 2000)
+        try:
+            validate_react_operator_params(
+                obs_max_tokens=obs_max_tokens,
+                obs_head_tokens=obs_head_tokens,
+                obs_tail_tokens=obs_tail_tokens,
+            )
+        except ValueError as exc:
+            raise ConfigurationError(
+                str(exc),
+                error_code="CFG-002",
+            ) from None
+        return normalized
 
     def _apply_data_analysis_overrides(self, config: DSLightingConfig, merged: Dict[str, Any]) -> None:
         raw = merged.pop("data_analysis", None)

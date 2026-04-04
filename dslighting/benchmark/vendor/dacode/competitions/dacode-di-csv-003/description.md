@@ -1,3 +1,1 @@
-# di-csv-003
-
-Pull the most recent stock performance data for Amazon, Facebook, and the S&P 500. Calculate the average daily return differences between Amazon and the S&P 500, as well as between Facebook and the S&P 500.
+# di-csv-003 Pull the most recent stock performance data for Amazon, Facebook, and the S&P 500. Calculate the average daily return differences between Amazon and the S&P 500, as well as between Facebook and the S&P 500.

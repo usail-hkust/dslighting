@@ -1,18 +1,10 @@
 # dm-csv-020
 
 ## Instruction
-
 Please review the Telco customer churn dataset to determine the top 10 cities with the highest churn rates. Ensure that the churn rate is calculated as the proportion of customers who churned in each city.
 
 ## About Dataset
-
-# Telco Customer Churn Dataset
-
-The Telco customer churn data contains information about a fictional telco company that provided home phone and Internet services to 7043 customers in California in Q3. It indicates which customers have left, stayed, or signed up for their service. Multiple important demographics are included for each customer, as well as a Satisfaction Score, Churn Score, and Customer Lifetime Value (CLTV) index.
-
-# Columns Description:
-
-* CustomerID: A unique ID that identifies each customer.
+# Telco Customer Churn Dataset The Telco customer churn data contains information about a fictional telco company that provided home phone and Internet services to 7043 customers in California in Q3. It indicates which customers have left, stayed, or signed up for their service. Multiple important demographics are included for each customer, as well as a Satisfaction Score, Churn Score, and Customer Lifetime Value (CLTV) index. # Columns Description: * CustomerID: A unique ID that identifies each customer.
 * Gender: The customer’s gender: Male, Female
 * Age: The customer’s current age, in years, at the time the fiscal quarter ended.
 * Senior Citizen: Indicates if the customer is 65 or older: Yes, No

@@ -1,3 +1,1 @@
-# di-text-011
-
-Could you please analyze the matches between Argentina and Brazil? Record the total number of matches, the number of wins for each team, and the number of draws. Indicate if Brazil has won more matches ("Yes" or "No").
+# di-text-011 Could you please analyze the matches between Argentina and Brazil? Record the total number of matches, the number of wins for each team, and the number of draws. Indicate if Brazil has won more matches ("Yes" or "No").

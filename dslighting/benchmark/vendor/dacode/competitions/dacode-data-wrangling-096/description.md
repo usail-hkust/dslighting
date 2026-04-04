@@ -1,3 +1,1 @@
-# Data Wrangling 096
-
-Generate a report listing the highest-impact assignments in each region. For each assignment, include the assignment names, regions, impact scores, and the total number of donations received, but only for assignments that have received donations. Ensure to fill in the results.
+# Data Wrangling 096 Generate a report listing the highest-impact assignments in each region. For each assignment, include the assignment names, regions, impact scores, and the total number of donations received, but only for assignments that have received donations. Ensure to fill in the results.

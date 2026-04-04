@@ -208,6 +208,7 @@ result = dslighting.run_agent(task_id="bike-sharing-demand")
   4. automind          - Complex planning with knowledge base
   5. dsagent           - Long-term planning with logging
   6. deepanalyze       - Deep analysis with structured tags
+  7. react             - Reasoning + acting baseline with strict tags
 """)
 
     print("Useful Commands:")
@@ -313,11 +314,27 @@ def _get_workflow_info():
             "unique_params": None,
             "class": presets.DeepAnalyze,
         },
+        "react": {
+            "full_name": "ReAct",
+            "description": "Reasoning + acting baseline with strict <Think>/<Action> tags",
+            "use_cases": ["Code-first baselines", "Simple iterative execution", "Protocol-constrained tasks"],
+            "default_model": "gpt-4o",
+            "parameters": {"temperature": 0.7},
+            "unique_params": {
+                "max_steps": "Maximum ReAct turns (default: 10)",
+                "obs_max_tokens": "Observation token budget (default: 4000)",
+                "obs_head_tokens": "Observation head tokens kept after truncation (default: 2000)",
+                "obs_tail_tokens": "Observation tail tokens kept after truncation (default: 2000)",
+                "context.keep_recent_turns": "Raw recent turn window kept by the ReAct context manager (default: 6)",
+                "context.strategy": "Context strategy: recent_turns | summarize_old_turns | hybrid (default: hybrid)",
+            },
+            "class": presets.ReAct,
+        },
     }
 
     # Get available workflows from presets module
     available_workflows = []
-    for name in ["aide", "autokaggle", "data_interpreter", "automind", "dsagent", "deepanalyze"]:
+    for name in ["aide", "autokaggle", "data_interpreter", "automind", "dsagent", "deepanalyze", "react"]:
         metadata = workflow_metadata.get(name)
         if metadata and metadata.get("class") is not None:
             # cmd_workflows expects each item to include workflow name for display.
@@ -496,6 +513,37 @@ result = agent.run(data, description="Deep analysis of data")
 
 print(f"Output: {result.output}")
 print(f"Cost: ${result.cost:.2f}")
+""",
+        "react": """
+from dotenv import load_dotenv
+load_dotenv()
+
+import dslighting
+
+data = dslighting.load_data("your_data.csv")
+
+agent = dslighting.Agent(
+    workflow="react",
+    model="gpt-4o",
+    temperature=0.7,
+    react={
+        "max_steps": 10,
+        "obs_max_tokens": 4000,
+        "obs_head_tokens": 2000,
+        "obs_tail_tokens": 2000,
+        "context": {
+            "strategy": "hybrid",
+            "keep_recent_turns": 14,
+            "summary_trigger_turns": 18,
+            "recent_observation_window": 8,
+        },
+    },
+)
+
+result = agent.run(data, description="Solve the task with strict <Think>/<Action> turns")
+
+print(f"Output: {result.output}")
+print(f"Cost: ${result.cost:.2f}")
 """
     }
 
@@ -582,6 +630,7 @@ result = agent.run(data, description="Analyze sales data and find trends")
   Need historical knowledge     | automind
   Long-running task             | dsagent
   Deep analysis                 | deepanalyze
+  Strict reasoning + acting     | react
 """)
 
     print("Pro Tips")

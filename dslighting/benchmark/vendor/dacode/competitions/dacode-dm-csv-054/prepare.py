@@ -2,7 +2,7 @@ from pathlib import Path
 import shutil
 
 GOLD_DIR = Path(__file__).resolve().parents[2] / "raw_dacode" / "gold" / "dm-csv-054"
-SKIP_FROM_PUBLIC = {"README.md", "sample_result.csv"}
+SKIP_FROM_PUBLIC = {"README.md", "result.csv", "sample_result.csv"}
 
 
 def prepare(raw: Path, public: Path, private: Path):

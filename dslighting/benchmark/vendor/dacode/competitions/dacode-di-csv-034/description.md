@@ -1,3 +1,1 @@
-# di-csv-034
-
-Filter the orders where the quantity is greater than or equal to 60 and has multiple repeated quantities within the same order. Record their orderID, productID, unitPrice, quantity, and discount.
+# di-csv-034 Filter the orders where the quantity is greater than or equal to 60 and has multiple repeated quantities within the same order. Record their orderID, productID, unitPrice, quantity, and discount.

@@ -1,3 +1,1 @@
-# Data Wrangling 098
-
-Using data from 2019 to 2021, determine which industries had the highest average valuations. Identify the new unicorn companies within these industries. Make sure to fill your findings.
+# Data Wrangling 098 Using data from 2019 to 2021, determine which industries had the highest average valuations. Identify the new unicorn companies within these industries. Make sure to fill your findings.

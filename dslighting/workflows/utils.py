@@ -259,28 +259,55 @@ def collect_output_files(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     collected = False
     copied_files: Set[str] = set()
+    default_output = sandbox_workdir / output_path.name
+    directory_mode = default_output.is_dir() or (not output_path.suffix and any(
+        (sandbox_workdir / filename).exists() for filename in expected_filenames
+    ))
+
+    def _replace_path(src: Path, dst: Path) -> None:
+        if dst.exists():
+            if dst.is_dir():
+                shutil.rmtree(dst)
+            else:
+                dst.unlink()
+        if src.is_dir():
+            shutil.copytree(src, dst)
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src, dst)
+
+    def _copy_into_collection_root(src: Path, name: str) -> Path:
+        if directory_mode:
+            output_path.mkdir(parents=True, exist_ok=True)
+            dst = output_path / name
+        else:
+            dst = output_path.parent / name
+        _replace_path(src, dst)
+        return dst
 
     # 1. Check for the default expected output file
-    default_output = sandbox_workdir / output_path.name
     if default_output.exists():
-        shutil.copy(default_output, output_path)
+        _replace_path(default_output, output_path)
         copied_files.add(output_path.name)
         collected = True
-        logger.info("Copied default output file to %s", output_path)
+        logger.info(
+            "Copied default output %s to %s",
+            "directory" if default_output.is_dir() else "file",
+            output_path,
+        )
 
     # 2. Check for files specified in task description
     for filename in expected_filenames:
         src_file = sandbox_workdir / filename
         if src_file.exists() and filename not in copied_files:
-            dst_file = output_path.parent / filename
-            shutil.copy(src_file, dst_file)
+            dst_file = _copy_into_collection_root(src_file, filename)
             copied_files.add(filename)
             collected = True
             logger.info("Copied expected output file '%s' to %s", filename, dst_file)
 
             # If no default output was found, also copy first expected file as the default
-            if not output_path.exists():
-                shutil.copy(src_file, output_path)
+            if not output_path.exists() and not directory_mode:
+                _replace_path(src_file, output_path)
                 logger.info("Also copied '%s' as default output to %s", filename, output_path)
 
     # 3. Collect any other new files created during execution
@@ -289,15 +316,14 @@ def collect_output_files(
     )
     for src_file in new_files:
         if src_file.name not in copied_files:
-            dst_file = output_path.parent / src_file.name
-            shutil.copy(src_file, dst_file)
+            dst_file = _copy_into_collection_root(src_file, src_file.name)
             copied_files.add(src_file.name)
             collected = True
             logger.info("Copied new output file '%s' to %s", src_file.name, dst_file)
 
             # If still no default output, use first new file
-            if not output_path.exists():
-                shutil.copy(src_file, output_path)
+            if not output_path.exists() and not directory_mode:
+                _replace_path(src_file, output_path)
                 logger.info("Also copied '%s' as default output to %s", src_file.name, output_path)
 
     if collected:

@@ -1,3 +1,1 @@
-# Data Wrangling 058
-
-Unzip and load the database from the provided archive. Filter the data to include matches from Spain, Germany, France, Italy, and England. For each combination of country, league, and season, compute the number of stages, number of teams, average goals scored by home and away teams, goal difference, and total goals. Only include records where the number of stages is greater than 10. Sort the results by country, league, and season, and populate the results.
+# Data Wrangling 058 Unzip and load the database from the provided archive. Filter the data to include matches from Spain, Germany, France, Italy, and England. For each combination of country, league, and season, compute the number of stages, number of teams, average goals scored by home and away teams, goal difference, and total goals. Only include records where the number of stages is greater than 10. Sort the results by country, league, and season, and populate the results.

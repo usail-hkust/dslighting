@@ -1,14 +1,7 @@
-# di-text-003
-
-Use the mean to fill in missing values and identify the top 5 countries with the highest and lowest birth rates. Sort them from highest to lowest.
+# di-text-003 Use the mean to fill in missing values and identify the top 5 countries with the highest and lowest birth rates. Sort them from highest to lowest.
 
 ## About Dataset
-
-This comprehensive dataset provides a wealth of information about** ** **all countries worldwide** , covering a wide range of indicators and attributes. It encompasses demographic statistics, economic indicators, environmental factors, healthcare metrics, education statistics, and much more. With every country represented, this dataset offers a complete global perspective on various aspects of nations, enabling in-depth analyses and cross-country comparisons.
-
-# Key Features
-
-- **Country** : Name of the country.
+This comprehensive dataset provides a wealth of information about** ** **all countries worldwide** , covering a wide range of indicators and attributes. It encompasses demographic statistics, economic indicators, environmental factors, healthcare metrics, education statistics, and much more. With every country represented, this dataset offers a complete global perspective on various aspects of nations, enabling in-depth analyses and cross-country comparisons. # Key Features - **Country** : Name of the country.
 - **Density (P/Km2)** : Population density measured in persons per square kilometer.
 - **Abbreviation** : Abbreviation or code representing the country.
 - **Agricultural Land (%)** : Percentage of land area used for agricultural purposes.

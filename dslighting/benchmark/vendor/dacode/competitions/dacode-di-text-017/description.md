@@ -1,3 +1,1 @@
-# di-text-017
-
-Analyze the data to determine the popularity of different categories among various age groups. Based on your findings, select the most fitting description for each category from the following: 'Most famous in 45-55 age group', 'Most popular among all age groups', 'Equally famous in all age groups except 15-25 and 65-75', or 'Almost equally famous in all age groups'.
+# di-text-017 Analyze the data to determine the popularity of different categories among various age groups. Based on your findings, select the most fitting description for each category from the following: 'Most famous in 45-55 age group', 'Most popular among all age groups', 'Equally famous in all age groups except 15-25 and 65-75', or 'Almost equally famous in all age groups'.

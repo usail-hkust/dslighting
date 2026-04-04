@@ -1,5 +1,1 @@
-# di-text-020
-
-You are working on a project for a sports analytics firm. Your task is to determine the average number of matches won and lost by Chennai Super Kings in Chennai by analyzing the provided data.
-
-Output fields: Average matches won, Average matches lost
+# di-text-020 You are working on a project for a sports analytics firm. Your task is to determine the average number of matches won and lost by Chennai Super Kings in Chennai by analyzing the provided data. Output fields: Average matches won, Average matches lost

@@ -1,3 +1,1 @@
-# Data Wrangling 066
-
-Compute the overdue rental percentage for each customer. Generate a list that includes the customer's name, email, and overdue percentage, sorted by overdue percentage in descending order. Populate the data.
+# Data Wrangling 066 Compute the overdue rental percentage for each customer. Generate a list that includes the customer's name, email, and overdue percentage, sorted by overdue percentage in descending order. Populate the data.

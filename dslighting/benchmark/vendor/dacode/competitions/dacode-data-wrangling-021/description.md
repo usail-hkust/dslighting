@@ -1,3 +1,1 @@
-# Data Wrangling 021
-
-Follow the data cleanup steps outlined in the provided Python file, which involve processing missing values and normalizing the data. Save the final cleaned and normalized dataset.
+# Data Wrangling 021 Follow the data cleanup steps outlined in the provided Python file, which involve processing missing values and normalizing the data. Save the final cleaned and normalized dataset.

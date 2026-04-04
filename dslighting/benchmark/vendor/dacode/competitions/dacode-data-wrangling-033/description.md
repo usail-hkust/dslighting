@@ -1,3 +1,1 @@
-# Data Wrangling 033
-
-Filter the database to keep only the information related to airports and aircraft. Ensure all data is in English. Make these modifications directly in the original file and save the changes.
+# Data Wrangling 033 Filter the database to keep only the information related to airports and aircraft. Ensure all data is in English. Make these modifications directly in the original file and save the changes.

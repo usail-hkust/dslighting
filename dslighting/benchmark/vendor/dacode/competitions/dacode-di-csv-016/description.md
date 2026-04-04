@@ -1,3 +1,1 @@
-# di-csv-016
-
-Identify the wrestlers involved in the shortest title match for each title in NXT. Provide details about the card, including title, match duration, match type, win type, location, and event.
+# di-csv-016 Identify the wrestlers involved in the shortest title match for each title in NXT. Provide details about the card, including title, match duration, match type, win type, location, and event.
