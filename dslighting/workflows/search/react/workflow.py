@@ -10,14 +10,14 @@ from typing import Any, Dict, Optional
 from dslighting.ops.code.execute import ExecuteAndTestOperator
 from dslighting.ops.presets.react import ReActOperator
 from dslighting.prompts.workflows.react import create_react_prompt
-from dslighting.react_protocol import normalize_react_reply
 from dslighting.runtime.dag.actor import SolveWorkflowActor
 from dslighting.workflows.base import BaseWorkflow
-from dslighting.workflows.search.react_context_manager import (
+from dslighting.workflows.search.react.context_manager import (
     ReActContextConfig,
     ReActContextManager,
     build_react_context_config,
 )
+from dslighting.workflows.search.react.protocol import normalize_react_reply
 
 logger = logging.getLogger(__name__)
 

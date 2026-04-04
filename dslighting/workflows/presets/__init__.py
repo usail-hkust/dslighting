@@ -14,7 +14,7 @@ try:
     from dslighting.workflows.search.aide_workflow import AIDEWorkflow
     from dslighting.workflows.search.automind_workflow import AutoMindWorkflow
     from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
-    from dslighting.workflows.search.react_workflow import ReActWorkflow
+    from dslighting.workflows.search.react.workflow import ReActWorkflow
 
     # 创建别名（为了向后兼容和简化命名）
     AIDE = AIDEWorkflow

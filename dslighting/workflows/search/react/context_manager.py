@@ -7,13 +7,13 @@ import logging
 import re
 from typing import Any, Optional
 
-from dslighting.react_validation import validate_react_operator_params
 from dslighting.state.context import (
     DEFAULT_MAX_HISTORY_CHARS,
     DEFAULT_MAX_OUTPUT_CHARS,
     hard_truncate_chars,
     hard_truncate_head_tail,
 )
+from dslighting.workflows.search.react.validation import validate_react_operator_params
 
 logger = logging.getLogger(__name__)
 

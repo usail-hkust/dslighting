@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dslighting.react_protocol import normalize_react_reply, validate_turn_structure
+from dslighting.workflows.search.react.protocol import (
+    normalize_react_reply,
+    validate_turn_structure,
+)
 
 
 def export_llm_calls_to_sft(

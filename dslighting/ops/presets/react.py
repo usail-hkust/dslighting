@@ -10,12 +10,14 @@ from __future__ import annotations
 from typing import Optional
 
 from dslighting.ops.base import Operator
-from dslighting.react_protocol import (
+from dslighting.workflows.search.react.protocol import (
     ReActTurnResult,
     build_execution_message,
     parse_react_reply,
 )
-from dslighting.react_validation import validate_react_operator_params
+from dslighting.workflows.search.react.validation import (
+    validate_react_operator_params,
+)
 
 
 class ReActOperator(Operator):

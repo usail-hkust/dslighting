@@ -21,7 +21,6 @@ from dslighting.ops.llm.basic import (
 from dslighting.ops.presets import AFlowReviewOperator, AFlowReviseOperator, ScEnsembleOperator
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
 from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
-from dslighting.react_validation import validate_react_operator_params
 from dslighting.core.visualization_policy import (
     resolve_visualization_policy_from_config,
     should_force_noninteractive_backend,
@@ -44,8 +43,13 @@ from dslighting.workflows.manual.my_custom_agent_workflow import MyCustomAgentWo
 from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
 from dslighting.workflows.search.aide_workflow import AIDEWorkflow
 from dslighting.workflows.search.automind_workflow import AutoMindWorkflow
-from dslighting.workflows.search.react_context_manager import build_react_context_config
-from dslighting.workflows.search.react_workflow import ReActWorkflow
+from dslighting.workflows.search.react.context_manager import (
+    build_react_context_config,
+)
+from dslighting.workflows.search.react.validation import (
+    validate_react_operator_params,
+)
+from dslighting.workflows.search.react.workflow import ReActWorkflow
 
 logger = logging.getLogger(__name__)
 

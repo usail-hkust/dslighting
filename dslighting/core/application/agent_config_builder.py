@@ -15,9 +15,11 @@ from dslighting.config import (
 from dslighting.core.config.llm_resolution import build_llm_config
 from dslighting.core.visualization_policy import consume_visualization_policy
 from dslighting.error import ConfigurationError
-from dslighting.react_validation import validate_react_operator_params
-from dslighting.workflows.search.react_context_manager import (
+from dslighting.workflows.search.react.context_manager import (
     normalize_react_context_params,
+)
+from dslighting.workflows.search.react.validation import (
+    validate_react_operator_params,
 )
 
 
