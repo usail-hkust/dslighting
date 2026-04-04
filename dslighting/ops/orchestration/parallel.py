@@ -140,7 +140,7 @@ class Parallel:
         if key_func is not None:
             keys = [key_func(r) for r in results]
         else:
-            keys = results
+            keys = [self._majority_key(r) for r in results]
 
         # Count occurrences of each key
         key_counts = Counter(keys)
@@ -178,6 +178,32 @@ class Parallel:
                 f"Returning first result."
             )
             return results[0], False
+
+    def _majority_key(self, value: Any) -> Any:
+        """Convert potentially unhashable results into stable majority-vote keys."""
+        if isinstance(value, dict):
+            return (
+                "__dict__",
+                tuple(
+                    (key, self._majority_key(item))
+                    for key, item in sorted(value.items(), key=lambda pair: repr(pair[0]))
+                ),
+            )
+        if isinstance(value, list):
+            return ("__list__", tuple(self._majority_key(item) for item in value))
+        if isinstance(value, tuple):
+            return ("__tuple__", tuple(self._majority_key(item) for item in value))
+        if isinstance(value, set):
+            return (
+                "__set__",
+                tuple(sorted((self._majority_key(item) for item in value), key=repr)),
+            )
+
+        try:
+            hash(value)
+            return value
+        except TypeError:
+            return ("__repr__", repr(value))
 
     async def __call__(self, **kwargs) -> Any:
         """Allow parallel to be called like a function."""

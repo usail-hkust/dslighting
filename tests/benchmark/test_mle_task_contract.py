@@ -100,7 +100,6 @@ def test_mle_task_contract_extracts_api_version_from_grader_config(tmp_path: Pat
     assert payload["grader"]["name"] == "compare_db"
     assert payload["submission_filename"] == "sport.db"
     # Regression guard: the payload must remain constructible as a runtime competition.
-
     from dslighting.benchmark.core.mle_task_contract import MLEStyleCompetition
 
     assert MLEStyleCompetition.from_dict(competition).api_version == "artifact_v1"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dslighting.core.data.introspection import DataPerceptionRequest, DataPerceptionService
+from dslighting.core.data.perception import DataPerceptionRequest, DataPerceptionService
 
 
 def test_data_perception_service_builds_structured_context(tmp_path: Path) -> None:

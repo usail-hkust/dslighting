@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dslighting.core.data.introspection.samplers.document import DocumentSampler
+from dslighting.core.data.perception.samplers.document import DocumentSampler
 
 
 def test_document_sampler_handles_standard_json() -> None:

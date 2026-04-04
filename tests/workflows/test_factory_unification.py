@@ -14,6 +14,7 @@ EXPECTED_WORKFLOWS = {
     "data_interpreter",
     "autokaggle",
     "deepanalyze",
+    "react",
     "aflow",
     "my_custom_agent",
 }

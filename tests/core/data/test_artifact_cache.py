@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from dslighting.core.data.introspection import DataPerceptionRequest, DataPerceptionService
-from dslighting.core.data.introspection.cache import DataPerceptionCache
+from dslighting.core.data.perception import DataPerceptionRequest, DataPerceptionService
+from dslighting.core.data.perception.cache import DataPerceptionCache
 
 
 @pytest.fixture(autouse=True)
@@ -79,7 +79,7 @@ def test_inventory_cache_hits_across_service_instances(tmp_path: Path, monkeypat
     request = DataPerceptionRequest(data_dir=data_dir)
     DataPerceptionService(request, cache=_make_cache(cache_dir)).inspect()
 
-    from dslighting.core.data.introspection import service as service_module
+    from dslighting.core.data.perception import service as service_module
 
     def fail_discovery(*args, **kwargs):  # noqa: ANN002, ANN003
         raise AssertionError("Expected cached inventory, but discovery path was used.")

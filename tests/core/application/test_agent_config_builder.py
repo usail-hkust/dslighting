@@ -21,15 +21,15 @@ def _make_builder(workflow_name: str, init_kwargs: dict):
     )
 
 
-def test_enforce_no_plotting_false_sets_visualization_allow() -> None:
+def test_visualization_policy_goes_to_shared_agent_config() -> None:
     builder = _make_builder("aide", {"max_iterations": 2})
-    config = builder.build(task_id="task1", run_kwargs={"enforce_no_plotting": False})
+    config = builder.build(task_id="task1", run_kwargs={"visualization_policy": "allow"})
 
     assert config.agent.search.max_iterations == 2
     assert config.agent.visualization.policy == VisualizationPolicy.ALLOW
 
 
-def test_autokaggle_enforce_no_plotting_false_sets_visualization_allow() -> None:
+def test_legacy_enforce_no_plotting_maps_to_no_display_policy() -> None:
     builder = _make_builder("autokaggle", {})
     config = builder.build(task_id="task1", run_kwargs={"enforce_no_plotting": False})
 
