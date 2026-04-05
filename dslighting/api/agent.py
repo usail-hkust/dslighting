@@ -20,7 +20,7 @@ Example:
     >>> from dslighting.core import ConfigBuilder
     >>> config = ConfigBuilder().build_config(model="gpt-4o")
     >>> benchmark = DSBenchmark("dabench").run(config=config)
-    >>> print(benchmark.summary["score"])  # Average score across tasks
+    >>> print(benchmark.summary["score"])  # Average score across all tasks
 """
 
 import asyncio

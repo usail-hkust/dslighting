@@ -504,10 +504,15 @@ class BaseBenchmark(AbstractBenchmark):
             total_tokens_col = 'total_tokens' if 'total_tokens' in df.columns else None
 
             stats: Dict[str, Any] = {}
+            total_tasks = int(len(df))
             if score_col:
-                valid_scores = df[score_col].dropna()
+                score_series = pd.to_numeric(df[score_col], errors="coerce")
+                valid_scores = score_series.dropna()
                 if len(valid_scores) > 0:
-                    stats['avg_score'] = float(valid_scores.mean())
+                    stats['average_score'] = float(valid_scores.mean())
+                    stats['actual_average_score'] = float(score_series.fillna(0.0).mean())
+                    stats['scored_task_count'] = int(len(valid_scores))
+                    stats['unscored_task_count'] = int(total_tasks - len(valid_scores))
                     stats['median_score'] = float(valid_scores.median())
                     stats['std_score'] = float(valid_scores.std())
 
@@ -541,6 +546,36 @@ class BaseBenchmark(AbstractBenchmark):
                     stats['avg_total_tokens'] = float(valid_total_tokens.mean())
                     stats['total_total_tokens'] = float(valid_total_tokens.sum())
 
+            exists_col = 'submission_exists' if 'submission_exists' in df.columns else None
+            valid_submission_col = 'valid_submission' if 'valid_submission' in df.columns else None
+            exists_series = None
+            valid_series = None
+            if exists_col:
+                exists_series = df[exists_col].map(
+                    lambda value: str(value).strip().lower() in {"1", "true", "yes", "on"}
+                )
+                exists_count = int(exists_series.sum())
+                stats['submission_exists_count'] = exists_count
+                stats['submission_exists_rate'] = float(exists_count / total_tasks) if total_tasks else 0.0
+                missing_count = int(total_tasks - exists_count)
+                stats['missing_submission_count'] = missing_count
+                stats['missing_submission_rate'] = float(missing_count / total_tasks) if total_tasks else 0.0
+
+            if valid_submission_col:
+                valid_series = df[valid_submission_col].map(
+                    lambda value: str(value).strip().lower() in {"1", "true", "yes", "on"}
+                )
+                valid_count = int(valid_series.sum())
+                failed_count = int(total_tasks - valid_count)
+                stats['valid_submission_count'] = valid_count
+                stats['valid_submission_rate'] = float(valid_count / total_tasks) if total_tasks else 0.0
+                stats['failed_submission_count'] = failed_count
+                stats['failed_submission_rate'] = float(failed_count / total_tasks) if total_tasks else 0.0
+                if exists_series is not None:
+                    invalid_count = int((exists_series & ~valid_series).sum())
+                    stats['invalid_submission_count'] = invalid_count
+                    stats['invalid_submission_rate'] = float(invalid_count / total_tasks) if total_tasks else 0.0
+
             model_info = self._resolve_model_name_for_metadata(kwargs.get("model_name"))
             scheduler_stats = kwargs.get("scheduler_stats") or {}
 
@@ -555,11 +590,26 @@ class BaseBenchmark(AbstractBenchmark):
 
             metadata: Dict[str, Any] = {
                 "model": model_info,
-                "total_tasks": int(len(df)),
-                "scores": {
-                    "average": stats.get("avg_score"),
+                "total_tasks": total_tasks,
+                "score": {
+                    "average": stats.get("average_score"),
+                    "actual_average": stats.get("actual_average_score"),
+                    "scored_task_count": stats.get("scored_task_count"),
+                    "unscored_task_count": stats.get("unscored_task_count"),
                     "median": stats.get("median_score"),
                     "std": stats.get("std_score"),
+                },
+                "submissions": {
+                    "exists_count": stats.get("submission_exists_count"),
+                    "exists_rate": stats.get("submission_exists_rate"),
+                    "valid_count": stats.get("valid_submission_count"),
+                    "valid_rate": stats.get("valid_submission_rate"),
+                    "failed_submission_count": stats.get("failed_submission_count"),
+                    "failed_submission_rate": stats.get("failed_submission_rate"),
+                    "missing_submission_count": stats.get("missing_submission_count"),
+                    "missing_submission_rate": stats.get("missing_submission_rate"),
+                    "invalid_submission_count": stats.get("invalid_submission_count"),
+                    "invalid_submission_rate": stats.get("invalid_submission_rate"),
                 },
                 "cost": {
                     "average": stats.get("avg_cost"),

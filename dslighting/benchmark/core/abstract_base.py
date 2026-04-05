@@ -191,18 +191,45 @@ class AbstractBenchmark(ABC):
         if self.results_path and self.results_path.exists():
             try:
                 df = pd.read_csv(self.results_path)
+                total_tasks = int(len(df))
 
                 if "score" in df.columns:
-                    valid_scores = df["score"].dropna()
+                    score_series = pd.to_numeric(df["score"], errors="coerce")
+                    valid_scores = score_series.dropna()
                     if len(valid_scores) > 0:
-                        summary_stats["score"] = float(valid_scores.mean())
+                        summary_stats["score"] = float(score_series.fillna(0.0).mean())
                         summary_stats["metadata"]["score_stats"] = {
-                            "mean": float(valid_scores.mean()),
+                            "average": float(valid_scores.mean()),
+                            "actual_average": float(score_series.fillna(0.0).mean()),
+                            "scored_task_count": int(len(valid_scores)),
+                            "unscored_task_count": int(total_tasks - len(valid_scores)),
                             "median": float(valid_scores.median()),
                             "std": float(valid_scores.std()),
                             "min": float(valid_scores.min()),
                             "max": float(valid_scores.max()),
                         }
+
+                if "submission_exists" in df.columns:
+                    exists_series = df["submission_exists"].map(
+                        lambda value: str(value).strip().lower() in {"1", "true", "yes", "on"}
+                    )
+                    summary_stats["metadata"]["submission_stats"] = {
+                        "exists_count": int(exists_series.sum()),
+                        "exists_rate": float(exists_series.mean()) if len(exists_series) > 0 else 0.0,
+                    }
+                if "valid_submission" in df.columns:
+                    valid_submission_series = df["valid_submission"].map(
+                        lambda value: str(value).strip().lower() in {"1", "true", "yes", "on"}
+                    )
+                    submission_stats = summary_stats["metadata"].setdefault("submission_stats", {})
+                    submission_stats.update(
+                        {
+                            "valid_count": int(valid_submission_series.sum()),
+                            "valid_rate": float(valid_submission_series.mean()) if len(valid_submission_series) > 0 else 0.0,
+                            "failed_submission_count": int(total_tasks - int(valid_submission_series.sum())),
+                            "failed_submission_rate": float((total_tasks - int(valid_submission_series.sum())) / total_tasks) if total_tasks > 0 else 0.0,
+                        }
+                    )
 
                 if "cost" in df.columns:
                     valid_costs = df["cost"].dropna()
