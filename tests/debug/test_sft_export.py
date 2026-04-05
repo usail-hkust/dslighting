@@ -48,9 +48,11 @@ def test_export_llm_calls_to_sft_writes_strict_and_full_datasets(tmp_path: Path)
     )
 
     assert summary["record_count"] == 1
+    assert summary["session_record_count"] == 1
 
     sft_jsonl_path = Path(summary["paths"]["sft_jsonl"])
     full_json_path = Path(summary["paths"]["full_json"])
+    session_jsonl_path = Path(summary["paths"]["session_jsonl"])
 
     sft_lines = sft_jsonl_path.read_text(encoding="utf-8").strip().splitlines()
     assert len(sft_lines) == 1
@@ -62,6 +64,9 @@ def test_export_llm_calls_to_sft_writes_strict_and_full_datasets(tmp_path: Path)
             {"role": "assistant", "content": "Hello."},
         ]
     }
+    session_lines = session_jsonl_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(session_lines) == 1
+    assert json.loads(session_lines[0]) == strict_record
 
     full_payload = json.loads(full_json_path.read_text(encoding="utf-8"))
     assert full_payload["task_id"] == "dabench-0-mean-fare-paid"
@@ -83,6 +88,7 @@ def test_export_llm_calls_to_sft_writes_strict_and_full_datasets(tmp_path: Path)
 
 def test_export_llm_calls_to_sft_repairs_unclosed_answer_for_react(tmp_path: Path) -> None:
     llm_calls_path = tmp_path / "llm_calls.jsonl"
+    session_messages_path = tmp_path / "messages.json"
     _write_jsonl(
         llm_calls_path,
         [
@@ -102,6 +108,23 @@ def test_export_llm_calls_to_sft_repairs_unclosed_answer_for_react(tmp_path: Pat
             }
         ],
     )
+    session_messages_path.write_text(
+        json.dumps(
+            [
+                {"role": "system", "content": "Be terse."},
+                {"role": "user", "content": "Finish the task."},
+                {
+                    "role": "assistant",
+                    "content": "<Think>Need compute.</Think>\n<Action>```python\nprint(40 + 2)\n```</Action>",
+                },
+                {"role": "user", "content": "<Observation>\n42\n</Observation>"},
+                {"role": "assistant", "content": "<Think>Done.</Think>\n<Answer>42"},
+            ],
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
     summary = export_llm_calls_to_sft(
         llm_calls_path=llm_calls_path,
@@ -109,10 +132,12 @@ def test_export_llm_calls_to_sft_repairs_unclosed_answer_for_react(tmp_path: Pat
         task_id="dacode-di-csv-031",
         workflow="react",
         benchmark="dacode",
+        session_messages_path=session_messages_path,
     )
 
     sft_json_path = Path(summary["paths"]["sft_json"])
     full_json_path = Path(summary["paths"]["full_json"])
+    session_json_path = Path(summary["paths"]["session_json"])
 
     sft_payload = json.loads(sft_json_path.read_text(encoding="utf-8"))
     assert sft_payload["record_count"] == 1
@@ -127,6 +152,22 @@ def test_export_llm_calls_to_sft_repairs_unclosed_answer_for_react(tmp_path: Pat
     assert record["response_normalized"]["content"] == "<Think>Done.</Think>\n<Answer>42\n</Answer>"
     assert record["response_repaired"] is True
     assert record["repair_reason"] == "added missing </Answer> closing tag"
+
+    session_payload = json.loads(session_json_path.read_text(encoding="utf-8"))
+    assert session_payload["record_count"] == 1
+    assert session_payload["records"][0]["messages"] == [
+        {"role": "system", "content": "Be terse."},
+        {"role": "user", "content": "Finish the task."},
+        {
+            "role": "assistant",
+            "content": "<Think>Need compute.</Think>\n<Action>```python\nprint(40 + 2)\n```</Action>",
+        },
+        {"role": "user", "content": "<Observation>\n42\n</Observation>"},
+        {
+            "role": "assistant",
+            "content": "<Think>Done.</Think>\n<Answer>42\n</Answer>",
+        },
+    ]
 
 
 def test_export_llm_calls_to_sft_skips_legacy_final_answer_from_react_sft(tmp_path: Path) -> None:
@@ -161,9 +202,12 @@ def test_export_llm_calls_to_sft_skips_legacy_final_answer_from_react_sft(tmp_pa
 
     sft_json_path = Path(summary["paths"]["sft_json"])
     full_json_path = Path(summary["paths"]["full_json"])
+    session_json_path = Path(summary["paths"]["session_json"])
 
     sft_payload = json.loads(sft_json_path.read_text(encoding="utf-8"))
     assert sft_payload["record_count"] == 0
+    session_payload = json.loads(session_json_path.read_text(encoding="utf-8"))
+    assert session_payload["record_count"] == 0
 
     full_payload = json.loads(full_json_path.read_text(encoding="utf-8"))
     record = full_payload["records"][0]

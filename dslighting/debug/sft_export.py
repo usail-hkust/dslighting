@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from dslighting.workflows.search.react.protocol import (
+    extract_answer_block,
     normalize_react_reply,
     validate_turn_structure,
 )
@@ -24,6 +25,7 @@ def export_llm_calls_to_sft(
     run_name: str | None = None,
     workspace_dir: str | None = None,
     export_stem: str | None = None,
+    session_messages_path: Path | None = None,
 ) -> dict[str, Any]:
     """Export raw llm_calls telemetry into strict SFT and full debug datasets."""
     llm_calls = _read_jsonl(llm_calls_path)
@@ -50,6 +52,12 @@ def export_llm_calls_to_sft(
         for record in full_records
         if record["sft_eligible"]
     ]
+    session_records = _build_session_sft_records(
+        full_records=full_records,
+        workflow=workflow,
+        workspace_dir=workspace_dir,
+        session_messages_path=session_messages_path,
+    )
 
     full_bundle = {
         "created_at_utc": created_at_utc,
@@ -71,28 +79,45 @@ def export_llm_calls_to_sft(
         "record_count": len(sft_records),
         "records": sft_records,
     }
+    session_bundle = {
+        "created_at_utc": created_at_utc,
+        "task_id": task_id,
+        "workflow": workflow,
+        "benchmark": benchmark,
+        "run_name": run_name,
+        "record_count": len(session_records),
+        "records": session_records,
+    }
 
     full_json_path = export_dir / f"{stem}_llm_full.json"
     full_jsonl_path = export_dir / f"{stem}_llm_full.jsonl"
     sft_json_path = export_dir / f"{stem}_sft.json"
     sft_jsonl_path = export_dir / f"{stem}_sft.jsonl"
+    session_json_path = export_dir / f"{stem}_session_sft.json"
+    session_jsonl_path = export_dir / f"{stem}_session_sft.jsonl"
 
     _write_json(full_json_path, full_bundle)
     _write_jsonl(full_jsonl_path, full_records)
     _write_json(sft_json_path, sft_bundle)
     _write_jsonl(sft_jsonl_path, sft_records)
+    _write_json(session_json_path, session_bundle)
+    _write_jsonl(session_jsonl_path, session_records)
 
     return {
         "task_id": task_id,
         "record_count": len(full_records),
+        "session_record_count": len(session_records),
         "full_records": full_records,
         "sft_records": sft_records,
+        "session_records": session_records,
         "paths": {
             "source_llm_calls": str(llm_calls_path),
             "full_json": str(full_json_path),
             "full_jsonl": str(full_jsonl_path),
             "sft_json": str(sft_json_path),
             "sft_jsonl": str(sft_jsonl_path),
+            "session_json": str(session_json_path),
+            "session_jsonl": str(session_jsonl_path),
         },
     }
 
@@ -156,6 +181,26 @@ def _build_full_record(
     }
 
 
+def _build_session_sft_records(
+    *,
+    full_records: list[dict[str, Any]],
+    workflow: str,
+    workspace_dir: str | None,
+    session_messages_path: Path | None,
+) -> list[dict[str, Any]]:
+    messages = _resolve_session_messages(
+        full_records=full_records,
+        workflow=workflow,
+        workspace_dir=workspace_dir,
+        session_messages_path=session_messages_path,
+    )
+    if not messages:
+        return []
+    if not _session_messages_are_sft_eligible(messages, workflow=workflow):
+        return []
+    return [{"messages": messages}]
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     if not path.exists():
@@ -167,6 +212,12 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
                 continue
             records.append(json.loads(line))
     return records
+
+
+def _read_json(path: Path) -> dict[str, Any] | list[Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -206,6 +257,27 @@ def _normalize_messages_for_sft(
     return normalized_messages
 
 
+def _resolve_session_messages(
+    *,
+    full_records: list[dict[str, Any]],
+    workflow: str,
+    workspace_dir: str | None,
+    session_messages_path: Path | None,
+) -> list[dict[str, Any]]:
+    if workflow == "react":
+        path = session_messages_path
+        if path is None and workspace_dir:
+            path = Path(workspace_dir) / "artifacts" / "messages.json"
+        if path is not None:
+            payload = _read_json(path)
+            if isinstance(payload, list):
+                return _normalize_messages_for_sft(payload, workflow=workflow)
+
+    if not full_records:
+        return []
+    return copy.deepcopy(full_records[-1]["messages"])
+
+
 def _normalize_assistant_response(
     content: Any,
     *,
@@ -235,6 +307,29 @@ def _messages_are_sft_eligible(
         if not is_valid:
             return False
     return True
+
+
+def _session_messages_are_sft_eligible(
+    messages: list[dict[str, Any]],
+    *,
+    workflow: str,
+) -> bool:
+    if not messages:
+        return False
+    if not _messages_are_sft_eligible(messages, workflow=workflow):
+        return False
+    if workflow != "react":
+        return True
+
+    last_message = messages[-1]
+    if last_message.get("role") != "assistant":
+        return False
+
+    content = last_message.get("content")
+    if not isinstance(content, str):
+        return False
+
+    return extract_answer_block(content) is not None
 
 
 def _slugify(value: str) -> str:
