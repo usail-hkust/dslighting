@@ -1,197 +1,86 @@
 """
-DSLighting Workflows Module
+DSLighting workflows namespace.
 
-This module provides base classes and utilities for implementing custom workflows.
-It includes the BaseWorkflow class, workflow factories for creating workflow
-instances, preset workflows for common use cases, and search strategies.
+Keep this package import lightweight.
 
-**Submodules:**
-- base: Base workflow class
-- factory: Workflow factory classes
-- presets: Preset workflow configurations
-- strategies: Search strategies
-- utils: Workflow utilities
-- state: Workflow-specific state containers (AutoKaggle, DSAgent)
-- operators: Workflow-specific operators (AFlow, AutoMind, DSAgent, AutoKaggle)
+Historically this module eagerly imported every workflow factory, preset, and
+utility. That pulled in the full workflow graph on first import of
+``dslighting.workflows`` and caused circular imports in paths that only needed a
+single nested module such as ``dslighting.workflows.search.react``.
+
+To avoid that, exports are resolved lazily on first attribute access.
 """
 
-import logging
-from typing import Set
+from __future__ import annotations
 
-logger = logging.getLogger(__name__)
-
-
-def _import_with_error_logging(module_name: str, attrs: list[str]) -> tuple:
-    """Import module with explicit error logging for better debugging."""
-    try:
-        module = __import__(f"dslighting.workflows.{module_name}", fromlist=[attrs])
-        return tuple(getattr(module, attr) for attr in attrs)
-    except ImportError as e:
-        logger.error(f"Failed to import {module_name}: {e}")
-        raise
+from importlib import import_module
+from typing import Dict, Tuple
 
 
-try:
-    from .base import BaseWorkflow
-
-    # Import all factory classes
-    from .factory.base import BaseWorkflowFactory
-    from .factory import (
-        WorkflowRegistry,
-        default_workflow_registry,
-        AIDEWorkflowFactory,
-        AutoMindWorkflowFactory,
-        DSAgentWorkflowFactory,
-        DataInterpreterWorkflowFactory,
-        AutoKaggleWorkflowFactory,
-        DeepAnalyzeWorkflowFactory,
-        MyCustomAgentWorkflowFactory,
-        AFlowWorkflowFactory,
-        ReActWorkflowFactory,
-        DynamicWorkflowFactory,
-    )
-
-    # Import all preset workflows
-    from .presets import (
-        AIDE,
-        AutoKaggle,
-        DataInterpreter,
-        DeepAnalyze,
-        DSAgent,
-        AutoMind,
-        AFlow,
-        ReAct,
-        AIDEWorkflow,
-        AutoKaggleWorkflow,
-        DataInterpreterWorkflow,
-        DeepAnalyzeWorkflow,
-        DSAgentWorkflow,
-        AutoMindWorkflow,
-        AFlowWorkflow,
-        ReActWorkflow,
-    )
-
-    # Import all search strategies
-    from .strategies import (
-        SearchStrategy,
-        GreedyStrategy,
-        BeamSearchStrategy,
-        MCTSStrategy,
-        EvolutionaryStrategy,
-    )
-
-    # Import utilities
-    from .utils import (
-        build_error_history,
-        capture_llm_history,
-        llm_history_length,
-        collect_output_files,
-        extract_output_filenames_from_description,
-        find_new_output_files,
-        get_initial_sandbox_files,
-        OUTPUT_EXTENSIONS,
-        IGNORE_FILES,
-    )
-
-except ImportError as e:
-    logger.error(f"Failed to import workflows module: {e}")
-    logger.error("Please ensure all dependencies are installed.")
-    # Set all imports to None for graceful degradation
-    BaseWorkflow = None  # type: ignore
-    BaseWorkflowFactory = None  # type: ignore
-    WorkflowRegistry = None  # type: ignore
-    default_workflow_registry = None  # type: ignore
-    AIDEWorkflowFactory = None  # type: ignore
-    AutoMindWorkflowFactory = None  # type: ignore
-    DSAgentWorkflowFactory = None  # type: ignore
-    DataInterpreterWorkflowFactory = None  # type: ignore
-    AutoKaggleWorkflowFactory = None  # type: ignore
-    DeepAnalyzeWorkflowFactory = None  # type: ignore
-    MyCustomAgentWorkflowFactory = None  # type: ignore
-    AFlowWorkflowFactory = None  # type: ignore
-    ReActWorkflowFactory = None  # type: ignore
-    DynamicWorkflowFactory = None  # type: ignore
-    AIDE = None  # type: ignore
-    AutoKaggle = None  # type: ignore
-    DataInterpreter = None  # type: ignore
-    DeepAnalyze = None  # type: ignore
-    DSAgent = None  # type: ignore
-    AutoMind = None  # type: ignore
-    AFlow = None  # type: ignore
-    ReAct = None  # type: ignore
-    AIDEWorkflow = None  # type: ignore
-    AutoKaggleWorkflow = None  # type: ignore
-    DataInterpreterWorkflow = None  # type: ignore
-    DeepAnalyzeWorkflow = None  # type: ignore
-    DSAgentWorkflow = None  # type: ignore
-    AutoMindWorkflow = None  # type: ignore
-    AFlowWorkflow = None  # type: ignore
-    ReActWorkflow = None  # type: ignore
-    SearchStrategy = None  # type: ignore
-    GreedyStrategy = None  # type: ignore
-    BeamSearchStrategy = None  # type: ignore
-    MCTSStrategy = None  # type: ignore
-    EvolutionaryStrategy = None  # type: ignore
-    build_error_history = None  # type: ignore
-    capture_llm_history = None  # type: ignore
-    llm_history_length = None  # type: ignore
-    collect_output_files = None  # type: ignore
-    extract_output_filenames_from_description = None  # type: ignore
-    find_new_output_files = None  # type: ignore
-    get_initial_sandbox_files = None  # type: ignore
-    OUTPUT_EXTENSIONS: Set[str] = set()  # type: ignore
-    IGNORE_FILES: Set[str] = set()  # type: ignore
-
-    # Re-raise the original error to alert developers
-    raise
+_LAZY_EXPORTS: Dict[str, Tuple[str, str]] = {
+    "BaseWorkflow": ("dslighting.workflows.base", "BaseWorkflow"),
+    "BaseWorkflowFactory": ("dslighting.workflows.factory.base", "BaseWorkflowFactory"),
+    "WorkflowRegistry": ("dslighting.workflows.factory", "WorkflowRegistry"),
+    "default_workflow_registry": ("dslighting.workflows.factory", "default_workflow_registry"),
+    "AIDEWorkflowFactory": ("dslighting.workflows.factory", "AIDEWorkflowFactory"),
+    "AutoMindWorkflowFactory": ("dslighting.workflows.factory", "AutoMindWorkflowFactory"),
+    "DSAgentWorkflowFactory": ("dslighting.workflows.factory", "DSAgentWorkflowFactory"),
+    "DataInterpreterWorkflowFactory": ("dslighting.workflows.factory", "DataInterpreterWorkflowFactory"),
+    "AutoKaggleWorkflowFactory": ("dslighting.workflows.factory", "AutoKaggleWorkflowFactory"),
+    "DeepAnalyzeWorkflowFactory": ("dslighting.workflows.factory", "DeepAnalyzeWorkflowFactory"),
+    "MyCustomAgentWorkflowFactory": ("dslighting.workflows.factory", "MyCustomAgentWorkflowFactory"),
+    "AFlowWorkflowFactory": ("dslighting.workflows.factory", "AFlowWorkflowFactory"),
+    "ReActWorkflowFactory": ("dslighting.workflows.factory", "ReActWorkflowFactory"),
+    "DynamicWorkflowFactory": ("dslighting.workflows.factory", "DynamicWorkflowFactory"),
+    "AIDE": ("dslighting.workflows.presets", "AIDE"),
+    "AutoKaggle": ("dslighting.workflows.presets", "AutoKaggle"),
+    "DataInterpreter": ("dslighting.workflows.presets", "DataInterpreter"),
+    "DeepAnalyze": ("dslighting.workflows.presets", "DeepAnalyze"),
+    "DSAgent": ("dslighting.workflows.presets", "DSAgent"),
+    "AutoMind": ("dslighting.workflows.presets", "AutoMind"),
+    "AFlow": ("dslighting.workflows.presets", "AFlow"),
+    "ReAct": ("dslighting.workflows.presets", "ReAct"),
+    "AIDEWorkflow": ("dslighting.workflows.presets", "AIDEWorkflow"),
+    "AutoKaggleWorkflow": ("dslighting.workflows.presets", "AutoKaggleWorkflow"),
+    "DataInterpreterWorkflow": ("dslighting.workflows.presets", "DataInterpreterWorkflow"),
+    "DeepAnalyzeWorkflow": ("dslighting.workflows.presets", "DeepAnalyzeWorkflow"),
+    "DSAgentWorkflow": ("dslighting.workflows.presets", "DSAgentWorkflow"),
+    "AutoMindWorkflow": ("dslighting.workflows.presets", "AutoMindWorkflow"),
+    "AFlowWorkflow": ("dslighting.workflows.presets", "AFlowWorkflow"),
+    "ReActWorkflow": ("dslighting.workflows.presets", "ReActWorkflow"),
+    "SearchStrategy": ("dslighting.workflows.strategies", "SearchStrategy"),
+    "GreedyStrategy": ("dslighting.workflows.strategies", "GreedyStrategy"),
+    "BeamSearchStrategy": ("dslighting.workflows.strategies", "BeamSearchStrategy"),
+    "MCTSStrategy": ("dslighting.workflows.strategies", "MCTSStrategy"),
+    "EvolutionaryStrategy": ("dslighting.workflows.strategies", "EvolutionaryStrategy"),
+    "build_error_history": ("dslighting.workflows.utils", "build_error_history"),
+    "capture_llm_history": ("dslighting.workflows.utils", "capture_llm_history"),
+    "llm_history_length": ("dslighting.workflows.utils", "llm_history_length"),
+    "collect_output_files": ("dslighting.workflows.utils", "collect_output_files"),
+    "extract_output_filenames_from_description": (
+        "dslighting.workflows.utils",
+        "extract_output_filenames_from_description",
+    ),
+    "find_new_output_files": ("dslighting.workflows.utils", "find_new_output_files"),
+    "get_initial_sandbox_files": ("dslighting.workflows.utils", "get_initial_sandbox_files"),
+    "OUTPUT_EXTENSIONS": ("dslighting.workflows.utils", "OUTPUT_EXTENSIONS"),
+    "IGNORE_FILES": ("dslighting.workflows.utils", "IGNORE_FILES"),
+}
 
 
-__all__ = [
-    "BaseWorkflow",
-    "BaseWorkflowFactory",
-    "WorkflowRegistry",
-    "default_workflow_registry",
-    "AIDEWorkflowFactory",
-    "AutoMindWorkflowFactory",
-    "DSAgentWorkflowFactory",
-    "DataInterpreterWorkflowFactory",
-    "AutoKaggleWorkflowFactory",
-    "DeepAnalyzeWorkflowFactory",
-    "MyCustomAgentWorkflowFactory",
-    "AFlowWorkflowFactory",
-    "ReActWorkflowFactory",
-    "DynamicWorkflowFactory",
-    # presets
-    "AIDE",
-    "AutoKaggle",
-    "DataInterpreter",
-    "DeepAnalyze",
-    "DSAgent",
-    "AutoMind",
-    "AFlow",
-    "ReAct",
-    "AIDEWorkflow",
-    "AutoKaggleWorkflow",
-    "DataInterpreterWorkflow",
-    "DeepAnalyzeWorkflow",
-    "DSAgentWorkflow",
-    "AutoMindWorkflow",
-    "AFlowWorkflow",
-    "ReActWorkflow",
-    # strategies
-    "SearchStrategy",
-    "GreedyStrategy",
-    "BeamSearchStrategy",
-    "MCTSStrategy",
-    "EvolutionaryStrategy",
-    # utilities
-    "build_error_history",
-    "capture_llm_history",
-    "llm_history_length",
-    "collect_output_files",
-    "extract_output_filenames_from_description",
-    "find_new_output_files",
-    "get_initial_sandbox_files",
-    "OUTPUT_EXTENSIONS",
-    "IGNORE_FILES",
-]
+def __getattr__(name: str):
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(f"module 'dslighting.workflows' has no attribute '{name}'")
+
+    module_name, attr_name = _LAZY_EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attr_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY_EXPORTS.keys()))
+
+
+__all__ = sorted(_LAZY_EXPORTS.keys())

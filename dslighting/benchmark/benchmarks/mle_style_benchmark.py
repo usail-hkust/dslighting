@@ -14,7 +14,7 @@ from dslighting.benchmark.core.config_loader import (
     BaseBenchmarkConfigLoader,
     create_problem_entry,
 )
-from dslighting.benchmark.evaluation import TaskEvaluationService
+from dslighting.benchmark.evaluation.service import TaskEvaluationService
 from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
 from dslighting.benchmark.evaluation.models import EvaluationOutcome
 from dslighting.benchmark.reporting import CompetitionReport, CompetitionReportBuilder

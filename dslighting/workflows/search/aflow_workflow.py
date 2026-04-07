@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import shutil # Import shutil
 
 from dslighting.state.search.experience import Experience
-from dslighting.benchmark.evaluation import TaskEvaluationService
+from dslighting.benchmark.evaluation.service import TaskEvaluationService
 from dslighting.benchmark.evaluation.contract_builder import build_task_evaluation_contract
 from dslighting.services.llm import LLMService
 from dslighting.core.types import WorkflowCandidate

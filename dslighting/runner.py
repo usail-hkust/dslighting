@@ -30,9 +30,9 @@ from dslighting.core.tasks import (
     QATaskAdapter,
     TaskResolver,
 )
-from dslighting.benchmark.evaluation import TaskEvaluationService
-from dslighting.workflows.factory import (
-    BaseWorkflowFactory,
+from dslighting.benchmark.evaluation.service import TaskEvaluationService
+from dslighting.workflows.factory.base import BaseWorkflowFactory
+from dslighting.workflows.factory.builtin import (
     AutoMindWorkflowFactory,
     AIDEWorkflowFactory,
     DSAgentWorkflowFactory,
