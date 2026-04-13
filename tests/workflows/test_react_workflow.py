@@ -7,9 +7,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from dslighting.config import OutputContractConfig
 from dslighting.ops.presets.react import ReActOperator
 from dslighting.utils.typing import ExecutionResult
-from dslighting.workflows.search.react_workflow import ReActWorkflow
+from dslighting.workflows.search.react.workflow import ReActWorkflow
 
 
 class _DummyWorkspaceService:
@@ -93,7 +94,9 @@ class _FakeExecuteOperator:
 
 
 @pytest.mark.asyncio
-async def test_react_workflow_executes_via_shared_execute_operator_and_saves_messages(tmp_path) -> None:
+async def test_react_workflow_executes_via_shared_execute_operator_and_saves_messages(
+    tmp_path,
+) -> None:
     workspace = _DummyWorkspaceService(tmp_path / "workspace")
     llm = _DummyLLMService(
         [
@@ -140,7 +143,7 @@ async def test_react_workflow_executes_via_shared_execute_operator_and_saves_mes
     assert llm.calls[0][0]["role"] == "system"
     assert "Role:" in llm.calls[0][0]["content"]
     assert "Task Goal and Data Overview:" in llm.calls[0][0]["content"]
-    assert 'exact filename `submission.csv`' not in llm.calls[0][0]["content"]
+    assert "exact filename `submission.csv`" not in llm.calls[0][0]["content"]
 
 
 @pytest.mark.asyncio
@@ -167,6 +170,63 @@ async def test_react_workflow_allows_plain_answer_without_artifact_gate(tmp_path
 
     assert not output_path.exists()
     assert len(llm.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_react_workflow_rejects_final_answer_until_output_exists(tmp_path) -> None:
+    workspace = _DummyWorkspaceService(tmp_path / "workspace")
+    llm = _DummyLLMService(
+        [
+            "<Think>Done.</Think><Answer>final</Answer>",
+            "<Think>Create output.</Think><Action>```python\nprint('write')\n```</Action>",
+            "<Think>Now done.</Think><Answer>final</Answer>",
+        ]
+    )
+
+    workflow = ReActWorkflow(
+        operators={
+            "react": ReActOperator(max_steps=3),
+            "execute": _FakeExecuteOperator(
+                workspace,
+                stdout="write",
+                create_output_name="answer.txt",
+            ),
+        },
+        services={
+            "llm": llm,
+            "sandbox": SimpleNamespace(),
+            "workspace": workspace,
+            "output_contract_config": OutputContractConfig(
+                require_output_before_completion=True,
+                missing_output_feedback_retries=1,
+            ),
+        },
+        agent_config={},
+    )
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    output_path = tmp_path / "out" / "answer.txt"
+
+    await workflow.solve(
+        description="Write the answer.",
+        io_instructions="Write the answer to answer.txt.",
+        data_dir=data_dir,
+        output_path=output_path,
+    )
+
+    assert len(llm.calls) == 3
+    assert (workspace.get_path("sandbox_workdir") / "answer.txt").exists()
+    feedback_messages = [
+        message["content"]
+        for call in llm.calls
+        for message in call
+        if "Final answer rejected" in message["content"]
+    ]
+    assert feedback_messages
+    messages_path = workspace.get_path("artifacts") / "messages.json"
+    saved_messages = json.loads(messages_path.read_text(encoding="utf-8"))
+    assert any("SubmissionStatus" in message["content"] for message in saved_messages)
 
 
 @pytest.mark.asyncio

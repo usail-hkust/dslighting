@@ -53,12 +53,18 @@ class ReActOperator(Operator):
         _ = expected_output_filename
         return parse_react_reply(assistant_reply)
 
-    def build_execution_message(self, exec_result) -> str:
+    def build_execution_message(
+        self,
+        exec_result,
+        *,
+        critical_footer: Optional[str] = None,
+    ) -> str:
         return build_execution_message(
             exec_result,
             obs_max_tokens=self.obs_max_tokens,
             obs_head_tokens=self.obs_head_tokens,
             obs_tail_tokens=self.obs_tail_tokens,
+            critical_footer=critical_footer,
         )
 
 

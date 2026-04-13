@@ -71,6 +71,50 @@ class DataAnalysisConfig(BaseModel):
     tabular_tolerant_fallback: bool = True
 
 
+class AgentRuntimeObservationConfig(BaseModel):
+    """Shared observation-window settings for agent workflows."""
+
+    max_tokens: int = 4000
+    head_tokens: int = 2000
+    tail_tokens: int = 2000
+    max_chars: Optional[int] = None
+
+
+class AgentRuntimeContextConfig(BaseModel):
+    """Shared prompt-history window settings for agent workflows."""
+
+    strategy: Literal["recent_turns", "summarize_old_turns", "hybrid"] = "hybrid"
+    max_history_chars: int = 48000
+    keep_recent_turns: int = 14
+    max_observation_chars: int = 16000
+    summary_trigger_turns: int = 18
+    summary_max_chars: int = 4000
+    keep_latest_feedback_only: bool = True
+    max_feedback_retries: int = 2
+    recent_observation_window: int = 8
+    max_feedback_chars: int = 1200
+
+
+class AgentRuntimeConfig(BaseModel):
+    """Shared runtime settings consumed by agent workflows."""
+
+    max_steps: int = 10
+    observation: AgentRuntimeObservationConfig = Field(
+        default_factory=AgentRuntimeObservationConfig
+    )
+    context: AgentRuntimeContextConfig = Field(default_factory=AgentRuntimeContextConfig)
+
+
+class OutputContractConfig(BaseModel):
+    """Shared output artifact contract settings."""
+
+    require_output_before_completion: bool = False
+    missing_output_feedback_retries: int = 0
+    max_preview_rows: int = 3
+    max_candidate_files: int = 20
+    allow_runner_fallback: bool = True
+
+
 class TaskConfig(BaseModel):
     """Defines the problem to be solved."""
 
@@ -242,6 +286,8 @@ class DSLightingConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     data_analysis: DataAnalysisConfig = Field(default_factory=DataAnalysisConfig)
+    agent_runtime: AgentRuntimeConfig = Field(default_factory=AgentRuntimeConfig)
+    output_contract: OutputContractConfig = Field(default_factory=OutputContractConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
 
     # Paradigm-specific configurations
@@ -249,6 +295,4 @@ class DSLightingConfig(BaseModel):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     optimizer: Optional[OptimizerConfig] = None
 
-    model_config = ConfigDict(
-        extra="forbid"  # Pydantic configuration
-    )
+    model_config = ConfigDict(extra="forbid")  # Pydantic configuration

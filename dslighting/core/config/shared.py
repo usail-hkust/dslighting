@@ -12,10 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 # Valid workflow names - shared constant
-VALID_WORKFLOW_NAMES = frozenset({
-    "aide", "autokaggle", "data_interpreter",
-    "automind", "dsagent", "deepanalyze", "react"
-})
+VALID_WORKFLOW_NAMES = frozenset(
+    {"aide", "autokaggle", "data_interpreter", "automind", "dsagent", "deepanalyze", "react"}
+)
 
 # Workflow to config key mapping - shared constant
 WORKFLOW_TO_CONFIG_KEY = {
@@ -25,7 +24,7 @@ WORKFLOW_TO_CONFIG_KEY = {
     "deepanalyze": "agent.search",
     "automind": "workflow.params",
     "dsagent": "workflow.params",
-    "react": "workflow.params",
+    "react": "agent_runtime",
 }
 
 
@@ -63,11 +62,7 @@ def get_config_key_for_workflow(workflow: str) -> str:
     return WORKFLOW_TO_CONFIG_KEY[workflow]
 
 
-def deep_merge(
-    base: Dict[str, Any],
-    override: Dict[str, Any],
-    path: str = ""
-) -> Dict[str, Any]:
+def deep_merge(base: Dict[str, Any], override: Dict[str, Any], path: str = "") -> Dict[str, Any]:
     """
     Deep merge two dictionaries.
 
@@ -89,11 +84,7 @@ def deep_merge(
 
     for key, value in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = deep_merge(
-                result[key],
-                value,
-                f"{path}.{key}" if path else key
-            )
+            result[key] = deep_merge(result[key], value, f"{path}.{key}" if path else key)
         else:
             result[key] = value
 
@@ -123,10 +114,7 @@ def get_workflow_for_benchmark(benchmark_name: str, default: str = "aide") -> st
     return default
 
 
-def apply_env_overrides(
-    config: Dict[str, Any],
-    env_mapping: Dict[str, tuple]
-) -> Dict[str, Any]:
+def apply_env_overrides(config: Dict[str, Any], env_mapping: Dict[str, tuple]) -> Dict[str, Any]:
     """
     Apply environment variable overrides to config.
 
@@ -164,9 +152,7 @@ def apply_env_overrides(
             if part not in current:
                 current[part] = {}
             elif not isinstance(current[part], dict):
-                logger.warning(
-                    f"Cannot apply env override: {'.'.join(parts[:-1])} is not a dict"
-                )
+                logger.warning(f"Cannot apply env override: {'.'.join(parts[:-1])} is not a dict")
                 break
             current = current[part]
         else:
@@ -175,12 +161,9 @@ def apply_env_overrides(
                 converted_value = converter(value)
                 current[parts[-1]] = converted_value
                 logger.debug(
-                    f"Applied env override: {config_path} = {converted_value} "
-                    f"(from {env_var})"
+                    f"Applied env override: {config_path} = {converted_value} " f"(from {env_var})"
                 )
             except (ValueError, TypeError) as e:
-                logger.warning(
-                    f"Failed to convert env var {env_var}={value!r}: {e}"
-                )
+                logger.warning(f"Failed to convert env var {env_var}={value!r}: {e}")
 
     return result

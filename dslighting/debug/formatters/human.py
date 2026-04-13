@@ -285,27 +285,28 @@ class HumanStructuredFormatter:
         *,
         section_map: list | None,
     ) -> list[str]:
-        """Render request content; use section_map for structured preview if available."""
+        """Render the exact sanitized request content sent to the LLM.
+
+        request_messages must be lossless in console output. Other payload types can
+        still use max_inline_chars, but LLM request rendering should not fold sections
+        or append a preview-only "[truncated]" marker because that makes the console
+        disagree with the stored payload and the provider request body.
+        """
+        _ = section_map
         if not isinstance(content, list):
-            text = content if isinstance(content, str) else None
-            if text and section_map:
-                return self._render_text_with_section_map(text, section_map)
-            return self._indent_lines(self._stringify(content), prefix="      ")
+            return self._indent_lines(self._stringify_full(content), prefix="      ")
 
         lines: list[str] = []
         image_idx = 0
         for item in content:
             if not isinstance(item, dict):
-                lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
+                lines.extend(self._indent_lines(self._stringify_full(item), prefix="      "))
                 continue
 
             item_type = item.get("type")
             if item_type == "text":
                 text = str(item.get("text", ""))
-                if section_map:
-                    lines.extend(self._render_text_with_section_map(text, section_map))
-                else:
-                    lines.extend(self._indent_lines(self._stringify(text), prefix="      "))
+                lines.extend(self._indent_lines(text, prefix="      "))
                 continue
 
             if item_type == "image_url":
@@ -319,8 +320,8 @@ class HumanStructuredFormatter:
                     )
                     continue
 
-            lines.extend(self._indent_lines(self._stringify(item), prefix="      "))
-        return lines or self._indent_lines(self._stringify(content), prefix="      ")
+            lines.extend(self._indent_lines(self._stringify_full(item), prefix="      "))
+        return lines or self._indent_lines(self._stringify_full(content), prefix="      ")
 
     def _render_response_payload(self, payload: dict[str, Any]) -> list[str]:
         lines: list[str] = []
@@ -485,6 +486,12 @@ class HumanStructuredFormatter:
         if len(text) > self.max_inline_chars:
             return text[: self.max_inline_chars] + "\n... [truncated]"
         return text
+
+    @staticmethod
+    def _stringify_full(value: Any) -> str:
+        if isinstance(value, str):
+            return value
+        return json.dumps(value, ensure_ascii=False, indent=2, default=str)
 
     @staticmethod
     def _indent_lines(value: str, *, prefix: str) -> list[str]:

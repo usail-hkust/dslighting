@@ -92,14 +92,24 @@ def build_execution_message(
     obs_max_tokens: int,
     obs_head_tokens: int,
     obs_tail_tokens: int,
+    critical_footer: str | None = None,
 ) -> str:
     """Render execution output back into the ReAct conversation."""
-    observation = truncate_observation(
+    execution_output = truncate_observation(
         format_observation(exec_result),
         obs_max_tokens=obs_max_tokens,
         obs_head_tokens=obs_head_tokens,
         obs_tail_tokens=obs_tail_tokens,
     )
+    if critical_footer:
+        observation = (
+            "<ExecutionOutput>\n"
+            f"{execution_output}\n"
+            "</ExecutionOutput>\n"
+            f"{critical_footer.strip()}"
+        )
+    else:
+        observation = execution_output
     return wrap_observation(observation)
 
 

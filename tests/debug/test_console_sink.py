@@ -31,6 +31,21 @@ def _event(
     )
 
 
+def test_human_formatter_renders_full_request_messages() -> None:
+    store = PayloadStore(output_dir=None, redaction_policy=RedactionPolicy(), dedupe_enabled=True)
+    long_content = "A" * 200 + "\nTAIL_MARKER_SHOULD_REMAIN"
+    request_ref = store.store(kind="request_messages", body=[{"role": "user", "content": long_content}])
+    formatter = HumanStructuredFormatter(max_inline_chars=40, use_color=False)
+
+    block = formatter.format_generic_event(
+        _event("llm.request.prepared", "call_1", payload_refs={"request_messages": request_ref}),
+        store,
+    )
+
+    assert "TAIL_MARKER_SHOULD_REMAIN" in block
+    assert "... [truncated]" not in block
+
+
 @pytest.mark.asyncio
 async def test_console_sink_marks_reused_payloads(monkeypatch) -> None:
     blocks: list[str] = []

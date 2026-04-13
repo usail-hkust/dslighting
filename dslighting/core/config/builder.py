@@ -13,8 +13,10 @@ from typing_extensions import ClassVar
 
 from dslighting.config import (
     DSLightingConfig,
+    AgentRuntimeConfig,
     DataAnalysisConfig,
     LLMConfig,
+    OutputContractConfig,
     RunConfig,
     WorkflowConfig,
     AgentConfig,
@@ -35,11 +37,10 @@ from dslighting.core.visualization_policy import (
     coerce_visualization_policy,
     consume_visualization_policy,
 )
-from dslighting.workflows.search.react.context_manager import (
-    normalize_react_context_params,
-)
-from dslighting.workflows.search.react.validation import (
-    validate_react_operator_params,
+from dslighting.core.config.runtime_params import (
+    LEGACY_REACT_RUNTIME_KEYS,
+    normalize_agent_runtime_params,
+    normalize_output_contract_params,
 )
 
 # Import shared config utilities
@@ -81,9 +82,7 @@ class ConfigBuilder:
 
     # Workflow to config key mapping (imported from shared module)
     WORKFLOW_TO_CONFIG_KEY: ClassVar[Dict[str, str]] = WORKFLOW_TO_CONFIG_KEY
-    _REACT_PARAM_KEYS: ClassVar[frozenset[str]] = frozenset(
-        {"max_steps", "obs_max_tokens", "obs_head_tokens", "obs_tail_tokens", "context"}
-    )
+    _LEGACY_REACT_PARAM_KEYS: ClassVar[frozenset[str]] = LEGACY_REACT_RUNTIME_KEYS
 
     def build_config(
         self,
@@ -95,6 +94,8 @@ class ConfigBuilder:
         provider: str = None,
         temperature: float = None,
         data_analysis: Optional[Dict[str, Any]] = None,
+        agent_runtime: Optional[Dict[str, Any]] = None,
+        output_contract: Optional[Dict[str, Any]] = None,
         max_iterations: int = None,
         num_drafts: int = None,
         workspace_dir: str = None,
@@ -102,7 +103,7 @@ class ConfigBuilder:
         keep_workspace: bool = None,
         keep_workspace_on_failure: bool = None,
         visualization_policy: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> DSLightingConfig:
         """
         Build DSLightingConfig by merging all configuration sources.
@@ -114,6 +115,9 @@ class ConfigBuilder:
             api_base: API base URL
             provider: LLM provider (for LiteLLM)
             temperature: LLM temperature
+            data_analysis: Shared data analysis settings
+            agent_runtime: Shared agent runtime settings
+            output_contract: Shared output artifact contract settings
             max_iterations: Maximum agent iterations
             num_drafts: Number of drafts to generate
             workspace_dir: Workspace directory
@@ -142,6 +146,8 @@ class ConfigBuilder:
             provider=provider,
             temperature=temperature,
             data_analysis=data_analysis,
+            agent_runtime=agent_runtime,
+            output_contract=output_contract,
             max_iterations=max_iterations,
             num_drafts=num_drafts,
             workspace_dir=workspace_dir,
@@ -149,7 +155,7 @@ class ConfigBuilder:
             keep_workspace=keep_workspace,
             keep_workspace_on_failure=keep_workspace_on_failure,
             visualization_policy=visualization_policy,
-            **kwargs
+            **kwargs,
         )
         config = self._deep_merge(config, user_config)
 
@@ -171,13 +177,12 @@ class ConfigBuilder:
 
         # DSLighting settings
         if os.getenv(ENV_DSLIGHTING_DEFAULT_WORKFLOW):
-            config.setdefault("workflow", {})["name"] = os.getenv(
-                ENV_DSLIGHTING_DEFAULT_WORKFLOW
-            )
+            config.setdefault("workflow", {})["name"] = os.getenv(ENV_DSLIGHTING_DEFAULT_WORKFLOW)
 
         if os.getenv(ENV_DSLIGHTING_WORKSPACE_DIR):
-            config.setdefault("run", {}).setdefault("parameters", {})["workspace_dir"] = \
-                os.getenv(ENV_DSLIGHTING_WORKSPACE_DIR)
+            config.setdefault("run", {}).setdefault("parameters", {})["workspace_dir"] = os.getenv(
+                ENV_DSLIGHTING_WORKSPACE_DIR
+            )
 
         return config
 
@@ -191,6 +196,8 @@ class ConfigBuilder:
         provider: str = None,
         temperature: float = None,
         data_analysis: Optional[Dict[str, Any]] = None,
+        agent_runtime: Optional[Dict[str, Any]] = None,
+        output_contract: Optional[Dict[str, Any]] = None,
         max_iterations: int = None,
         num_drafts: int = None,
         workspace_dir: str = None,
@@ -198,7 +205,7 @@ class ConfigBuilder:
         keep_workspace: bool = None,
         keep_workspace_on_failure: bool = None,
         visualization_policy: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         Build user configuration from parameters.
@@ -223,16 +230,24 @@ class ConfigBuilder:
         remaining_kwargs = {}
 
         for key, value in kwargs.items():
-            if key in ['aide', 'autokaggle', 'data_interpreter', 'automind', 'dsagent', 'deepanalyze', 'react']:
+            if key == "react":
+                raise ConfigurationError(
+                    "`react` runtime config is no longer supported. Use "
+                    "`agent_runtime={...}` for max steps/observation/context settings "
+                    "and `output_contract={...}` for output artifact gating.",
+                    error_code="CFG-002",
+                )
+            if key in [
+                "aide",
+                "autokaggle",
+                "data_interpreter",
+                "automind",
+                "dsagent",
+                "deepanalyze",
+            ]:
                 # Nested dictionary format (v1.9.0+)
                 if isinstance(value, dict):
                     workflow_specific_params[key] = value
-                elif key == "react":
-                    raise ConfigurationError(
-                        "`react` must be a dict when provided, e.g. "
-                        "`react={'max_steps': 12, 'obs_max_tokens': 1200, 'context': {'keep_recent_turns': 14}}`.",
-                        error_code="CFG-002",
-                    )
             else:
                 remaining_kwargs[key] = value
 
@@ -241,28 +256,25 @@ class ConfigBuilder:
             wf_params = dict(wf_params)
             wf_visualization_policy = consume_visualization_policy(wf_params)
             if wf_visualization_policy is not None:
-                config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = wf_visualization_policy
+                config.setdefault("agent", {}).setdefault("visualization", {})[
+                    "policy"
+                ] = wf_visualization_policy
 
-            if wf_name == 'autokaggle':
+            if wf_name == "autokaggle":
                 # AutoKaggle parameters → agent.autokaggle
                 config.setdefault("agent", {})["autokaggle"] = wf_params
-            elif wf_name == 'aide':
+            elif wf_name == "aide":
                 # AIDE parameters → agent.search
                 config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
-            elif wf_name in ['automind', 'dsagent']:
+            elif wf_name in ["automind", "dsagent"]:
                 # AutoMind/DS-Agent parameters → workflow.params
                 config.setdefault("workflow", {}).setdefault("params", {}).update(wf_params)
-            elif wf_name == 'data_interpreter':
+            elif wf_name == "data_interpreter":
                 # DataInterpreter parameters → agent.search (for max_iterations)
                 config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
-            elif wf_name == 'deepanalyze':
+            elif wf_name == "deepanalyze":
                 # DeepAnalyze parameters → agent.search
                 config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
-            elif wf_name == 'react':
-                # ReAct parameters → workflow.params
-                config.setdefault("workflow", {}).setdefault("params", {}).update(
-                    self._normalize_react_params(wf_params, source="react")
-                )
 
         # ========== Common parameters ==========
         if workflow is not None:
@@ -294,8 +306,26 @@ class ConfigBuilder:
                 )
             config.setdefault("data_analysis", {}).update(data_analysis)
 
+        if agent_runtime is not None:
+            try:
+                config.setdefault("agent_runtime", {}).update(
+                    normalize_agent_runtime_params(agent_runtime)
+                )
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(str(exc), error_code="CFG-002") from None
+
+        if output_contract is not None:
+            try:
+                config.setdefault("output_contract", {}).update(
+                    normalize_output_contract_params(output_contract)
+                )
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(str(exc), error_code="CFG-002") from None
+
         if max_iterations is not None:
-            config.setdefault("agent", {}).setdefault("search", {})["max_iterations"] = max_iterations
+            config.setdefault("agent", {}).setdefault("search", {})[
+                "max_iterations"
+            ] = max_iterations
             config.setdefault("run", {})["total_steps"] = max_iterations
 
         if num_drafts is not None:
@@ -305,7 +335,9 @@ class ConfigBuilder:
             config.setdefault("run", {})["run_name"] = run_name
 
         if workspace_dir is not None:
-            config.setdefault("workflow", {}).setdefault("params", {})["workspace_base_dir"] = workspace_dir
+            config.setdefault("workflow", {}).setdefault("params", {})[
+                "workspace_base_dir"
+            ] = workspace_dir
 
         if keep_workspace is not None:
             config.setdefault("run", {})["keep_all_workspaces"] = keep_workspace
@@ -320,7 +352,9 @@ class ConfigBuilder:
 
         flat_visualization_policy = consume_visualization_policy(remaining_kwargs)
         if flat_visualization_policy is not None:
-            config.setdefault("agent", {}).setdefault("visualization", {})["policy"] = flat_visualization_policy
+            config.setdefault("agent", {}).setdefault("visualization", {})[
+                "policy"
+            ] = flat_visualization_policy
 
         if workflow == "react":
             self._reject_legacy_react_flat_kwargs(remaining_kwargs)
@@ -348,7 +382,9 @@ class ConfigBuilder:
 
             # If both api_key and api_keys exist, prefer api_keys (key pool takes priority)
             if "api_keys" in llm_dict and "api_key" in llm_dict:
-                logger.debug("Both api_key and api_keys present. Removing api_key in favor of api_keys for key rotation.")
+                logger.debug(
+                    "Both api_key and api_keys present. Removing api_key in favor of api_keys for key rotation."
+                )
                 del llm_dict["api_key"]
 
             llm_config = LLMConfig(**llm_dict)
@@ -375,9 +411,7 @@ class ConfigBuilder:
                 if isinstance(autokaggle_dict, dict) and "enforce_no_plotting" in autokaggle_dict:
                     legacy_value = autokaggle_dict.pop("enforce_no_plotting")
                 if legacy_value is not None:
-                    visualization_dict["policy"] = (
-                        "no_display" if legacy_value else "allow"
-                    )
+                    visualization_dict["policy"] = "no_display" if legacy_value else "allow"
             if visualization_dict:
                 agent_dict["visualization"] = visualization_dict
         agent_config = AgentConfig(**agent_dict)
@@ -389,6 +423,14 @@ class ConfigBuilder:
         # Extract data-analysis config
         data_analysis_dict = config_dict.get("data_analysis", {})
         data_analysis_config = DataAnalysisConfig(**data_analysis_dict)
+
+        # Extract shared agent runtime config
+        agent_runtime_dict = config_dict.get("agent_runtime", {})
+        agent_runtime_config = AgentRuntimeConfig(**agent_runtime_dict)
+
+        # Extract shared output contract config
+        output_contract_dict = config_dict.get("output_contract", {})
+        output_contract_config = OutputContractConfig(**output_contract_dict)
 
         # Extract scheduler config
         scheduler_dict = config_dict.get("scheduler", {})
@@ -402,6 +444,8 @@ class ConfigBuilder:
             agent=agent_config,
             sandbox=sandbox_config,
             data_analysis=data_analysis_config,
+            agent_runtime=agent_runtime_config,
+            output_contract=output_contract_config,
             scheduler=scheduler_config,
         )
 
@@ -420,77 +464,21 @@ class ConfigBuilder:
         """
         return deep_merge(base, update)
 
-    def _normalize_react_params(
-        self,
-        params: Dict[str, Any],
-        *,
-        source: str,
-    ) -> Dict[str, Any]:
-        if not isinstance(params, dict):
-            raise ConfigurationError(
-                f"`{source}` must be a dictionary",
-                error_code="CFG-002",
-            )
-
-        unknown = sorted(key for key in params if key not in self._REACT_PARAM_KEYS)
-        if unknown:
-            raise ConfigurationError(
-                f"Unknown ReAct parameters in `{source}`: {unknown}. "
-                f"Allowed keys: {sorted(self._REACT_PARAM_KEYS)}",
-                error_code="CFG-002",
-            )
-
-        normalized: Dict[str, Any] = {}
-        for key, value in params.items():
-            if key == "context":
-                try:
-                    normalized[key] = normalize_react_context_params(value)
-                except (TypeError, ValueError) as exc:
-                    raise ConfigurationError(
-                        f"Invalid `{source}.context`: {exc}",
-                        error_code="CFG-002",
-                    ) from None
-                continue
-            try:
-                coerced = int(value)
-            except (TypeError, ValueError):
-                raise ConfigurationError(
-                    f"`{source}.{key}` must be an integer",
-                    error_code="CFG-002",
-                ) from None
-            if coerced <= 0:
-                raise ConfigurationError(
-                    f"`{source}.{key}` must be > 0",
-                    error_code="CFG-002",
-                )
-            normalized[key] = coerced
-
-        obs_max_tokens = normalized.get("obs_max_tokens", 4000)
-        obs_head_tokens = normalized.get("obs_head_tokens", 2000)
-        obs_tail_tokens = normalized.get("obs_tail_tokens", 2000)
-        try:
-            validate_react_operator_params(
-                obs_max_tokens=obs_max_tokens,
-                obs_head_tokens=obs_head_tokens,
-                obs_tail_tokens=obs_tail_tokens,
-            )
-        except ValueError as exc:
-            raise ConfigurationError(str(exc), error_code="CFG-002") from None
-        return normalized
-
     def _reject_legacy_react_flat_kwargs(self, remaining_kwargs: Dict[str, Any]) -> None:
-        invalid_flat = sorted(key for key in self._REACT_PARAM_KEYS if key in remaining_kwargs)
+        invalid_flat = sorted(
+            key for key in self._LEGACY_REACT_PARAM_KEYS if key in remaining_kwargs
+        )
         if invalid_flat:
             raise ConfigurationError(
-                "ReAct parameters must be passed via workflow namespace, e.g. "
-                "`react={'max_steps': 12, 'obs_max_tokens': 1200, 'context': {'keep_recent_turns': 14}}`. "
+                "Legacy ReAct runtime parameters are no longer supported. "
+                "Use `agent_runtime={...}` with nested `observation` and `context` settings. "
                 f"Invalid flat keys: {invalid_flat}",
                 error_code="CFG-002",
             )
 
         if "react" in remaining_kwargs:
             raise ConfigurationError(
-                "`react` must be a dict namespace, not a flat runtime parameter.",
+                "`react` runtime config is no longer supported. Use `agent_runtime={...}`.",
                 error_code="CFG-002",
             )
 
@@ -507,7 +495,7 @@ class ConfigBuilder:
             raise ConfigurationError(
                 "Configuration must be a dictionary",
                 error_code="CFG-001",
-                suggestion="Ensure the configuration is passed as a valid dictionary object"
+                suggestion="Ensure the configuration is passed as a valid dictionary object",
             )
 
         # Validate workflow name
@@ -518,8 +506,11 @@ class ConfigBuilder:
                     f"Invalid workflow name: '{workflow_name}'. "
                     f"Must be one of: {', '.join(sorted(VALID_WORKFLOW_NAMES))}",
                     error_code="CFG-002",
-                    details={"workflow_name": workflow_name, "valid_workflows": list(VALID_WORKFLOW_NAMES)},
-                    suggestion=f"Use one of the valid workflow names: {', '.join(sorted(VALID_WORKFLOW_NAMES))}"
+                    details={
+                        "workflow_name": workflow_name,
+                        "valid_workflows": list(VALID_WORKFLOW_NAMES),
+                    },
+                    suggestion=f"Use one of the valid workflow names: {', '.join(sorted(VALID_WORKFLOW_NAMES))}",
                 )
             if workflow_name == "react":
                 workflow_params = config_dict.get("workflow", {}).get("params", {}) or {}
@@ -530,35 +521,44 @@ class ConfigBuilder:
                         error_code="CFG-002",
                     )
 
-                allowed_keys = set(self._REACT_PARAM_KEYS) | {"workspace_base_dir"}
+                allowed_keys = {"workspace_base_dir"}
                 unknown = sorted(key for key in workflow_params if key not in allowed_keys)
                 if unknown:
                     raise ConfigurationError(
                         f"Unknown workflow.params keys for workflow='react': {unknown}. "
-                        f"Allowed keys: {sorted(allowed_keys)}",
+                        "Runtime settings must use `agent_runtime={...}`.",
                         error_code="CFG-002",
                     )
-
-                react_params = {
-                    key: value for key, value in workflow_params.items() if key in self._REACT_PARAM_KEYS
-                }
-                self._normalize_react_params(react_params, source="workflow.params")
 
                 invalid_run_keys = []
                 if "react" in run_parameters:
                     invalid_run_keys.append("run.parameters.react")
                 invalid_run_keys.extend(
                     f"run.parameters.{key}"
-                    for key in self._REACT_PARAM_KEYS
+                    for key in self._LEGACY_REACT_PARAM_KEYS
                     if key in run_parameters
                 )
                 if invalid_run_keys:
                     raise ConfigurationError(
                         "Legacy ReAct runtime parameter paths are no longer supported. "
-                        "Use `workflow.params` instead. "
+                        "Use `agent_runtime` instead. "
                         f"Invalid keys: {sorted(invalid_run_keys)}",
                         error_code="CFG-002",
                     )
+
+        agent_runtime_config = config_dict.get("agent_runtime")
+        if agent_runtime_config is not None:
+            try:
+                normalize_agent_runtime_params(agent_runtime_config)
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(str(exc), error_code="CFG-002") from None
+
+        output_contract_config = config_dict.get("output_contract")
+        if output_contract_config is not None:
+            try:
+                normalize_output_contract_params(output_contract_config)
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(str(exc), error_code="CFG-002") from None
 
         # Validate LLM config mutual exclusion
         llm_config = config_dict.get("llm", {})
@@ -567,8 +567,11 @@ class ConfigBuilder:
                 raise ConfigurationError(
                     "Only one of 'api_key' or 'api_keys' can be set, not both",
                     error_code="CFG-003",
-                    details={"has_api_key": "api_key" in llm_config, "has_api_keys": "api_keys" in llm_config},
-                    suggestion="Remove either 'api_key' or 'api_keys' from the LLM configuration"
+                    details={
+                        "has_api_key": "api_key" in llm_config,
+                        "has_api_keys": "api_keys" in llm_config,
+                    },
+                    suggestion="Remove either 'api_key' or 'api_keys' from the LLM configuration",
                 )
 
     def _coerce_types(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -588,6 +591,7 @@ class ConfigBuilder:
             - "128" -> int
             - "0.5" -> float
         """
+
         def _coerce_bool(value: Any) -> bool:
             if isinstance(value, bool):
                 return value
@@ -612,9 +616,10 @@ class ConfigBuilder:
             "max_debug_depth": (int, "max_debug_depth"),
             "max_attempts_per_phase": (int, "max_attempts_per_phase"),
             "max_steps": (int, "max_steps"),
-            "obs_max_tokens": (int, "obs_max_tokens"),
-            "obs_head_tokens": (int, "obs_head_tokens"),
-            "obs_tail_tokens": (int, "obs_tail_tokens"),
+            "max_tokens": (int, "max_tokens"),
+            "head_tokens": (int, "head_tokens"),
+            "tail_tokens": (int, "tail_tokens"),
+            "max_chars": (int, "max_chars"),
             "max_history_chars": (int, "max_history_chars"),
             "keep_recent_turns": (int, "keep_recent_turns"),
             "max_observation_chars": (int, "max_observation_chars"),
@@ -630,6 +635,11 @@ class ConfigBuilder:
             "cache_enabled": (_coerce_bool, "cache_enabled"),
             "cache_max_entries": (int, "cache_max_entries"),
             "cache_debug_metrics": (_coerce_bool, "cache_debug_metrics"),
+            "require_output_before_completion": (_coerce_bool, "require_output_before_completion"),
+            "missing_output_feedback_retries": (int, "missing_output_feedback_retries"),
+            "max_preview_rows": (int, "max_preview_rows"),
+            "max_candidate_files": (int, "max_candidate_files"),
+            "allow_runner_fallback": (_coerce_bool, "allow_runner_fallback"),
         }
 
         coerced = config_dict.copy()
@@ -656,14 +666,19 @@ class ConfigBuilder:
         if isinstance(data_analysis_config, dict):
             sections.append(data_analysis_config)
 
-        workflow_config = coerced.get("workflow", {})
-        if isinstance(workflow_config, dict) and workflow_config.get("name") == "react":
-            workflow_params = workflow_config.get("params", {})
-            if isinstance(workflow_params, dict):
-                sections.append(workflow_params)
-                react_context = workflow_params.get("context", {})
-                if isinstance(react_context, dict):
-                    sections.append(react_context)
+        agent_runtime_config = coerced.get("agent_runtime", {})
+        if isinstance(agent_runtime_config, dict):
+            sections.append(agent_runtime_config)
+            observation_config = agent_runtime_config.get("observation", {})
+            context_config = agent_runtime_config.get("context", {})
+            if isinstance(observation_config, dict):
+                sections.append(observation_config)
+            if isinstance(context_config, dict):
+                sections.append(context_config)
+
+        output_contract_config = coerced.get("output_contract", {})
+        if isinstance(output_contract_config, dict):
+            sections.append(output_contract_config)
 
         for section in sections:
             for key, (coercer, _) in type_mappings.items():
@@ -729,8 +744,7 @@ class ConfigBuilder:
             # 2. Migrate if needed
             if not skip_migration and version != self.version_manager.VERSION:
                 logger.info(
-                    f"Migrating config from version {version} to "
-                    f"{self.version_manager.VERSION}"
+                    f"Migrating config from version {version} to " f"{self.version_manager.VERSION}"
                 )
                 config_dict = migrate_config(config_dict)
                 logger.info("Config migration completed successfully")
@@ -803,14 +817,17 @@ class ConfigBuilder:
         try:
             if file_format == "yaml":
                 import yaml
+
                 with open(file_path, "r", encoding="utf-8") as f:
                     config_dict = yaml.safe_load(f) or {}
             elif file_format == "json":
                 with open(file_path, "r", encoding="utf-8") as f:
                     import json
+
                     config_dict = json.load(f)
             elif file_format == "toml":
                 import toml
+
                 with open(file_path, "r", encoding="utf-8") as f:
                     config_dict = toml.load(f)
             else:

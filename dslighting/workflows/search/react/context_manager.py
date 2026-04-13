@@ -13,27 +13,17 @@ from dslighting.state.context import (
     hard_truncate_chars,
     hard_truncate_head_tail,
 )
+from dslighting.core.config.runtime_params import (
+    AGENT_RUNTIME_CONTEXT_ALLOWED_KEYS,
+    AGENT_RUNTIME_CONTEXT_ALLOWED_STRATEGIES,
+    normalize_agent_runtime_context_params,
+)
 from dslighting.workflows.search.react.validation import validate_react_operator_params
 
 logger = logging.getLogger(__name__)
 
-REACT_CONTEXT_ALLOWED_STRATEGIES = frozenset(
-    {"recent_turns", "summarize_old_turns", "hybrid"}
-)
-REACT_CONTEXT_ALLOWED_KEYS = frozenset(
-    {
-        "strategy",
-        "max_history_chars",
-        "keep_recent_turns",
-        "max_observation_chars",
-        "summary_trigger_turns",
-        "summary_max_chars",
-        "keep_latest_feedback_only",
-        "max_feedback_retries",
-        "recent_observation_window",
-        "max_feedback_chars",
-    }
-)
+REACT_CONTEXT_ALLOWED_STRATEGIES = AGENT_RUNTIME_CONTEXT_ALLOWED_STRATEGIES
+REACT_CONTEXT_ALLOWED_KEYS = AGENT_RUNTIME_CONTEXT_ALLOWED_KEYS
 
 DEFAULT_REACT_CONTEXT = {
     "strategy": "hybrid",
@@ -53,6 +43,10 @@ _STRICT_PYTHON_BLOCK_PATTERN = re.compile(
     r"\s*```python\s*(?P<code>.*?)\s*```\s*",
     re.DOTALL | re.IGNORECASE,
 )
+_CRITICAL_SUBMISSION_STATUS_PATTERN = re.compile(
+    r"<SubmissionStatus\b(?=[^>]*critical=[\"']true[\"'])[^>]*>.*?</SubmissionStatus>",
+    re.DOTALL | re.IGNORECASE,
+)
 
 _SUMMARY_MIN_CHARS = 192
 _TASK_MIN_CHARS = 256
@@ -69,78 +63,12 @@ _MASKED_RUNTIME_TEXT = (
 )
 
 
-def _coerce_bool(value: Any, *, field_name: str) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return bool(value)
-    normalized = str(value).strip().lower()
-    if normalized in {"1", "true", "t", "yes", "y", "on"}:
-        return True
-    if normalized in {"0", "false", "f", "no", "n", "off"}:
-        return False
-    raise ValueError(f"`{field_name}` must be a boolean")
-
-
-def _coerce_int(
-    value: Any,
-    *,
-    field_name: str,
-    minimum: int,
-) -> int:
-    try:
-        coerced = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"`{field_name}` must be an integer") from exc
-    if coerced < minimum:
-        comparator = ">=" if minimum == 0 else ">"
-        target = minimum if minimum == 0 else minimum - 1
-        raise ValueError(f"`{field_name}` must be {comparator} {target}")
-    return coerced
-
-
 def normalize_react_context_params(params: Optional[dict[str, Any]]) -> dict[str, Any]:
-    """Normalize nested ReAct context params from config/builders."""
-    if params is None:
-        return {}
-    if not isinstance(params, dict):
-        raise TypeError("`context` must be a dictionary")
-
-    unknown = sorted(key for key in params if key not in REACT_CONTEXT_ALLOWED_KEYS)
-    if unknown:
-        raise ValueError(
-            f"Unknown ReAct context parameters: {unknown}. "
-            f"Allowed keys: {sorted(REACT_CONTEXT_ALLOWED_KEYS)}"
-        )
-
-    normalized: dict[str, Any] = {}
-    for key, value in params.items():
-        if key == "strategy":
-            strategy = str(value).strip()
-            if strategy not in REACT_CONTEXT_ALLOWED_STRATEGIES:
-                raise ValueError(
-                    f"`context.strategy` must be one of: "
-                    f"{sorted(REACT_CONTEXT_ALLOWED_STRATEGIES)}"
-                )
-            normalized[key] = strategy
-        elif key == "keep_latest_feedback_only":
-            normalized[key] = _coerce_bool(
-                value,
-                field_name="context.keep_latest_feedback_only",
-            )
-        elif key == "max_feedback_retries":
-            normalized[key] = _coerce_int(
-                value,
-                field_name="context.max_feedback_retries",
-                minimum=0,
-            )
-        else:
-            normalized[key] = _coerce_int(
-                value,
-                field_name=f"context.{key}",
-                minimum=1,
-            )
-    return normalized
+    """Normalize nested context params from the shared agent_runtime config."""
+    return normalize_agent_runtime_context_params(
+        params,
+        source="agent_runtime.context",
+    )
 
 
 @dataclass(frozen=True)
@@ -160,9 +88,7 @@ class ReActContextConfig:
 def validate_react_context_config(config: ReActContextConfig) -> ReActContextConfig:
     """Validate cross-field ReAct context constraints."""
     if config.summary_trigger_turns < config.keep_recent_turns:
-        raise ValueError(
-            "`context.summary_trigger_turns` must be >= `context.keep_recent_turns`"
-        )
+        raise ValueError("`context.summary_trigger_turns` must be >= `context.keep_recent_turns`")
     return config
 
 
@@ -298,19 +224,14 @@ class ReActContextManager:
             for idx, turn in enumerate(turns)
             if turn.runtime_kind == "observation" and turn.runtime_reply is not None
         ]
-        raw_observation_indexes = set(
-            observation_indexes[-self.config.recent_observation_window :]
-        )
+        raw_observation_indexes = set(observation_indexes[-self.config.recent_observation_window :])
 
         rendered: list[_RenderedTurnState] = []
         for idx, turn in enumerate(turns):
             runtime_mode = "raw"
             if turn.runtime_reply is None:
                 runtime_mode = "none"
-            elif (
-                turn.runtime_kind == "observation"
-                and idx not in raw_observation_indexes
-            ):
+            elif turn.runtime_kind == "observation" and idx not in raw_observation_indexes:
                 runtime_mode = "compressed"
             rendered.append(
                 _RenderedTurnState(
@@ -421,8 +342,7 @@ class ReActContextManager:
 
         dropped = state.rendered_turns.pop(0)
         logger.info(
-            "[ReActContextManager] dropping oldest raw turn from LLM window | "
-            "runtime_kind=%s",
+            "[ReActContextManager] dropping oldest raw turn from LLM window | " "runtime_kind=%s",
             dropped.turn.runtime_kind or "none",
         )
         return True
@@ -461,7 +381,7 @@ class ReActContextManager:
                     continue
                 overflow = total_chars - self.config.max_history_chars
                 target = max(128, len(content) - overflow)
-                updated = hard_truncate_chars(
+                updated = self._truncate_message_content(
                     content,
                     target,
                     marker_template="\n...[PROMPT TRUNCATED {omitted} chars]...\n",
@@ -481,7 +401,7 @@ class ReActContextManager:
                     continue
                 overflow = total_chars - self.config.max_history_chars
                 target = max(64, len(content) - overflow)
-                updated = hard_truncate_chars(
+                updated = self._truncate_message_content(
                     content,
                     target,
                     marker_template="\n...[PROMPT TRUNCATED {omitted} chars]...\n",
@@ -501,6 +421,38 @@ class ReActContextManager:
                 break
 
         return trimmed
+
+    def _truncate_message_content(
+        self,
+        content: str,
+        max_chars: int,
+        *,
+        marker_template: str,
+    ) -> str:
+        match = _CRITICAL_SUBMISSION_STATUS_PATTERN.search(content)
+        if match is None:
+            return hard_truncate_chars(
+                content,
+                max_chars,
+                marker_template=marker_template,
+            )
+
+        footer = match.group(0).strip()
+        body = (content[: match.start()] + content[match.end() :]).strip()
+        if len(footer) >= max_chars:
+            raise ValueError(
+                "Critical SubmissionStatus footer exceeds the prompt window budget; "
+                "shorten the output contract status renderer or increase "
+                "`agent_runtime.context.max_history_chars`."
+            )
+        truncated_body = hard_truncate_chars(
+            body,
+            max_chars - len(footer) - 1,
+            marker_template=marker_template,
+        )
+        if truncated_body:
+            return f"{truncated_body}\n{footer}"
+        return footer
 
     def _partition_turns(self, turns: list[ReActTurn]) -> tuple[list[ReActTurn], list[ReActTurn]]:
         recent_raw = turns[-self.config.keep_recent_turns :]
@@ -580,6 +532,7 @@ class ReActContextManager:
             lines.append(f"  - Turn {offset}: {self._summarize_turn(turn)}")
 
         return "\n".join(lines)
+
     def _summarize_turn(self, turn: ReActTurn) -> str:
         think = self._extract_tag_content(turn.assistant_reply, "Think")
         action = self._extract_tag_content(turn.assistant_reply, "Action")
@@ -638,7 +591,7 @@ class ReActContextManager:
                 if mode == "raw"
                 else self._compressed_runtime_budget()
             )
-            inner = hard_truncate_head_tail(
+            inner = self._truncate_preserving_critical_submission_status(
                 inner,
                 budget,
                 marker_template="\n...[OBSERVATION TRUNCATED {omitted} chars]...\n",
@@ -664,6 +617,40 @@ class ReActContextManager:
             budget,
             marker_template="\n...[RUNTIME TRUNCATED {omitted} chars]...\n",
         )
+
+    def _truncate_preserving_critical_submission_status(
+        self,
+        content: str,
+        max_chars: int,
+        *,
+        marker_template: str,
+    ) -> str:
+        match = _CRITICAL_SUBMISSION_STATUS_PATTERN.search(content)
+        if match is None:
+            return hard_truncate_head_tail(
+                content,
+                max_chars,
+                marker_template=marker_template,
+            )
+
+        footer = match.group(0).strip()
+        body = (content[: match.start()] + content[match.end() :]).strip()
+        if len(footer) >= max_chars:
+            raise ValueError(
+                "Critical SubmissionStatus footer exceeds "
+                "`agent_runtime.context.max_observation_chars`; shorten the "
+                "output contract status renderer or increase the context budget."
+            )
+
+        body_budget = max_chars - len(footer) - 1
+        truncated_body = hard_truncate_head_tail(
+            body,
+            body_budget,
+            marker_template=marker_template,
+        )
+        if truncated_body:
+            return f"{truncated_body}\n{footer}"
+        return footer
 
     def _compressed_runtime_budget(self) -> int:
         return min(

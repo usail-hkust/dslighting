@@ -19,7 +19,15 @@ from dslighting.core.types import TaskDefinition, TaskType
 # Services and workflows
 from dslighting.services.llm import LLMService
 from dslighting.workflows.base import BaseWorkflow
-from dslighting.runtime.dag import DagRunSummary, DagRuntime, DagRuntimeOptions, DeclarativeWorkflowActor, NodeDispatcher, SolveWorkflowActor, create_pipeline_runtime
+from dslighting.runtime.dag import (
+    DagRunSummary,
+    DagRuntime,
+    DagRuntimeOptions,
+    DeclarativeWorkflowActor,
+    NodeDispatcher,
+    SolveWorkflowActor,
+    create_pipeline_runtime,
+)
 
 # Dynamic components (factories and adapters)
 from dslighting.core.tasks import (
@@ -43,6 +51,10 @@ from dslighting.workflows.factory.builtin import (
     DynamicWorkflowFactory,
     MyCustomAgentWorkflowFactory,
     ReActWorkflowFactory,
+)
+from dslighting.workflows.output_contract import (
+    is_valid_output_path,
+    resolve_runner_output_candidate,
 )
 
 # Import AFlow workflow for type checking
@@ -211,11 +223,15 @@ class RuntimeConfigParser:
         if max_inflight_nodes is not None:
             options.max_inflight_nodes = max_inflight_nodes
 
-        max_retries = self._coerce_non_negative_int(_first_override("dag_max_retries", "max_retries"))
+        max_retries = self._coerce_non_negative_int(
+            _first_override("dag_max_retries", "max_retries")
+        )
         if max_retries is not None:
             options.max_retries = max_retries
 
-        node_timeout_seconds_raw = _first_override("node_timeout_seconds", "dag_node_timeout_seconds")
+        node_timeout_seconds_raw = _first_override(
+            "node_timeout_seconds", "dag_node_timeout_seconds"
+        )
         if node_timeout_seconds_raw is not None:
             try:
                 node_timeout_seconds = float(node_timeout_seconds_raw)
@@ -283,7 +299,6 @@ class RuntimeConfigParser:
             return None
         return parsed if parsed > 0 else None
 
-
     @staticmethod
     def _coerce_non_negative_int(value: Any) -> int | None:
         """Convert value to a non-negative integer, or None if invalid."""
@@ -327,9 +342,7 @@ class RuntimeConfigParser:
         llm_max_concurrency = runtime_hints.get("llm_max_concurrency")
         if llm_max_concurrency is not None:
             try:
-                extra_parameters["llm_max_concurrency"] = max(
-                    1, int(llm_max_concurrency)
-                )
+                extra_parameters["llm_max_concurrency"] = max(1, int(llm_max_concurrency))
             except (TypeError, ValueError):
                 pass
 
@@ -457,8 +470,11 @@ class DSLightingRunner:
             raise WorkflowError(
                 f"Unknown workflow '{config.workflow.name}'. Available workflows: [{available}]",
                 error_code="WRK-001",
-                details={"workflow_name": config.workflow.name, "available_workflows": list(self.factories.keys())},
-                suggestion="Check the workflow name against the list of available workflows"
+                details={
+                    "workflow_name": config.workflow.name,
+                    "available_workflows": list(self.factories.keys()),
+                },
+                suggestion="Check the workflow name against the list of available workflows",
             )
         self.factory: BaseWorkflowFactory = factory_class()
 
@@ -467,7 +483,9 @@ class DSLightingRunner:
         self.run_records: list[dict[str, Any]] = []
         self.registry_grader = RegistryGrader()
         self._llm_runtime_limits_lock = threading.RLock()
-        self._llm_runtime_limit_signature: tuple[int | None, tuple[tuple[str, int], ...]] | None = None
+        self._llm_runtime_limit_signature: tuple[int | None, tuple[tuple[str, int], ...]] | None = (
+            None
+        )
         self._llm_runtime_limit_source_task: str | None = None
 
         logger.info("DSLightingRunner is ready to evaluate tasks.")
@@ -484,7 +502,9 @@ class DSLightingRunner:
             "llm_model_quotas": dict(model_items),
         }
 
-    def register_workflow(self, name: str, factory: BaseWorkflowFactory | type[BaseWorkflowFactory]) -> None:
+    def register_workflow(
+        self, name: str, factory: BaseWorkflowFactory | type[BaseWorkflowFactory]
+    ) -> None:
         """
         Register a workflow factory dynamically for this runner instance.
         Critical for paradigms like AFLOW which synthesize workflows at runtime.
@@ -573,9 +593,7 @@ class DSLightingRunner:
                 logger.info(f"Task '{task.task_id}' evaluation finished successfully.")
 
             except Exception as execution_error:
-                logger.error(
-                    f"Task '{task.task_id}' failed: {execution_error}", exc_info=True
-                )
+                logger.error(f"Task '{task.task_id}' failed: {execution_error}", exc_info=True)
                 result = f"[ERROR] {execution_error.__class__.__name__}: {execution_error}"
 
             finally:
@@ -629,9 +647,7 @@ class DSLightingRunner:
                     failed = isinstance(result, str) and result.startswith("[ERROR]")
                     keep_on_fail = self.config.run.keep_workspace_on_failure
                     keep_all = self.config.run.keep_all_workspaces
-                    workspace_service.cleanup(
-                        keep_workspace=keep_all or (failed and keep_on_fail)
-                    )
+                    workspace_service.cleanup(keep_workspace=keep_all or (failed and keep_on_fail))
 
                 if adapter:
                     adapter.cleanup()
@@ -645,9 +661,7 @@ class DSLightingRunner:
 
         return eval_function
 
-    async def _prepare_task_execution(
-        self, task: TaskDefinition
-    ) -> DSLightingConfig:
+    async def _prepare_task_execution(self, task: TaskDefinition) -> DSLightingConfig:
         """Prepare runtime environment for task execution.
 
         This method handles:
@@ -676,9 +690,14 @@ class DSLightingRunner:
         #   <base_dir>/<session_run_name>/<task_run_name>/
         if task_config.workflow is None:
             from dslighting.config import WorkflowConfig
+
             task_config.workflow = WorkflowConfig(name="aide", params={})
-        workspace_base = task_config.workflow.params.get("workspace_base_dir") or DEFAULT_WORKSPACE_DIR
-        task_config.workflow.params["workspace_base_dir"] = str(Path(workspace_base) / session_run_name)
+        workspace_base = (
+            task_config.workflow.params.get("workspace_base_dir") or DEFAULT_WORKSPACE_DIR
+        )
+        task_config.workflow.params["workspace_base_dir"] = str(
+            Path(workspace_base) / session_run_name
+        )
 
         # Use RuntimeConfigParser to extract and apply runtime configuration
         config_parser = RuntimeConfigParser(task, task_config)
@@ -688,8 +707,7 @@ class DSLightingRunner:
 
         dag_runtime_options = config_parser.parse_dag_options(runtime_hints)
         self._configure_llm_runtime_limits(
-            task_id=task.task_id,
-            task_config=task_config, dag_options=dag_runtime_options
+            task_id=task.task_id, task_config=task_config, dag_options=dag_runtime_options
         )
         log_resolved_runtime_config(
             logger,
@@ -724,13 +742,9 @@ class DSLightingRunner:
 
         if isinstance(workflow, AFlowWorkflow):
             optimizer_name = "AFLOW"
-            logger.info(
-                "Detected %s workflow. Running meta-optimization stage.", optimizer_name
-            )
+            logger.info("Detected %s workflow. Running meta-optimization stage.", optimizer_name)
             best_workflow_code = await workflow.optimize()
-            logger.info(
-                "Meta-optimization complete. Proceeding with final evaluation workflow."
-            )
+            logger.info("Meta-optimization complete. Proceeding with final evaluation workflow.")
 
             if hasattr(benchmark_instance, "set_mode"):
                 logger.info(
@@ -740,9 +754,7 @@ class DSLightingRunner:
                 benchmark_instance.set_mode("test")
 
             dynamic_factory = DynamicWorkflowFactory(code_string=best_workflow_code)
-            workflow = dynamic_factory.create_workflow(
-                task_config, benchmark=benchmark_instance
-            )
+            workflow = dynamic_factory.create_workflow(task_config, benchmark=benchmark_instance)
             llm_service = workflow.services.get("llm")
             sandbox_service = workflow.services.get("sandbox")
             workspace_service = workflow.services.get("workspace")
@@ -785,7 +797,15 @@ class DSLightingRunner:
         adapter_class = self.adapter_classes.get(task.task_type)
         if not adapter_class:
             logger.error(f"No adapter registered for task type '{task.task_type}'.")
-            return f"[ERROR] Unsupported task type '{task.task_type}'", None, None, "", "", None, None
+            return (
+                f"[ERROR] Unsupported task type '{task.task_type}'",
+                None,
+                None,
+                "",
+                "",
+                None,
+                None,
+            )
 
         adapter: BaseTaskAdapter = adapter_class(task_config)
 
@@ -806,7 +826,7 @@ class DSLightingRunner:
                     f"Failed to link data directory: {link_error}",
                     error_code="WSP-001",
                     details={"data_dir": str(data_dir) if data_dir else None},
-                    suggestion="Check that the data directory exists and is accessible"
+                    suggestion="Check that the data directory exists and is accessible",
                 ) from link_error
         else:
             logger.warning("WorkspaceService missing; skipping data linkage.")
@@ -815,8 +835,11 @@ class DSLightingRunner:
             raise WorkflowError(
                 "Task adapter returned empty data_dir or output_path.",
                 error_code="WRK-002",
-                details={"data_dir": str(data_dir) if data_dir else None, "output_path": str(output_path) if output_path else None},
-                suggestion="Check the task adapter implementation to ensure data_dir and output_path are properly set"
+                details={
+                    "data_dir": str(data_dir) if data_dir else None,
+                    "output_path": str(output_path) if output_path else None,
+                },
+                suggestion="Check the task adapter implementation to ensure data_dir and output_path are properly set",
             )
 
         # Resolve DAG runtime options for execution
@@ -861,29 +884,17 @@ class DSLightingRunner:
             The actual path where the output was found/collected.
         """
         sandbox_workdir = workspace_service.get_path("sandbox_workdir")
-        generated_file = sandbox_workdir / output_path.name
+        generated_file, accepted_via_fallback = resolve_runner_output_candidate(
+            sandbox_workdir=sandbox_workdir,
+            output_path=output_path,
+        )
+        if accepted_via_fallback:
+            logger.warning(
+                f"Submission hash mismatch: expected '{output_path.name}', "
+                f"found '{generated_file.name}' via fallback glob."
+            )
 
-        def _is_valid(p: Path) -> bool:
-            """A path is valid if it exists and, for directories, is non-empty."""
-            return p.exists() and (not p.is_dir() or any(p.iterdir()))
-
-        if not _is_valid(generated_file):
-            # Fallback: agent may have used a different hash suffix, or created an empty
-            # directory in an earlier iteration before failing. Search for
-            # submission_{task_id}_*{suffix} and prefer non-empty results.
-            stem = output_path.stem  # e.g. "submission_dacode-ml-binary-023_6fd2a7"
-            parts = stem.rsplit("_", 1)
-            if len(parts) == 2:
-                pattern = f"{parts[0]}_*{output_path.suffix}"
-                candidates = [c for c in sorted(sandbox_workdir.glob(pattern)) if _is_valid(c)]
-                if candidates:
-                    generated_file = candidates[0]
-                    logger.warning(
-                        f"Submission hash mismatch: expected '{output_path.name}', "
-                        f"found '{generated_file.name}' via fallback glob."
-                    )
-
-        if _is_valid(generated_file):
+        if is_valid_output_path(generated_file):
             # Only copy if output_path is an absolute path
             # If it's a relative path (just filename), keep it in workspace/sandbox
             if output_path.is_absolute():
@@ -902,15 +913,11 @@ class DSLightingRunner:
                             else:
                                 output_path.unlink()
                         shutil.copytree(generated_file, output_path)
-                        logger.info(
-                            f"Copied directory '{generated_file}' to '{output_path}'"
-                        )
+                        logger.info(f"Copied directory '{generated_file}' to '{output_path}'")
                     else:
                         # For files, use regular copy
                         shutil.copy(generated_file, output_path)
-                        logger.info(
-                            f"Copied file '{generated_file}' to '{output_path}'"
-                        )
+                        logger.info(f"Copied file '{generated_file}' to '{output_path}'")
             else:
                 # Relative path - file stays in sandbox, use workspace path for result
                 logger.info(
@@ -952,16 +959,10 @@ class DSLightingRunner:
         benchmark_instance = self.benchmark
 
         # Grade via benchmark if available
-        if (
-            benchmark_instance
-            and hasattr(benchmark_instance, "grade")
-            and isinstance(result, Path)
-        ):
+        if benchmark_instance and hasattr(benchmark_instance, "grade") and isinstance(result, Path):
             try:
                 logger.info(f"Grading submission: {result}")
-                score = await benchmark_instance.grade(
-                    result, competition_id=task.task_id
-                )
+                score = await benchmark_instance.grade(result, competition_id=task.task_id)
                 logger.info(f"Grading complete | Score: {score}")
                 # Return score as result
                 return {"score": score, "submission_path": str(result)}
@@ -970,7 +971,7 @@ class DSLightingRunner:
                     f"Benchmark grading failed for task '{task.task_id}': {grade_error}",
                     error_code="BMK-001",
                     details={"task_id": task.task_id},
-                    suggestion="Check the benchmark grade.py implementation and ensure the submission format is correct"
+                    suggestion="Check the benchmark grade.py implementation and ensure the submission format is correct",
                 ) from grade_error
         elif isinstance(result, Path) and task.task_type == "kaggle":
             logger.info(f"Submission created at: {result}")
@@ -996,8 +997,9 @@ class DSLightingRunner:
         dag_options: DagRuntimeOptions,
     ) -> None:
         run_parameters = dict(task_config.run.parameters or {})
-        configured_global_cap = dag_options.llm_global_max_concurrency or RuntimeConfigParser._coerce_positive_int(
-            run_parameters.get("llm_max_concurrency")
+        configured_global_cap = (
+            dag_options.llm_global_max_concurrency
+            or RuntimeConfigParser._coerce_positive_int(run_parameters.get("llm_max_concurrency"))
         )
         model_quotas = dict(dag_options.llm_model_quotas or {})
 
@@ -1086,9 +1088,7 @@ class DSLightingRunner:
         output_path: Path,
         dag_options: "DagRuntimeOptions" = None,
     ) -> Any:
-        actor_strategy = str(
-            getattr(dag_options, "dag_actor_strategy", "coarse")
-        ).strip().lower()
+        actor_strategy = str(getattr(dag_options, "dag_actor_strategy", "coarse")).strip().lower()
 
         if actor_strategy == "declarative":
             supports_declarative = getattr(workflow, "supports_declarative_dag", None)
@@ -1244,32 +1244,34 @@ class DSLightingRunner:
             has_error = bool(final_result.get("error"))
             if status and status != "success":
                 raise WorkflowError(
-                    final_result.get("error") or f"DAG workflow reported status '{status}' for task '{task_id}'",
+                    final_result.get("error")
+                    or f"DAG workflow reported status '{status}' for task '{task_id}'",
                     error_code="WRK-003",
                     details={
                         "task_id": task_id,
                         "final_result": final_result,
                         "dag_summary": summary.to_dict() if summary else None,
                     },
-                    suggestion="Review workflow final_result status/error for the failing phase and retry."
+                    suggestion="Review workflow final_result status/error for the failing phase and retry.",
                 )
             if has_error:
                 raise WorkflowError(
-                    final_result.get("error") or f"DAG workflow reported an error for task '{task_id}'",
+                    final_result.get("error")
+                    or f"DAG workflow reported an error for task '{task_id}'",
                     error_code="WRK-003",
                     details={
                         "task_id": task_id,
                         "final_result": final_result,
                         "dag_summary": summary.to_dict() if summary else None,
                     },
-                    suggestion="Review workflow final_result error payload and execution logs."
+                    suggestion="Review workflow final_result error payload and execution logs.",
                 )
         if not summary.success:
             raise WorkflowError(
                 summary.last_error or f"DAG runtime execution failed for task '{task_id}'",
                 error_code="WRK-003",
                 details={"task_id": task_id, "dag_summary": summary.to_dict() if summary else None},
-                suggestion="Review the workflow execution logs and check for errors in task implementation"
+                suggestion="Review the workflow execution logs and check for errors in task implementation",
             )
         return summary
 
@@ -1603,7 +1605,9 @@ class DSLightingRunner:
         """
         metadata = {
             "run_name": task_config.run.run_name,
-            "workspace_dir": str(run_context["workspace_dir"]) if run_context["workspace_dir"] else None,
+            "workspace_dir": (
+                str(run_context["workspace_dir"]) if run_context["workspace_dir"] else None
+            ),
             "workflow": task_config.workflow.name if task_config.workflow else None,
             "parameters": run_context["filtered_parameters"],
             "benchmark": run_context["benchmark_snapshot"],
@@ -1634,7 +1638,9 @@ class DSLightingRunner:
                 "final_code": best_node.code if best_node else None,
                 "final_code_path": run_context["final_code_path"],
                 "best_node_id": best_node.id if best_node else None,
-                "best_path_node_ids": search_tree_info.get("best_path") if search_tree_info else None,
+                "best_path_node_ids": (
+                    search_tree_info.get("best_path") if search_tree_info else None
+                ),
             },
             "config_snapshot": run_context["config_snapshot"],
         }
@@ -1800,8 +1806,7 @@ class DSLightingRunner:
     ) -> None:
         """Write newline-delimited JSON records to an artifacts sub-path."""
         content = "\n".join(
-            json.dumps(self._to_json_safe(record), ensure_ascii=False)
-            for record in records
+            json.dumps(self._to_json_safe(record), ensure_ascii=False) for record in records
         )
         workspace_service.write_file(content, "artifacts", relative_path)
 
@@ -1816,10 +1821,7 @@ class DSLightingRunner:
         if isinstance(value, Path):
             return str(value)
         if isinstance(value, dict):
-            return {
-                str(key): self._to_json_safe(item)
-                for key, item in value.items()
-            }
+            return {str(key): self._to_json_safe(item) for key, item in value.items()}
         if isinstance(value, (list, tuple, set)):
             return [self._to_json_safe(item) for item in value]
         return value
@@ -1881,7 +1883,9 @@ class DSLightingRunner:
             metadata["search_tree"] = {
                 "node_count": len(search_tree_data),
                 "best_node_id": search_tree_info.get("best_node_id") if search_tree_info else None,
-                "best_path_node_ids": search_tree_info.get("best_path") if search_tree_info else None,
+                "best_path_node_ids": (
+                    search_tree_info.get("best_path") if search_tree_info else None
+                ),
                 "file": f"artifacts/{telemetry_dir}/search_tree.json",
             }
         else:
@@ -1938,9 +1942,7 @@ class DSLightingRunner:
         }
         return nodes, info
 
-    def _extract_best_path(
-        self, state: JournalState, best_node: Any | None
-    ) -> list[str] | None:
+    def _extract_best_path(self, state: JournalState, best_node: Any | None) -> list[str] | None:
         if not best_node:
             return None
         path: list[str] = []

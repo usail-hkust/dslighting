@@ -11,6 +11,7 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 from dslighting.benchmark.core.base import BaseBenchmark
+from dslighting.config import OutputContractConfig
 from dslighting.error import ConfigurationError, DynamicImportError
 from dslighting.ops.code import ExecuteAndTestOperator
 from dslighting.ops.llm.basic import (
@@ -20,7 +21,11 @@ from dslighting.ops.llm.basic import (
 )
 from dslighting.ops.presets import AFlowReviewOperator, AFlowReviseOperator, ScEnsembleOperator
 from dslighting.ops.presets.automind import ComplexityScorerOperator, PlanDecomposerOperator
-from dslighting.ops.presets.dsagent import DevelopPlanOperator, ExecutePlanOperator, ReviseLogOperator
+from dslighting.ops.presets.dsagent import (
+    DevelopPlanOperator,
+    ExecutePlanOperator,
+    ReviseLogOperator,
+)
 from dslighting.core.visualization_policy import (
     resolve_visualization_policy_from_config,
     should_force_noninteractive_backend,
@@ -59,11 +64,7 @@ def _resolve_sandbox_env(config: Any) -> Optional[Dict[str, str]]:
     sandbox_env = parameters.get("sandbox_env")
     if not isinstance(sandbox_env, dict):
         return None
-    return {
-        str(key): str(value)
-        for key, value in sandbox_env.items()
-        if value is not None
-    }
+    return {str(key): str(value) for key, value in sandbox_env.items() if value is not None}
 
 
 def _create_sandbox_service(workspace: WorkspaceService, config: Any) -> SandboxService:
@@ -126,41 +127,29 @@ def _resolve_rag_settings(config: Any, workflow_name: str) -> tuple[bool, str]:
     return enable_rag, case_dir
 
 
-def _resolve_react_settings(config: Any) -> tuple[int, int, int, int, Any]:
-    params = getattr(config.workflow, "params", None) or {}
-    max_steps = params.get("max_steps", 10)
-    obs_max_tokens = params.get("obs_max_tokens", 4000)
-    obs_head_tokens = params.get("obs_head_tokens", 2000)
-    obs_tail_tokens = params.get("obs_tail_tokens", 2000)
-    raw_context = params.get("context")
+def _resolve_agent_runtime_settings(config: Any) -> tuple[int, int, int, int, Any]:
+    agent_runtime = getattr(config, "agent_runtime", None)
+    observation = getattr(agent_runtime, "observation", None)
+    context = getattr(agent_runtime, "context", None)
 
-    def _coerce_positive_int(value: Any, field_name: str) -> int:
-        try:
-            coerced = int(value)
-        except (TypeError, ValueError):
-            raise ConfigurationError(
-                f"`react.{field_name}` must be an integer",
-                error_code="CFG-002",
-            ) from None
-        if coerced <= 0:
-            raise ConfigurationError(
-                f"`react.{field_name}` must be > 0",
-                error_code="CFG-002",
-            )
-        return coerced
+    max_steps_value = int(getattr(agent_runtime, "max_steps", 10) or 10)
+    obs_max_tokens_value = int(getattr(observation, "max_tokens", 4000) or 4000)
+    obs_head_tokens_value = int(getattr(observation, "head_tokens", 2000) or 2000)
+    obs_tail_tokens_value = int(getattr(observation, "tail_tokens", 2000) or 2000)
+    raw_context = context.model_dump() if hasattr(context, "model_dump") else context
 
+    if max_steps_value <= 0:
+        raise ConfigurationError(
+            "`agent_runtime.max_steps` must be > 0",
+            error_code="CFG-002",
+        )
     try:
         context_config = build_react_context_config(raw_context)
     except (TypeError, ValueError) as exc:
         raise ConfigurationError(
-            f"Invalid `react.context`: {exc}",
+            f"Invalid `agent_runtime.context`: {exc}",
             error_code="CFG-002",
         ) from None
-
-    max_steps_value = _coerce_positive_int(max_steps, "max_steps")
-    obs_max_tokens_value = _coerce_positive_int(obs_max_tokens, "obs_max_tokens")
-    obs_head_tokens_value = _coerce_positive_int(obs_head_tokens, "obs_head_tokens")
-    obs_tail_tokens_value = _coerce_positive_int(obs_tail_tokens, "obs_tail_tokens")
 
     try:
         validate_react_operator_params(
@@ -180,11 +169,29 @@ def _resolve_react_settings(config: Any) -> tuple[int, int, int, int, Any]:
     )
 
 
+def _resolve_output_contract_settings(config: Any) -> OutputContractConfig:
+    raw = getattr(config, "output_contract", None)
+    if isinstance(raw, OutputContractConfig):
+        return raw
+    if raw is None:
+        return OutputContractConfig()
+    if hasattr(raw, "model_dump"):
+        raw = raw.model_dump()
+    if not isinstance(raw, dict):
+        raise ConfigurationError(
+            "`output_contract` must be a dictionary or OutputContractConfig",
+            error_code="CFG-002",
+        )
+    return OutputContractConfig(**raw)
+
+
 class AIDEWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "aide"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AIDEWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> AIDEWorkflow:
         workspace_base = None
         if config.workflow and config.workflow.params:
             workspace_base = config.workflow.params.get("workspace_base_dir")
@@ -216,7 +223,9 @@ class AutoMindWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "automind"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AutoMindWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> AutoMindWorkflow:
         workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
@@ -253,7 +262,9 @@ class DSAgentWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "dsagent"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> DSAgentWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> DSAgentWorkflow:
         workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
@@ -324,7 +335,9 @@ class AutoKaggleWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "autokaggle"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AutoKaggleWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> AutoKaggleWorkflow:
         workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
@@ -406,7 +419,9 @@ class AFlowWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "aflow"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> AFlowWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> AFlowWorkflow:
         workspace_base = None
         if config.workflow and config.workflow.params:
             workspace_base = config.workflow.params.get("workspace_base_dir")
@@ -435,7 +450,9 @@ class ReActWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "react"
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> ReActWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> ReActWorkflow:
         workspace_base = None
         if config.workflow and config.workflow.params:
             workspace_base = config.workflow.params.get("workspace_base_dir")
@@ -443,9 +460,13 @@ class ReActWorkflowFactory(BaseWorkflowFactory):
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
 
-        max_steps, obs_max_tokens, obs_head_tokens, obs_tail_tokens, context_config = _resolve_react_settings(config)
+        max_steps, obs_max_tokens, obs_head_tokens, obs_tail_tokens, context_config = (
+            _resolve_agent_runtime_settings(config)
+        )
+        output_contract_config = _resolve_output_contract_settings(config)
 
         from dslighting.ops.presets.react import ReActOperator
+
         operators = {
             "react": ReActOperator(
                 llm_service=llm_service,
@@ -461,6 +482,7 @@ class ReActWorkflowFactory(BaseWorkflowFactory):
             "sandbox": sandbox_service,
             "workspace": workspace,
             "react_context_config": context_config,
+            "output_contract_config": output_contract_config,
         }
         return ReActWorkflow(
             operators=operators,
@@ -492,9 +514,13 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
         return "dynamic"
 
     def create_agent(self, **kwargs: Any) -> BaseWorkflow:
-        raise NotImplementedError("DynamicWorkflowFactory is runner-only and does not support create_agent().")
+        raise NotImplementedError(
+            "DynamicWorkflowFactory is runner-only and does not support create_agent()."
+        )
 
-    def create_workflow(self, config: Any, benchmark: Optional[BaseBenchmark] = None) -> BaseWorkflow:
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> BaseWorkflow:
         workspace = WorkspaceService(run_name=config.run.run_name)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)

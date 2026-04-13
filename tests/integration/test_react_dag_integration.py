@@ -8,7 +8,7 @@ import pytest
 from dslighting.ops.presets.react import ReActOperator
 from dslighting.runtime.dag import DagRuntime, DagRuntimeOptions, SolveWorkflowActor
 from dslighting.utils.typing import ExecutionResult
-from dslighting.workflows.search.react_workflow import ReActWorkflow
+from dslighting.workflows.search.react.workflow import ReActWorkflow
 
 
 class _DummyWorkspaceService:
@@ -119,5 +119,7 @@ async def test_react_workflow_runs_via_dag_runtime(tmp_path) -> None:
     assert summary.actor_completed is True
     assert summary.failed_nodes == 0
     assert execute_operator.calls == [{"code": "print('ok')", "mode": "script"}]
-    assert (workspace.get_path("sandbox_workdir") / "answer.txt").read_text(encoding="utf-8") == "ok"
+    assert (workspace.get_path("sandbox_workdir") / "answer.txt").read_text(
+        encoding="utf-8"
+    ) == "ok"
     assert not output_path.exists()
