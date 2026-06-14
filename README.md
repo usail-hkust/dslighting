@@ -41,7 +41,7 @@
 
 ---
 
-## News 2026.06
+## 2026-06 🎉
 
 Our paper, **DS-Lighting: Making Agent Harnesses Explicit for Data-Science Automation**, has been accepted to the **KDD 2026 Workshop on AI Data Scientist (AIDataSci)**. [PDF](docs/papers/ds-lighting-kdd2026-workshop.pdf)
 
