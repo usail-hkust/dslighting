@@ -41,6 +41,10 @@
 
 ---
 
+## News 2026.06
+
+Our paper, **DS-Lighting: Making Agent Harnesses Explicit for Data-Science Automation**, has been accepted to the **KDD 2026 Workshop on AI Data Scientist (AIDataSci)**. [PDF](docs/papers/ds-lighting-kdd2026-workshop.pdf)
+
 <details>
 <summary><strong>News 2026.03</strong> · <a href="#benchmarks">Jump to Benchmarks</a></summary>
 
@@ -695,6 +699,20 @@ Avoid introducing new imports from removed/deprecated compatibility paths.
 ## License
 
 AGPL-3.0. See `LICENSE`.
+
+## Citation
+
+If you use DSLighting in research, please cite:
+
+```bibtex
+@misc{liu2026dslighting,
+  title = {DS-Lighting: Making Agent Harnesses Explicit for Data-Science Automation},
+  author = {Fan Liu and Hao Liu},
+  year = {2026},
+  note = {Accepted to the KDD 2026 Workshop on AI for Data Science (AIDataSci)},
+  url = {https://openreview.net/forum?id=K7ohsDwj1m}
+}
+```
 
 ## Contributing
 
