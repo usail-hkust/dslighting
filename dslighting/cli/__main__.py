@@ -330,11 +330,38 @@ def _get_workflow_info():
             },
             "class": presets.ReAct,
         },
+        "dsflow": {
+            "full_name": "DSFlow",
+            "description": "Two-stage workflow meta-optimization with reusable operator discovery",
+            "use_cases": [
+                "Workflow-search baselines",
+                "Multi-task data-science benchmarks",
+                "Operator discovery",
+            ],
+            "default_model": "gpt-4o",
+            "parameters": {"max_rounds": 4, "top_k_selection": 2},
+            "unique_params": {
+                "best_workflow_path": "Saved workflow to evaluate without meta-optimization",
+                "coarse_capture": "Coarse screening target: plan | code (default: code)",
+                "task_sample_size": "Number of validation tasks sampled (default: 3)",
+                "final_selection_mode": "Final selection: fine | weighted (default: weighted)",
+            },
+            "class": presets.DSFlow,
+        },
     }
 
     # Get available workflows from presets module
     available_workflows = []
-    for name in ["aide", "autokaggle", "data_interpreter", "automind", "dsagent", "deepanalyze", "react"]:
+    for name in [
+        "aide",
+        "autokaggle",
+        "data_interpreter",
+        "automind",
+        "dsagent",
+        "deepanalyze",
+        "dsflow",
+        "react",
+    ]:
         metadata = workflow_metadata.get(name)
         if metadata and metadata.get("class") is not None:
             # cmd_workflows expects each item to include workflow name for display.

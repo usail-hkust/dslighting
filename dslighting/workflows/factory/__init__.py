@@ -18,6 +18,7 @@ __all__ = [
     "DeepAnalyzeWorkflowFactory",
     "MyCustomAgentWorkflowFactory",
     "AFlowWorkflowFactory",
+    "DSFlowWorkflowFactory",
     "ReActWorkflowFactory",
     "DynamicWorkflowFactory",
 ]
@@ -49,6 +50,7 @@ _EXPORT_MAP = {
         "MyCustomAgentWorkflowFactory",
     ),
     "AFlowWorkflowFactory": ("dslighting.workflows.factory.builtin", "AFlowWorkflowFactory"),
+    "DSFlowWorkflowFactory": ("dslighting.workflows.factory.builtin", "DSFlowWorkflowFactory"),
     "ReActWorkflowFactory": ("dslighting.workflows.factory.builtin", "ReActWorkflowFactory"),
     "DynamicWorkflowFactory": ("dslighting.workflows.factory.builtin", "DynamicWorkflowFactory"),
 }

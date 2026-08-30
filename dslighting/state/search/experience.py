@@ -22,6 +22,7 @@ class Experience(State):
     persisting state to the filesystem within the run's workspace.
     """
     def __init__(self, workspace: WorkspaceService):
+        self._created_at = datetime.now(timezone.utc)
         self.workspace = workspace
         # Define paths within the managed workspace
         self.scores_file = workspace.get_path("state") / "scores.jsonl"
@@ -33,6 +34,93 @@ class Experience(State):
         if not self.experience_file.exists():
             with open(self.experience_file, 'w') as f:
                 json.dump({}, f)
+
+    @property
+    def created_at(self) -> datetime:
+        """Return the time this persistent experience state was opened."""
+        return self._created_at
+
+    def _load_state_values(self) -> Dict[str, Any]:
+        try:
+            payload = json.loads(self.experience_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+        """Read an arbitrary value from the persistent experience document."""
+        return self._load_state_values().get(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        """Store an arbitrary value in the persistent experience document."""
+        payload = self._load_state_values()
+        payload[key] = value
+        self.experience_file.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+    def delete(self, key: str) -> bool:
+        """Delete an arbitrary value from the persistent experience document."""
+        payload = self._load_state_values()
+        if key not in payload:
+            return False
+        del payload[key]
+        self.experience_file.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return True
+
+    def clear(self) -> None:
+        """Clear recorded scores, experiences, and workflow candidates."""
+        self.scores_file.write_text("", encoding="utf-8")
+        self.experience_file.write_text("{}", encoding="utf-8")
+        for candidate in self.candidates_dir.glob("round_*_workflow.py"):
+            candidate.unlink(missing_ok=True)
+
+    def snapshot(self) -> bytes:
+        """Serialize the files that make up the experience state."""
+        candidates = {
+            candidate.name: candidate.read_text(encoding="utf-8")
+            for candidate in self.candidates_dir.glob("round_*_workflow.py")
+            if candidate.is_file()
+        }
+        payload = {
+            "created_at": self._created_at.isoformat(),
+            "experience": self._load_state_values(),
+            "scores": self.scores_file.read_text(encoding="utf-8"),
+            "candidates": candidates,
+        }
+        return json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+    def restore(self, data: bytes) -> bool:
+        """Restore an experience state created by :meth:`snapshot`."""
+        try:
+            payload = json.loads(data.decode("utf-8"))
+            experience = payload["experience"]
+            scores = payload["scores"]
+            candidates = payload["candidates"]
+            if not isinstance(experience, dict) or not isinstance(scores, str):
+                return False
+            if not isinstance(candidates, dict):
+                return False
+            if any(
+                not isinstance(filename, str)
+                or Path(filename).name != filename
+                or not isinstance(source, str)
+                for filename, source in candidates.items()
+            ):
+                return False
+        except (KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+            return False
+
+        self.experience_file.write_text(
+            json.dumps(experience, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        self.scores_file.write_text(scores, encoding="utf-8")
+        self.candidates_dir.mkdir(parents=True, exist_ok=True)
+        for filename, source in candidates.items():
+            (self.candidates_dir / filename).write_text(source, encoding="utf-8")
+        return True
 
     def _load_all_candidates(self) -> List[WorkflowCandidate]:
         """Loads all recorded candidates from the scores file."""

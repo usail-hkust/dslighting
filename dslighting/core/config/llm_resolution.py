@@ -146,6 +146,7 @@ def build_llm_config(
     api_keys: Optional[Sequence[str]] = None,
     api_base: Optional[str] = None,
     provider: Optional[str] = None,
+    default_headers: Optional[Dict[str, str]] = None,
     temperature: Optional[float] = None,
 ) -> LLMConfig:
     """Build a resolved LLMConfig from defaults, env, model overrides, and explicit params."""
@@ -165,6 +166,7 @@ def build_llm_config(
         "api_keys": list(api_keys) if api_keys is not None else None,
         "api_base": api_base,
         "provider": provider,
+        "default_headers": default_headers,
         "temperature": temperature,
     }
 

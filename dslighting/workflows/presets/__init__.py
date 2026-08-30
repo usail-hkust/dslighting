@@ -13,6 +13,7 @@ __all__ = [
     "DSAgent",
     "AutoMind",
     "AFlow",
+    "DSFlow",
     "ReAct",
     "AIDEWorkflow",
     "AutoKaggleWorkflow",
@@ -21,6 +22,7 @@ __all__ = [
     "DSAgentWorkflow",
     "AutoMindWorkflow",
     "AFlowWorkflow",
+    "DSFlowWorkflow",
     "ReActWorkflow",
 ]
 
@@ -41,6 +43,7 @@ _EXPORT_MAP = {
     "DSAgentWorkflow": ("dslighting.workflows.manual.dsagent_workflow", "DSAgentWorkflow"),
     "AutoMindWorkflow": ("dslighting.workflows.search.automind_workflow", "AutoMindWorkflow"),
     "AFlowWorkflow": ("dslighting.workflows.search.aflow_workflow", "AFlowWorkflow"),
+    "DSFlowWorkflow": ("dslighting.workflows.search.dsflow_workflow", "DSFlowWorkflow"),
     "ReActWorkflow": ("dslighting.workflows.search.react.workflow", "ReActWorkflow"),
     "AIDE": ("dslighting.workflows.search.aide_workflow", "AIDEWorkflow"),
     "AutoKaggle": ("dslighting.workflows.manual.autokaggle_workflow", "AutoKaggleWorkflow"),
@@ -52,6 +55,7 @@ _EXPORT_MAP = {
     "DSAgent": ("dslighting.workflows.manual.dsagent_workflow", "DSAgentWorkflow"),
     "AutoMind": ("dslighting.workflows.search.automind_workflow", "AutoMindWorkflow"),
     "AFlow": ("dslighting.workflows.search.aflow_workflow", "AFlowWorkflow"),
+    "DSFlow": ("dslighting.workflows.search.dsflow_workflow", "DSFlowWorkflow"),
     "ReAct": ("dslighting.workflows.search.react.workflow", "ReActWorkflow"),
 }
 

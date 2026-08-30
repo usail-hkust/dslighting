@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.config import OutputContractConfig
@@ -33,7 +33,6 @@ from dslighting.core.visualization_policy import (
 from dslighting.services.llm import LLMService
 from dslighting.services.data_analysis_provider import create_data_perception_runtime
 from dslighting.services.sandbox import SandboxService
-from dslighting.services.vdb import VDBService
 from dslighting.services.workspace import WorkspaceService
 from dslighting.state.dsagent import DSAgentState
 from dslighting.state.search.journal import JournalState
@@ -48,6 +47,7 @@ from dslighting.workflows.manual.my_custom_agent_workflow import MyCustomAgentWo
 from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
 from dslighting.workflows.search.aide_workflow import AIDEWorkflow
 from dslighting.workflows.search.automind_workflow import AutoMindWorkflow
+from dslighting.workflows.search.dsflow_workflow import DSFlowWorkflow
 from dslighting.workflows.search.react.context_manager import (
     build_react_context_config,
 )
@@ -57,6 +57,9 @@ from dslighting.workflows.search.react.validation import (
 from dslighting.workflows.search.react.workflow import ReActWorkflow
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dslighting.ops.base import Operator
 
 
 def _resolve_sandbox_env(config: Any) -> Optional[Dict[str, str]]:
@@ -233,6 +236,8 @@ class AutoMindWorkflowFactory(BaseWorkflowFactory):
         enable_rag, case_dir = _resolve_rag_settings(config, "automind")
         vdb_service = None
         if enable_rag:
+            from dslighting.services.vdb import VDBService
+
             vdb_service = VDBService(case_dir=case_dir)
 
         state = JournalState()
@@ -272,6 +277,8 @@ class DSAgentWorkflowFactory(BaseWorkflowFactory):
         enable_rag, case_dir = _resolve_rag_settings(config, "dsagent")
         vdb_service = None
         if enable_rag:
+            from dslighting.services.vdb import VDBService
+
             vdb_service = VDBService(case_dir=case_dir)
 
         state = DSAgentState()
@@ -446,6 +453,38 @@ class AFlowWorkflowFactory(BaseWorkflowFactory):
         )
 
 
+class DSFlowWorkflowFactory(BaseWorkflowFactory):
+    """Assemble DSFlow's optimizer and its reusable operator toolbox."""
+
+    def _get_workflow_name(self) -> str:
+        return "dsflow"
+
+    def create_workflow(
+        self, config: Any, benchmark: Optional[BaseBenchmark] = None
+    ) -> DSFlowWorkflow:
+        workspace_base = None
+        if config.workflow and config.workflow.params:
+            workspace_base = config.workflow.params.get("workspace_base_dir")
+        workspace = WorkspaceService(run_name=config.run.run_name, base_dir=workspace_base)
+        llm_service = LLMService(config=config.llm)
+        sandbox_service = _create_sandbox_service(workspace, config)
+        data_perception = create_data_perception_runtime(config)
+        services = {
+            "llm": llm_service,
+            "workspace": workspace,
+            "sandbox": sandbox_service,
+            "data_perception": data_perception,
+        }
+        agent_config = config.agent.model_dump()
+        agent_config["dsflow"] = config.dsflow.model_dump()
+        return DSFlowWorkflow(
+            operators={},
+            services=services,
+            agent_config=agent_config,
+            benchmark=benchmark,
+        )
+
+
 class ReActWorkflowFactory(BaseWorkflowFactory):
     def _get_workflow_name(self) -> str:
         return "react"
@@ -521,18 +560,24 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
     def create_workflow(
         self, config: Any, benchmark: Optional[BaseBenchmark] = None
     ) -> BaseWorkflow:
-        workspace = WorkspaceService(run_name=config.run.run_name)
+        workspace_base = None
+        if config.workflow and config.workflow.params:
+            workspace_base = config.workflow.params.get("workspace_base_dir")
+        workspace = WorkspaceService(run_name=config.run.run_name, base_dir=workspace_base)
         llm_service = LLMService(config=config.llm)
         sandbox_service = _create_sandbox_service(workspace, config)
+        data_perception = create_data_perception_runtime(config)
         services = {
             "llm": llm_service,
             "sandbox": sandbox_service,
             "workspace": workspace,
+            "data_perception": data_perception,
         }
         operators = self._build_operator_instances(
             llm_service=llm_service,
             sandbox_service=sandbox_service,
             workspace=workspace,
+            data_perception=data_perception,
         )
         return self.workflow_class(
             operators=operators,
@@ -545,6 +590,7 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
         llm_service: LLMService,
         sandbox_service: SandboxService,
         workspace: WorkspaceService,
+        data_perception: Any = None,
     ) -> Dict[str, Any]:
         if not self.operator_classes:
             return {
@@ -561,6 +607,7 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
                 sandbox_service=sandbox_service,
                 workspace=workspace,
                 operators=operators,
+                data_perception=data_perception,
             )
         return operators
 
@@ -571,6 +618,7 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
         sandbox_service: SandboxService,
         workspace: WorkspaceService,
         operators: Dict[str, Any],
+        data_perception: Any = None,
     ) -> Any:
         params = inspect.signature(cls.__init__).parameters
         kwargs: Dict[str, Any] = {}
@@ -582,4 +630,6 @@ class DynamicWorkflowFactory(BaseWorkflowFactory):
             kwargs["workspace"] = workspace
         if "operators" in params:
             kwargs["operators"] = operators
+        if "data_perception" in params:
+            kwargs["data_perception"] = data_perception
         return cls(**kwargs)  # type: ignore[arg-type]

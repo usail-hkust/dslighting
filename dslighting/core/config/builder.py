@@ -9,34 +9,23 @@ configuration version management and migration support.
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 from typing_extensions import ClassVar
 
 from dslighting.config import (
-    DSLightingConfig,
+    AgentConfig,
     AgentRuntimeConfig,
     DataAnalysisConfig,
+    DSFlowConfig,
+    DSLightingConfig,
     LLMConfig,
     OutputContractConfig,
     RunConfig,
-    WorkflowConfig,
-    AgentConfig,
     SandboxConfig,
     SchedulerConfig,
-)
-from dslighting.error import ConfigurationError
-
-from dslighting.utils.defaults import (
-    DEFAULT_CONFIG,
-    DEFAULT_WORKSPACE_DIR,
-    ENV_DSLIGHTING_DEFAULT_WORKFLOW,
-    ENV_DSLIGHTING_WORKSPACE_DIR,
+    WorkflowConfig,
 )
 from dslighting.core.config.llm_resolution import build_llm_config
-from dslighting.core.visualization_policy import (
-    VISUALIZATION_POLICY_KEY,
-    coerce_visualization_policy,
-    consume_visualization_policy,
-)
 from dslighting.core.config.runtime_params import (
     LEGACY_REACT_RUNTIME_KEYS,
     normalize_agent_runtime_params,
@@ -49,15 +38,25 @@ from dslighting.core.config.shared import (
     WORKFLOW_TO_CONFIG_KEY,
     deep_merge,
     is_valid_workflow_name,
-    get_config_key_for_workflow,
+)
+from dslighting.core.visualization_policy import (
+    VISUALIZATION_POLICY_KEY,
+    coerce_visualization_policy,
+    consume_visualization_policy,
+)
+from dslighting.error import ConfigurationError
+from dslighting.utils.defaults import (
+    DEFAULT_CONFIG,
+    ENV_DSLIGHTING_DEFAULT_WORKFLOW,
+    ENV_DSLIGHTING_WORKSPACE_DIR,
 )
 
 from .versioning import (
     ConfigVersionManager,
-    get_version_manager,
     detect_config_version,
-    migrate_config,
+    get_version_manager,
     is_config_compatible,
+    migrate_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -92,6 +91,7 @@ class ConfigBuilder:
         api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
+        default_headers: Optional[Dict[str, str]] = None,
         temperature: float = None,
         data_analysis: Optional[Dict[str, Any]] = None,
         agent_runtime: Optional[Dict[str, Any]] = None,
@@ -114,6 +114,7 @@ class ConfigBuilder:
             api_key: API key for LLM
             api_base: API base URL
             provider: LLM provider (for LiteLLM)
+            default_headers: Additional HTTP headers for every LLM request
             temperature: LLM temperature
             data_analysis: Shared data analysis settings
             agent_runtime: Shared agent runtime settings
@@ -144,6 +145,7 @@ class ConfigBuilder:
             api_keys=api_keys,
             api_base=api_base,
             provider=provider,
+            default_headers=default_headers,
             temperature=temperature,
             data_analysis=data_analysis,
             agent_runtime=agent_runtime,
@@ -165,6 +167,7 @@ class ConfigBuilder:
             api_keys=api_keys,
             api_base=api_base,
             provider=provider,
+            default_headers=default_headers,
             temperature=temperature,
         )
 
@@ -194,6 +197,7 @@ class ConfigBuilder:
         api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
+        default_headers: Optional[Dict[str, str]] = None,
         temperature: float = None,
         data_analysis: Optional[Dict[str, Any]] = None,
         agent_runtime: Optional[Dict[str, Any]] = None,
@@ -244,6 +248,7 @@ class ConfigBuilder:
                 "automind",
                 "dsagent",
                 "deepanalyze",
+                "dsflow",
             ]:
                 # Nested dictionary format (v1.9.0+)
                 if isinstance(value, dict):
@@ -275,6 +280,8 @@ class ConfigBuilder:
             elif wf_name == "deepanalyze":
                 # DeepAnalyze parameters → agent.search
                 config.setdefault("agent", {}).setdefault("search", {}).update(wf_params)
+            elif wf_name == "dsflow":
+                config.setdefault("dsflow", {}).update(wf_params)
 
         # ========== Common parameters ==========
         if workflow is not None:
@@ -294,6 +301,9 @@ class ConfigBuilder:
 
         if provider is not None:
             config.setdefault("llm", {})["provider"] = provider
+
+        if default_headers is not None:
+            config.setdefault("llm", {})["default_headers"] = default_headers
 
         if temperature is not None:
             config.setdefault("llm", {})["temperature"] = temperature
@@ -436,6 +446,14 @@ class ConfigBuilder:
         scheduler_dict = config_dict.get("scheduler", {})
         scheduler_config = SchedulerConfig(**scheduler_dict)
 
+        # Extract DSFlow's namespaced meta-optimization settings.
+        dsflow_dict = config_dict.get("dsflow", {})
+        dsflow_config = (
+            dsflow_dict
+            if isinstance(dsflow_dict, DSFlowConfig)
+            else DSFlowConfig(**dsflow_dict)
+        )
+
         # Create DSLightingConfig
         return DSLightingConfig(
             llm=llm_config,
@@ -447,6 +465,7 @@ class ConfigBuilder:
             agent_runtime=agent_runtime_config,
             output_contract=output_contract_config,
             scheduler=scheduler_config,
+            dsflow=dsflow_config,
         )
 
     def _deep_merge(self, base: Dict, update: Dict) -> Dict:

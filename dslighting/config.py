@@ -1,7 +1,8 @@
 # dslighting/config.py
 
-from typing import Dict, Any, Optional, List, Literal, TYPE_CHECKING
-from pydantic import BaseModel, Field, ConfigDict
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from dslighting.benchmark import RuntimeSchedulerOptions
@@ -25,6 +26,10 @@ class LLMConfig(BaseModel):
     api_base: Optional[str] = "https://api.openai.com/v1"
     provider: Optional[str] = Field(
         None, description="Optional LiteLLM provider alias, e.g. 'siliconflow'."
+    )
+    default_headers: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional HTTP headers included with every LLM request.",
     )
     max_retries: int = 3
     max_concurrent_per_key: int = 20
@@ -269,6 +274,44 @@ class OptimizerConfig(BaseModel):
     top_k_selection: int = 2
 
 
+class DSFlowConfig(BaseModel):
+    """Parameters for DSFlow's two-stage workflow meta-optimization."""
+
+    best_workflow_path: Optional[str] = Field(
+        None,
+        description=(
+            "Optional saved best_workflow.py. When set, skip meta-optimization "
+            "and evaluate this workflow directly."
+        ),
+    )
+    max_rounds: int = 4
+    top_k_selection: int = 2
+    fine_evaluate_each_generation: bool = False
+
+    task_sample_size: int = 3
+    task_sample_strategy: Literal["first", "random"] = "first"
+
+    operator_library_enabled: bool = True
+    operator_library_path: str = "runs/dsflow_operator_library.json"
+    operator_library_max_ops_in_prompt: int = 15
+
+    # Persisting generated operators in the JSON operator library is enough for
+    # packaged installs. Source-file synchronization remains opt-in because an
+    # installed package may be read-only.
+    auto_sync_custom_operators: bool = False
+    progress_enabled: bool = True
+
+    coarse_capture: Literal["plan", "code"] = "code"
+    coarse_max_llm_calls: int = 6
+    workflow_generation_max_attempts: int = 2
+    operator_generation_max_attempts: int = 2
+
+    final_selection_mode: Literal["fine", "weighted"] = "weighted"
+    weight_fine: float = 0.5
+    weight_coarse: float = 0.5
+    final_fine_normalization: Literal["none", "minmax", "rank"] = "rank"
+
+
 class WorkflowConfig(BaseModel):
     """Specifies which workflow to run and its parameters."""
 
@@ -294,5 +337,6 @@ class DSLightingConfig(BaseModel):
     workflow: Optional[WorkflowConfig] = None
     agent: AgentConfig = Field(default_factory=AgentConfig)
     optimizer: Optional[OptimizerConfig] = None
+    dsflow: DSFlowConfig = Field(default_factory=DSFlowConfig)
 
     model_config = ConfigDict(extra="forbid")  # Pydantic configuration

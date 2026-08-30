@@ -17,6 +17,7 @@ _BUILTIN_FACTORY_TARGETS: dict[str, FactoryTarget] = {
     "autokaggle": ("dslighting.workflows.factory.builtin", "AutoKaggleWorkflowFactory"),
     "deepanalyze": ("dslighting.workflows.factory.builtin", "DeepAnalyzeWorkflowFactory"),
     "aflow": ("dslighting.workflows.factory.builtin", "AFlowWorkflowFactory"),
+    "dsflow": ("dslighting.workflows.factory.builtin", "DSFlowWorkflowFactory"),
     "react": ("dslighting.workflows.factory.builtin", "ReActWorkflowFactory"),
     "my_custom_agent": ("dslighting.workflows.factory.builtin", "MyCustomAgentWorkflowFactory"),
 }

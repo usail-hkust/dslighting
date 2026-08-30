@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 from dslighting.core.application.agent_config_builder import AgentConfigBuilder
@@ -24,6 +24,7 @@ class AgentAppService:
         api_keys: Optional[List[str]],
         api_base: Optional[str],
         provider: Optional[str],
+        default_headers: Optional[Dict[str, str]],
         temperature: Optional[float],
         timeout: int,
         keep_workspace: bool,
@@ -41,6 +42,7 @@ class AgentAppService:
             api_keys=api_keys,
             api_base=api_base,
             provider=provider,
+            default_headers=default_headers,
             temperature=temperature,
             timeout=timeout,
             keep_workspace=keep_workspace,

@@ -55,6 +55,7 @@ def test_explicit_params_beat_model_override(monkeypatch) -> None:
         api_key="manual-key",
         api_base="https://manual.example/v1",
         provider="manual-provider",
+        default_headers={"x-foo": "true"},
         temperature=0.9,
     )
 
@@ -63,6 +64,7 @@ def test_explicit_params_beat_model_override(monkeypatch) -> None:
     assert config.llm.api_keys is None
     assert config.llm.api_base == "https://manual.example/v1"
     assert config.llm.provider == "manual-provider"
+    assert config.llm.default_headers == {"x-foo": "true"}
     assert config.llm.temperature == pytest.approx(0.9)
 
 

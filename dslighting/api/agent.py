@@ -26,10 +26,11 @@ Example:
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from dslighting.core.application import AgentAppService
 from dslighting.core.interfaces import AgentInterface, AgentResult
+
 if TYPE_CHECKING:
     from dslighting.runner import DSLightingRunner
 from dslighting.error import ConfigurationError
@@ -50,6 +51,7 @@ WORKFLOW_ALIASES = {
     "dsagent": "dsagent",
     "automind": "automind",
     "aflow": "aflow",
+    "dsflow": "dsflow",
     "react": "react",
 }
 
@@ -76,6 +78,7 @@ class Agent(AgentInterface):
         api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
+        default_headers: Optional[dict[str, str]] = None,
         temperature: float = None,
         timeout: int = 300,
         keep_workspace: bool = False,
@@ -89,12 +92,13 @@ class Agent(AgentInterface):
         Initialize Agent.
 
         Args:
-            workflow: Name of the workflow to use ("aide", "autokaggle", "data_interpreter", "deepanalyze", "dsagent", "automind", "aflow")
+            workflow: Name of the workflow to use ("aide", "autokaggle", "data_interpreter", "deepanalyze", "dsagent", "automind", "aflow", "dsflow")
             model: LLM model to use
             api_key: API key (optional, will be read from env if not provided)
             api_keys: API key pool for rotation (optional)
             api_base: API base URL (optional, will be read from env if not provided)
             provider: LLM provider (optional)
+            default_headers: Additional HTTP headers for every LLM request
             temperature: Temperature parameter (optional, will be read from env if not provided)
             timeout: Sandbox timeout in seconds
             keep_workspace: Whether to keep workspace after execution
@@ -114,7 +118,7 @@ class Agent(AgentInterface):
         if workflow_key not in WORKFLOW_ALIASES:
             raise ConfigurationError(
                 f"Unknown workflow: {workflow}. "
-                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow, react",
+                f"Choose from: aide, autokaggle, data_interpreter, deepanalyze, dsagent, automind, aflow, dsflow, react",
                 error_code="CFG-002",
             )
 
@@ -130,6 +134,7 @@ class Agent(AgentInterface):
         self.api_keys = api_keys
         self.api_base = api_base
         self.provider = provider
+        self.default_headers = dict(default_headers or {})
         self.temperature = temperature
         self.timeout = timeout
         self.keep_workspace = keep_workspace
@@ -227,6 +232,7 @@ class Agent(AgentInterface):
             api_keys=self.api_keys,
             api_base=self.api_base,
             provider=self.provider,
+            default_headers=self.default_headers,
             temperature=self.temperature,
             timeout=self.timeout,
             keep_workspace=self.keep_workspace,

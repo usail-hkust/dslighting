@@ -41,6 +41,10 @@
 
 ---
 
+## 2026-08 🎉
+
+我们的 EMNLP 2026 Findings 论文 **DSFlow: Evolutionary Workflow Optimization for Generalizable LLM-Based Data Science Automation** 提出通过进化式 workflow 优化，构建可跨任务、跨 LLM backbone 泛化的数据科学 Agent。[下载 PDF](papers/dsflow-emnlp2026-findings.pdf)
+
 <details>
 <summary><strong>News 2026.03</strong> · <a href="#benchmarks">跳转到 Benchmarks</a></summary>
 
@@ -427,6 +431,50 @@ print(result.metadata_path)
 ```
 
 支持 DABench 与 MLEBench 变体。
+
+### DSFlow baseline
+
+[独立版 DSFlow](https://anonymous.4open.science/r/data_science_dsflow-0E54/)
+已作为两阶段 workflow 接入：先用粗粒度的 plan/code 分数筛选候选，
+再对 top-k 候选进行 benchmark 精评，最后在 test 模式运行选出的 workflow。
+
+```python
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="dsflow",
+    model="gpt-4o",
+    dsflow={
+        "max_rounds": 4,
+        "top_k_selection": 2,
+        "task_sample_size": 3,
+    },
+)
+
+benchmark = DSBenchmark("mlebench", data_dir="/path/to/mlebench-data")
+result = benchmark.run(config=config)
+```
+
+对于需要附加 HTTP header 的 OpenAI-compatible endpoint，可以按运行配置，
+无需修改 OpenAI 客户端的全局状态：
+
+```python
+config = ConfigBuilder().build_config(
+    workflow="dsflow",
+    model="your-model",
+    api_key="your-api-key",
+    api_base="https://your-endpoint.example/v1/",
+    provider="openai",
+    default_headers={"x-foo": "true"},
+)
+```
+
+选出的 workflow 会保存为运行 workspace 下的 `best_workflow.py`。
+
+如需跳过 meta-optimization、直接评测已有 workflow，可传入
+`dsflow={"best_workflow_path": "/path/to/best_workflow.py"}`。原独立版
+DSFlow 中使用旧 `dsat` import 路径的 workflow 会在加载时自动迁移。
 
 如果 `DSBenchmark` 导入时报错（例如缺少 `pandas`），先安装缺失依赖：
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Literal, Optional, Sequence, Union
+from typing import Dict, Literal, Optional, Sequence, Union
 
 from dslighting.config import LLMConfig
 from dslighting.core.config.llm_resolution import build_llm_config
@@ -64,6 +64,7 @@ def resolve_llm_config_for_role(
     api_keys: Optional[Sequence[str]] = None,
     api_base: str | None = None,
     provider: str | None = None,
+    default_headers: Dict[str, str] | None = None,
     temperature: float | None = None,
 ) -> LLMConfig:
     """Resolve an `LLMConfig` using shared precedence rules for a logical role."""
@@ -74,6 +75,7 @@ def resolve_llm_config_for_role(
         api_keys=api_keys,
         api_base=api_base,
         provider=provider,
+        default_headers=default_headers,
         temperature=temperature,
     )
 
@@ -85,6 +87,7 @@ def resolve_primary_llm_config(
     api_keys: Optional[Sequence[str]] = None,
     api_base: str | None = None,
     provider: str | None = None,
+    default_headers: Dict[str, str] | None = None,
     temperature: float | None = None,
 ) -> LLMConfig:
     return resolve_llm_config_for_role(
@@ -94,6 +97,7 @@ def resolve_primary_llm_config(
         api_keys=api_keys,
         api_base=api_base,
         provider=provider,
+        default_headers=default_headers,
         temperature=temperature,
     )
 
@@ -105,6 +109,7 @@ def resolve_text_judge_llm_config(
     api_keys: Optional[Sequence[str]] = None,
     api_base: str | None = None,
     provider: str | None = None,
+    default_headers: Dict[str, str] | None = None,
     temperature: float | None = None,
 ) -> LLMConfig:
     return resolve_llm_config_for_role(
@@ -114,6 +119,7 @@ def resolve_text_judge_llm_config(
         api_keys=api_keys,
         api_base=api_base,
         provider=provider,
+        default_headers=default_headers,
         temperature=temperature,
     )
 
@@ -125,6 +131,7 @@ def resolve_image_judge_llm_config(
     api_keys: Optional[Sequence[str]] = None,
     api_base: str | None = None,
     provider: str | None = None,
+    default_headers: Dict[str, str] | None = None,
     temperature: float | None = None,
 ) -> LLMConfig:
     return resolve_llm_config_for_role(
@@ -134,6 +141,7 @@ def resolve_image_judge_llm_config(
         api_keys=api_keys,
         api_base=api_base,
         provider=provider,
+        default_headers=default_headers,
         temperature=temperature,
     )
 

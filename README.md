@@ -41,6 +41,10 @@
 
 ---
 
+## 2026-08 🎉
+
+Our EMNLP 2026 Findings paper, **DSFlow: Evolutionary Workflow Optimization for Generalizable LLM-Based Data Science Automation**, introduces evolutionary workflow optimization for building data-science agents that generalize across tasks and LLM backbones. [Download PDF](docs/papers/dsflow-emnlp2026-findings.pdf)
+
 ## 2026-06 🎉
 
 Our paper, **DS-Lighting: Making Agent Harnesses Explicit for Data-Science Automation**, has been accepted to the **KDD 2026 Workshop on AI Data Scientist (AIDataSci)**. [PDF](docs/papers/ds-lighting-kdd2026-workshop.pdf)
@@ -436,6 +440,51 @@ If you rely on `.env` values or `LLM_MODEL_CONFIGS`, build the config with `Conf
 Passing a bare `DSLightingConfig()` no longer triggers benchmark-side LLM env fallback.
 
 Supported benchmark families include DABench, DACode, MLEBench variants, MoSciBench, and ScienceBench.
+
+### DSFlow baseline
+
+The [standalone DSFlow implementation](https://anonymous.4open.science/r/data_science_dsflow-0E54/)
+is integrated as a two-stage meta-optimization workflow. It screens
+candidate workflows with a coarse plan/code score, fine-evaluates the top-k
+candidates on the benchmark, and runs the selected workflow in test mode.
+
+```python
+from dslighting.api import DSBenchmark
+from dslighting.core import ConfigBuilder
+
+config = ConfigBuilder().build_config(
+    workflow="dsflow",
+    model="gpt-4o",
+    dsflow={
+        "max_rounds": 4,
+        "top_k_selection": 2,
+        "task_sample_size": 3,
+    },
+)
+
+benchmark = DSBenchmark("mlebench", data_dir="/path/to/mlebench-data")
+result = benchmark.run(config=config)
+```
+
+OpenAI-compatible endpoints that require additional HTTP headers can be
+configured per run without mutating global OpenAI client state:
+
+```python
+config = ConfigBuilder().build_config(
+    workflow="dsflow",
+    model="your-model",
+    api_key="your-api-key",
+    api_base="https://your-endpoint.example/v1/",
+    provider="openai",
+    default_headers={"x-foo": "true"},
+)
+```
+
+The selected workflow is saved as `best_workflow.py` in the run workspace.
+
+To skip meta-optimization and evaluate a previously saved workflow, set
+`dsflow={"best_workflow_path": "/path/to/best_workflow.py"}`. Standalone
+DSFlow workflows using the former `dsat` import path are migrated at load time.
 
 ### DABench
 

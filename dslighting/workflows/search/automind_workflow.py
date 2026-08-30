@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import json
-from typing import Dict, Any, Optional, List, Tuple, Type
+from typing import TYPE_CHECKING, Dict, Any, Optional, List, Tuple, Type
 from pathlib import Path
 
 from dslighting.runtime.dag import BaseWorkflowActor, NodeResult, OpNode
@@ -8,7 +10,6 @@ from dslighting.state.search.journal import Node, MetricValue
 from dslighting.utils.typing import ExecutionResult
 from dslighting.benchmark.core.base import BaseBenchmark
 from dslighting.error import LLMServiceError
-from dslighting.services.vdb import VDBService
 
 from dslighting.prompts.common import create_draft_prompt
 from dslighting.prompts.workflows.automind import (
@@ -32,6 +33,9 @@ from dslighting.workflows.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dslighting.services.vdb import VDBService
 
 
 class AutoMindWorkflowDagActor(BaseWorkflowActor):

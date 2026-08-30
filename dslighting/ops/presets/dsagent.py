@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from dslighting.core.visualization_policy import (
     build_visualization_instruction_text,
@@ -12,7 +14,6 @@ from dslighting.prompts.workflows.dsagent import (
 )
 from dslighting.services.llm import LLMService
 from dslighting.services.sandbox import SandboxService
-from dslighting.services.vdb import VDBService
 from dslighting.utils.typing import ExecutionResult
 from dslighting.utils.parsing import parse_plan_and_code
 from dslighting.state.context import MAX_HISTORY_CHARS, MAX_OUTPUT_CHARS, truncate_output
@@ -21,6 +22,9 @@ from dslighting.state.context import MAX_HISTORY_CHARS, MAX_OUTPUT_CHARS, trunca
 RECENT_CONTEXT_VERBATIM = 8000  # Increased from 2000
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dslighting.services.vdb import VDBService
 
 class DevelopPlanOperator(Operator):
     """Retrieves cases and generates an experiment plan."""

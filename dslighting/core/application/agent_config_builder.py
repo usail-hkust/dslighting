@@ -7,8 +7,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from dslighting.config import (
     AgentRuntimeConfig,
-    DSLightingConfig,
     DataAnalysisConfig,
+    DSFlowConfig,
+    DSLightingConfig,
     OutputContractConfig,
     RunConfig,
     SandboxConfig,
@@ -51,6 +52,7 @@ class AgentConfigBuilder:
         sandbox_timeout: Optional[int],
         sandbox_api_key: Optional[str],
         init_kwargs: Dict[str, Any],
+        default_headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.workflow_name = workflow_name
         self.model = model
@@ -58,6 +60,7 @@ class AgentConfigBuilder:
         self.api_keys = api_keys
         self.api_base = api_base
         self.provider = provider
+        self.default_headers = dict(default_headers or {})
         self.temperature = temperature
         self.timeout = timeout
         self.keep_workspace = keep_workspace
@@ -80,6 +83,7 @@ class AgentConfigBuilder:
             api_keys=self.api_keys,
             api_base=self.api_base,
             provider=self.provider,
+            default_headers=self.default_headers,
             temperature=self.temperature,
         )
 
@@ -100,6 +104,16 @@ class AgentConfigBuilder:
         self._apply_agent_runtime_overrides(config, merged)
         self._apply_output_contract_overrides(config, merged)
         self._apply_sandbox_overrides(config, merged)
+
+        if self.workflow_name == "dsflow":
+            raw_dsflow = merged.pop("dsflow", None)
+            if raw_dsflow is not None:
+                if not isinstance(raw_dsflow, dict):
+                    raise ConfigurationError(
+                        "`dsflow` must be a dict matching DSFlowConfig",
+                        error_code="CFG-002",
+                    )
+                config.dsflow = DSFlowConfig(**raw_dsflow)
 
         if self.workflow_name == "react" and "react" in merged:
             raise ConfigurationError(

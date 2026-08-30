@@ -5,16 +5,22 @@ Provides standard MLE task loading functionality, users don't need to reimplemen
 """
 
 import logging
-from pathlib import Path
-from typing import Any, List, Optional, TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from dslighting.config import DSLightingConfig, DataAnalysisConfig, RunConfig, SandboxConfig, WorkflowConfig
-from dslighting.core.visualization_policy import consume_visualization_policy
+from dslighting.config import (
+    DataAnalysisConfig,
+    DSLightingConfig,
+    RunConfig,
+    SandboxConfig,
+    WorkflowConfig,
+)
 from dslighting.core.config.runtime_logging import log_resolved_runtime_config
 from dslighting.core.data import TaskContext
 from dslighting.core.execution import TaskExecutor
 from dslighting.core.interfaces import WorkflowFactoryInterface
+from dslighting.core.visualization_policy import consume_visualization_policy
 
 if TYPE_CHECKING:
     from dslighting.runner import DSLightingRunner
@@ -44,6 +50,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         api_keys: Optional[List[str]] = None,
         api_base: str = None,
         provider: str = None,
+        default_headers: Optional[Dict[str, str]] = None,
         temperature: float = None,
         timeout: int = 300,
         keep_workspace: bool = False,
@@ -57,6 +64,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             api_key: API key (optional, read from env var if not provided)
             api_base: API base URL (optional, read from env var if not provided)
             provider: LLM provider (optional)
+            default_headers: Additional HTTP headers for every LLM request
             temperature: Temperature parameter (optional, read from env var if not provided)
             timeout: Sandbox timeout
             keep_workspace: Whether to keep workspace
@@ -88,6 +96,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             api_keys=api_keys,
             api_base=api_base,
             provider=provider,
+            default_headers=default_headers,
             temperature=temperature,
             data_analysis=agent_init_kwargs.get("data_analysis"),
         )
@@ -261,12 +270,12 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
             # Check data type
             if isinstance(data, TaskContext):
                 # TaskContext object
-                logger.info(f"Detected TaskContext object")
+                logger.info("Detected TaskContext object")
                 task_id = data.task_id
                 data_dir = data.data_dir
             elif isinstance(data, dict) and 'data_dir' in data:
                 # dataset dict/dictionary (from dslighting.datasets.load_xxx())
-                logger.info(f"Detected dataset dict/dictionary")
+                logger.info("Detected dataset dict/dictionary")
                 data_dir = Path(data['data_dir'])
                 task_id = task_id or data.get('task_id')
             else:
@@ -278,7 +287,7 @@ class BaseWorkflowFactory(WorkflowFactoryInterface, ABC):
         # Case 2: only task_id was provided
         elif task_id is not None and data_dir is None:
             # Automatically find data_dir from registry
-            logger.info(f"Only task_id provided, will look up data_dir from registry")
+            logger.info("Only task_id provided, will look up data_dir from registry")
             # Call run_with_task_id, let its internal logic handle data_dir lookup
             return await self.run_with_task_id(task_id=task_id, **kwargs)
 

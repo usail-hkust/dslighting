@@ -47,6 +47,7 @@ from dslighting.workflows.factory.builtin import (
     DataInterpreterWorkflowFactory,
     AutoKaggleWorkflowFactory,
     AFlowWorkflowFactory,
+    DSFlowWorkflowFactory,
     DeepAnalyzeWorkflowFactory,
     DynamicWorkflowFactory,
     MyCustomAgentWorkflowFactory,
@@ -59,6 +60,7 @@ from dslighting.workflows.output_contract import (
 
 # Import AFlow workflow for type checking
 from dslighting.workflows.search.aflow_workflow import AFlowWorkflow
+from dslighting.workflows.search.dsflow_workflow import DSFlowWorkflow
 from dslighting.state.search.journal import JournalState
 from dslighting.error import (
     BenchmarkError,
@@ -436,6 +438,7 @@ WORKFLOW_FACTORIES: dict[str, type[BaseWorkflowFactory]] = {
     "data_interpreter": DataInterpreterWorkflowFactory,
     "autokaggle": AutoKaggleWorkflowFactory,
     "aflow": AFlowWorkflowFactory,
+    "dsflow": DSFlowWorkflowFactory,
     "deepanalyze": DeepAnalyzeWorkflowFactory,
     "my_custom_agent": MyCustomAgentWorkflowFactory,
     "react": ReActWorkflowFactory,
@@ -736,15 +739,52 @@ class DSLightingRunner:
         """
         benchmark_instance = self.benchmark
         workflow = self.factory.create_workflow(task_config, benchmark=benchmark_instance)
-        workspace_service = workflow.services.get("workspace")
-        llm_service = workflow.services.get("llm")
-        sandbox_service = workflow.services.get("sandbox")
+        workflow_services = getattr(workflow, "services", {}) or {}
+        workspace_service = workflow_services.get("workspace") or getattr(
+            workflow, "workspace", None
+        )
+        llm_service = workflow_services.get("llm") or getattr(workflow, "llm_service", None)
+        sandbox_service = workflow_services.get("sandbox") or getattr(
+            workflow, "sandbox_service", None
+        )
 
-        if isinstance(workflow, AFlowWorkflow):
-            optimizer_name = "AFLOW"
-            logger.info("Detected %s workflow. Running meta-optimization stage.", optimizer_name)
-            best_workflow_code = await workflow.optimize()
-            logger.info("Meta-optimization complete. Proceeding with final evaluation workflow.")
+        if isinstance(workflow, (AFlowWorkflow, DSFlowWorkflow)):
+            optimizer_name = "DSFLOW" if isinstance(workflow, DSFlowWorkflow) else "AFLOW"
+            saved_workflow_path = None
+            if isinstance(workflow, DSFlowWorkflow):
+                saved_workflow_path = task_config.dsflow.best_workflow_path
+
+            if saved_workflow_path:
+                workflow_path = Path(saved_workflow_path).expanduser()
+                if not workflow_path.is_file():
+                    raise ConfigurationError(
+                        f"DSFlow best workflow file does not exist: {workflow_path}",
+                        error_code="CFG-002",
+                    )
+                try:
+                    best_workflow_code = workflow_path.read_text(encoding="utf-8")
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f"Unable to read DSFlow best workflow file '{workflow_path}': {exc}",
+                        error_code="CFG-002",
+                    ) from exc
+                best_workflow_code = workflow._sanitize_workflow_code(best_workflow_code)
+                logger.info(
+                    "Loaded saved DSFlow workflow from %s; skipping meta-optimization.",
+                    workflow_path,
+                )
+            else:
+                logger.info(
+                    "Detected %s workflow. Running meta-optimization stage.", optimizer_name
+                )
+                best_workflow_code = await workflow.optimize()
+                logger.info(
+                    "Meta-optimization complete. Proceeding with final evaluation workflow."
+                )
+                if isinstance(workflow, DSFlowWorkflow):
+                    best_workflow_file = workflow.workspace.get_path("run_dir") / "best_workflow.py"
+                    best_workflow_file.write_text(best_workflow_code, encoding="utf-8")
+                    logger.info("Saved DSFlow best workflow to %s", best_workflow_file)
 
             if hasattr(benchmark_instance, "set_mode"):
                 logger.info(
@@ -753,7 +793,14 @@ class DSLightingRunner:
                 )
                 benchmark_instance.set_mode("test")
 
-            dynamic_factory = DynamicWorkflowFactory(code_string=best_workflow_code)
+            operator_classes = None
+            if isinstance(workflow, DSFlowWorkflow):
+                workflow.ensure_operators_for_workflow(best_workflow_code)
+                operator_classes = workflow.export_operator_classes()
+            dynamic_factory = DynamicWorkflowFactory(
+                code_string=best_workflow_code,
+                operator_classes=operator_classes,
+            )
             workflow = dynamic_factory.create_workflow(task_config, benchmark=benchmark_instance)
             llm_service = workflow.services.get("llm")
             sandbox_service = workflow.services.get("sandbox")

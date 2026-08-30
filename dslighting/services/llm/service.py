@@ -12,13 +12,13 @@ from __future__ import annotations
 
 import asyncio
 import copy
-from contextlib import asynccontextmanager
 import hashlib
 import logging
 import os
 import threading
 import time
 import weakref
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -306,6 +306,8 @@ class LLMService:
         }
         if self.config.provider:
             kwargs["custom_llm_provider"] = self.config.provider
+        if self.config.default_headers:
+            kwargs["extra_headers"] = dict(self.config.default_headers)
         if response_format:
             kwargs["response_format"] = response_format
         return kwargs

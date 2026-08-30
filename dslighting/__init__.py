@@ -88,6 +88,7 @@ def list_workflows() -> None:
         ("DSAgent", "Structured operator workflow"),
         ("AutoMind", "Planning workflow with knowledge retrieval"),
         ("AFlow", "Meta-optimization workflow"),
+        ("DSFlow", "Two-stage data-science workflow meta-optimization"),
     ]
 
     print("DSLighting workflows:")
